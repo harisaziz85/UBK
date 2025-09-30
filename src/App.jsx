@@ -25,6 +25,9 @@ import InspectionDetails from "./admin/InspectionDetails";
 import Inspectionform from "./admin/Inspectionform"
 import Inspectionschdues from "./admin/Inspectionschdues";
 import Inspectionfailureitems from "./admin/Inspectionfailureitems";
+import Adminpassup from "./admin/Adminpassup";
+import AdminGeneralsetting from "./admin/AdminGeneralsetting";
+import AdminDashboard from "./admin/AdminDashboard";
 
 
 function App() {
@@ -53,6 +56,22 @@ function App() {
         {/* Admin Routes */}
         <Route element={<AdminLayout />}>
           <Route path="/admin/profile" element={<Adminprofile/>} />
+          <Route path="/admin/update-password" element={<Adminpassup/>} />
+          <Route path="/admin/dashboard" element={<AdminDashboard/>} />
+
+
+
+
+
+
+
+
+
+
+
+          <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
+
+
           <Route path="/admin/forms" element={<AdminForms/>} />
           <Route path="/admin/doc" element={<AdminDoc/>} />
           <Route path="/admin/pretripsafety" element={<Pretripsafety/>} />
