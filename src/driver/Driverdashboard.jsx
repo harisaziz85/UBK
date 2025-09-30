@@ -1,8 +1,9 @@
 import React from 'react'
+import MeterReadings from './component/MeterReadings'
 
 const Driverdashboard = () => {
   return (
-    <div>Driverdashboard</div>
+    <div><MeterReadings/></div>
   )
 }
 
