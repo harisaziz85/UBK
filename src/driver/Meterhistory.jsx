@@ -6,4 +6,4 @@ const Meterhistory = () => {
   )
 }
 
-export default Meterhistory
+export default Meterhistory;
