@@ -21,7 +21,7 @@ import Pretripsafety from "./admin/Pretripsafety";
 import Detailspage from "./admin/Detailspage";
 import UBKTowing from "./admin/components/UBKTowing";
 import InspectionHistory from "./admin/InspectionHistory";
-import InspectionDetails from "./admin/InspectionDetails";
+import InspectionDetails from "./driver/Inspection/InspectionDetails";
 import Inspectionform from "./admin/Inspectionform"
 import Inspectionschdues from "./admin/Inspectionschdues";
 import Inspectionfailureitems from "./admin/Inspectionfailureitems";
@@ -30,8 +30,9 @@ import AdminGeneralsetting from "./admin/AdminGeneralsetting";
 import AdminDashboard from "./admin/AdminDashboard";
 import ConsentForm from "./driver/component/Postform/ConsentForm";
 import VehiclesTable from "./driver/component/Vechile/VechicleTable";
-import VehicleDetailsPage from "./driver/component/Vechile/VechileDetails";
+import VehicleDetailsPage from "./driver/Inspection/InspectionDetails";
 import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
+import VehicleInspectionSystem from "./driver/Inspection/StartInspection";
 
 
 function App() {
@@ -47,7 +48,6 @@ function App() {
         <Route element={<DriverLayout />}>
           <Route path="/driverdashboard" element={<Driverdashboard />} />
           <Route path="/meterhistory" element={<MeterHistoryTable />} />
-          <Route path="/tripinspection" element={<TripInspection />} />
           <Route path="/vehiclelist" element={<VehiclesTable />} />
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/truckdocuments" element={<TruckDock />} />
@@ -57,7 +57,10 @@ function App() {
           <Route path="/profile" element={<Userprofile />} />
           <Route path="/updatepassword" element={<PassUpdate />} />
           <Route path="/testing" element={<Testing />} />
-
+        {/* inspections module route */}
+         <Route path="/tripinspection" element={<TripInspection />} />
+        <Route path='/start-inspection' element={<VehicleInspectionSystem/>}/>
+        <Route path="/inspection/:id" element={<InspectionDetails/>}/>
         </Route>
 
         {/* Admin Routes */}
@@ -65,20 +68,7 @@ function App() {
           <Route path="/admin/profile" element={<Adminprofile/>} />
           <Route path="/admin/update-password" element={<Adminpassup/>} />
           <Route path="/admin/dashboard" element={<AdminDashboard/>} />
-
-
-
-
-
-
-
-
-
-
-
           <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
-
-
           <Route path="/admin/forms" element={<AdminForms/>} />
           <Route path="/admin/doc" element={<AdminDoc/>} />
           <Route path="/admin/pretripsafety" element={<Pretripsafety/>} />
@@ -89,14 +79,6 @@ function App() {
           <Route path="/admin/inspectionform" element={<Inspectionform/>} />
           <Route path="/admin/inspectionschedules" element={<Inspectionschdues/>} />
           <Route path="/admin/inspection-failure-items" element={<Inspectionfailureitems/>} />
-
-
-
-
-
-
-
-
 
 
 
