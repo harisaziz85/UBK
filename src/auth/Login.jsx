@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { FiMail, FiLock } from "react-icons/fi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { LuScanLine } from "react-icons/lu";
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("email");
@@ -13,9 +16,45 @@ const Login = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const apiData = {
+      email: formData.email,
+      password: formData.password,
+    };
+
+    try {
+      const response = await axios.post(
+        'https://ubktowingbackend-production.up.railway.app/api/common/auth/admin/login',
+        apiData
+      );
+      toast.success('Login successful! Redirecting...', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+      // Reset form
+      setFormData({
+        email: '',
+        password: '',
+      });
+      // Redirect or handle success (e.g., navigate to dashboard)
+      // For now, just show success message
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'An error occurred during login.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,7 +102,7 @@ const Login = () => {
 
           {/* Email Form */}
           {activeTab === "email" && (
-            <div>
+            <form onSubmit={handleSubmit}>
               <div className="w-full">
                 <p className="robotomedium text-[#333333CC]">
                   Email or User Name
@@ -77,6 +116,8 @@ const Login = () => {
                     placeholder="name@example.com"
                     value={formData.email}
                     onChange={handleChange}
+                    autoComplete="off"
+                    required
                   />
                 </div>
               </div>
@@ -92,11 +133,13 @@ const Login = () => {
                     placeholder="********"
                     value={formData.password}
                     onChange={handleChange}
+                    autoComplete="new-password"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="ml-2 text-gray-500"
+                    className="ml-2 text-gray-500 cursor-pointer"
                   >
                     {showPassword ? (
                       <FaRegEyeSlash className="text-[20px]" />
@@ -111,10 +154,17 @@ const Login = () => {
                 Forgot Password?
               </p>
 
-              <button className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff]">
+              <button 
+                type="submit"
+                className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff] flex items-center justify-center cursor-pointer"
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <FiLoader className="animate-spin text-[20px] mr-2" />
+                )}
                 Sign in
               </button>
-            </div>
+            </form>
           )}
 
           {/* QR Code */}
@@ -132,6 +182,7 @@ const Login = () => {
           )}
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
