@@ -1,21 +1,77 @@
 import React, { useState } from "react";
-import { FiMail, FiLock } from "react-icons/fi";
+import { FiMail, FiLock, FiLoader } from "react-icons/fi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { LuScanLine } from "react-icons/lu";
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("email");
-
-  // form data persist rahe
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const apiData = {
+      email: formData.email,
+      password: formData.password,
+    };
+
+    try {
+      const response = await axios.post(
+        '/api/common/auth/admin/login',  // Proxy کے ذریعے full URL
+        apiData
+      );
+      
+      const { token, user } = response.data;  // Response structure کے مطابق
+      
+      // Token کو localStorage میں save کریں
+      localStorage.setItem('authToken', token);
+
+      toast.success('Login successful! Redirecting...', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+
+      // Form reset
+      setFormData({
+        email: '',
+        password: '',
+      });
+
+      // Role-based redirect (2 seconds delay کے ساتھ)
+      setTimeout(() => {
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (user.role === 'driver') {
+          navigate('/driverdashboard');
+        } else {
+          toast.error('Unknown role. Please contact admin.');
+        }
+      }, 2000);
+
+    } catch (err) {
+      console.error('Login error:', err);  // Debug کے لیے
+      toast.error(err.response?.data?.message || 'An error occurred during login.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,10 +93,10 @@ const Login = () => {
           </p>
 
           {/* Tabs */}
-          <div className="flex justify-center  mt-[24px] mb-[32px]">
+          <div className="flex justify-center mt-[24px] mb-[32px]">
             <button
               onClick={() => setActiveTab("email")}
-              className={`flex items-center gap-2 px-6 py-2 w-[50%] justify-center content-center  transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-2 w-[50%] justify-center content-center transition-all duration-300 ${
                 activeTab === "email"
                   ? "bg-[#043677] text-white"
                   : "bg-[#00000000] text-[#333]"
@@ -51,19 +107,19 @@ const Login = () => {
 
             <button
               onClick={() => setActiveTab("qr")}
-              className={`flex items-center gap-2 bg-[#000000] justify-center py-2 w-[50%]  transition-all duration-300 ${
+              className={`flex items-center gap-2 py-2 w-[50%] justify-center transition-all duration-300 ${
                 activeTab === "qr"
                   ? "bg-[#043677] text-white"
                   : "bg-[#00000000] text-[#333]"
               }`}
             >
-              <span className="text-lg"><LuScanLine /></span> OR Code
+              <span className="text-lg"><LuScanLine /></span> QR Code
             </button>
           </div>
 
           {/* Email Form */}
           {activeTab === "email" && (
-            <div>
+            <form onSubmit={handleSubmit}>
               <div className="w-full">
                 <p className="robotomedium text-[#333333CC]">
                   Email or User Name
@@ -77,6 +133,8 @@ const Login = () => {
                     placeholder="name@example.com"
                     value={formData.email}
                     onChange={handleChange}
+                    autoComplete="off"
+                    required
                   />
                 </div>
               </div>
@@ -92,11 +150,13 @@ const Login = () => {
                     placeholder="********"
                     value={formData.password}
                     onChange={handleChange}
+                    autoComplete="new-password"
+                    required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="ml-2 text-gray-500"
+                    className="ml-2 text-gray-500 cursor-pointer"
                   >
                     {showPassword ? (
                       <FaRegEyeSlash className="text-[20px]" />
@@ -111,17 +171,24 @@ const Login = () => {
                 Forgot Password?
               </p>
 
-              <button className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff]">
+              <button 
+                type="submit"
+                className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff] flex items-center justify-center cursor-pointer disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading && (
+                  <FiLoader className="animate-spin text-[20px] mr-2" />
+                )}
                 Sign in
               </button>
-            </div>
+            </form>
           )}
 
           {/* QR Code */}
           {activeTab === "qr" && (
             <div className="flex flex-col items-center">
               <img
-                src="/qr.png" // 👈 apni QR image ka path do
+                src="/qr.png" 
                 alt="QR Code"
                 className="w-40 h-40 my-6"
               />
@@ -132,6 +199,7 @@ const Login = () => {
           )}
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

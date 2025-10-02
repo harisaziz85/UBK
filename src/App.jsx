@@ -33,6 +33,8 @@ import VehiclesTable from "./driver/component/Vechile/VechicleTable";
 import VehicleDetailsPage from "./driver/Inspection/InspectionDetails";
 import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
 import VehicleInspectionSystem from "./driver/Inspection/StartInspection";
+import AllDrivers from "./admin/AllDrivers";
+import AddDriver from "./admin/AddDriver";
 
 
 function App() {
@@ -68,6 +70,9 @@ function App() {
           <Route path="/admin/profile" element={<Adminprofile/>} />
           <Route path="/admin/update-password" element={<Adminpassup/>} />
           <Route path="/admin/dashboard" element={<AdminDashboard/>} />
+          <Route path="/admin/drivers" element={<AllDrivers/>} />
+          <Route path="/admin/add-drivers" element={<AddDriver/>} />
+
           <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
           <Route path="/admin/forms" element={<AdminForms/>} />
           <Route path="/admin/doc" element={<AdminDoc/>} />
