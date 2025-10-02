@@ -28,6 +28,12 @@ import Inspectionfailureitems from "./admin/Inspectionfailureitems";
 import Adminpassup from "./admin/Adminpassup";
 import AdminGeneralsetting from "./admin/AdminGeneralsetting";
 import AdminDashboard from "./admin/AdminDashboard";
+import ConsentForm from "./driver/component/Postform/ConsentForm";
+import VehiclesTable from "./driver/component/Vechile/VechicleTable";
+import VehicleDetailsPage from "./driver/component/Vechile/VechileDetails";
+import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
+import AllDrivers from "./admin/AllDrivers";
+import AddDriver from "./admin/AddDriver";
 
 
 function App() {
@@ -42,15 +48,18 @@ function App() {
         {/* Driver Routes */}
         <Route element={<DriverLayout />}>
           <Route path="/driverdashboard" element={<Driverdashboard />} />
-          <Route path="/meterhistory" element={<Meterhistory />} />
+          <Route path="/meterhistory" element={<MeterHistoryTable />} />
           <Route path="/tripinspection" element={<TripInspection />} />
-          <Route path="/vehiclelist" element={<Vehiclelist />} />
+          <Route path="/vehiclelist" element={<VehiclesTable />} />
+          <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/truckdocuments" element={<TruckDock />} />
           <Route path="/form" element={<Froms />} />
-          <Route path="/vehicleassignment" element={<VehicleAssignment />} />
+          <Route path="/consent-form" element={ <ConsentForm/>} />
+          {/* <Route path="/vehicleassignment" element={<VehicleAssignment />} /> */}
           <Route path="/profile" element={<Userprofile />} />
           <Route path="/updatepassword" element={<PassUpdate />} />
           <Route path="/testing" element={<Testing />} />
+
         </Route>
 
         {/* Admin Routes */}
@@ -58,6 +67,10 @@ function App() {
           <Route path="/admin/profile" element={<Adminprofile/>} />
           <Route path="/admin/update-password" element={<Adminpassup/>} />
           <Route path="/admin/dashboard" element={<AdminDashboard/>} />
+          <Route path="/admin/drivers" element={<AllDrivers/>} />
+          <Route path="/admin/add-drivers" element={<AddDriver/>} />
+
+
 
 
 

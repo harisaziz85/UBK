@@ -1,8 +1,11 @@
 import React from 'react'
+import MainContent from './FormContent'
 
 const Froms = () => {
   return (
-    <div>Froms</div>
+    <>
+    <MainContent/>
+    </>
   )
 }
 

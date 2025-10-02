@@ -1,12 +1,14 @@
-// src/layouts/AdminLayout.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { FaTachometerAlt, FaUsers, FaCar, FaFileAlt, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { MdOutlineDashboardCustomize, MdKeyboardArrowDown } from "react-icons/md";
-import { FaWpforms } from "react-icons/fa6";
+import { FaWpforms, FaUser, FaLock } from "react-icons/fa";
 import { FaSearch } from "react-icons/fa";
+import { LuUserRound } from "react-icons/lu";
+import { LuKeyRound } from "react-icons/lu";
 import { VscBell } from "react-icons/vsc";
 import { LiaUserCircleSolid } from "react-icons/lia";
+import axios from 'axios';
 
 // Reusing CustomSearchDropdown from DriverLayout
 const CustomSearchDropdown = () => {
@@ -116,6 +118,27 @@ const AdminVehicleDropdown = ({ setSidebarOpen }) => {
 
 const AdminLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState({ profilePicture: null });
+
+  // Fetch user profile data on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await axios.get('/api/common/profile/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setUserProfile(response.data);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -208,10 +231,43 @@ const AdminLayout = () => {
           </button>
           <h1 className="text-lg font-semibold text-[#043677]"></h1>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <CustomSearchDropdown />
             <VscBell className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[24px]" />
-            <LiaUserCircleSolid className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[34px]" />
+            <div className="relative">
+              {userProfile.profilePicture ? (
+                <img
+                  src={userProfile.profilePicture}
+                  alt="User Profile"
+                  className="w-10 h-10 rounded-full cursor-pointer object-cover"
+                  onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+                />
+              ) : (
+                <LiaUserCircleSolid
+                  className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[34px]"
+                  onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+                />
+              )}
+              {isProfileModalOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+                  <NavLink
+                    to="/admin/profile"
+                    className="flex items-center justify-between robotoregular text-[14px]  gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    onClick={() => setIsProfileModalOpen(false)}
+                  >User Profile
+                    <LuUserRound className="" /> 
+                  </NavLink>
+                  <hr className="text-[#33333333]"/>
+                  <NavLink
+                    to="/admin/update-password"
+                    className="flex items-center justify-between  robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    onClick={() => setIsProfileModalOpen(false)}
+                  >Password
+                    <LuKeyRound className="" /> 
+                  </NavLink>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

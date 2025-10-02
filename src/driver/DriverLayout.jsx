@@ -75,7 +75,7 @@ const VehicleDropdown = ({ setSidebarOpen }) => {
   const options = [
     { value: "vehiclelist", label: "Vehicle List", path: "/vehiclelist" },
     { value: "meterhistory", label: "Meter History", path: "/meterhistory" },
-    { value: "vehicleassignment", label: "Vehicle Assignment", path: "/vehicleassignment" }
+    // { value: "vehicleassignment", label: "Vehicle Assignment", path: "/vehicleassignment" }
   ];
 
   return (
@@ -198,7 +198,7 @@ const DriverLayout = () => {
       )}
 
       {/* Content Area */}
-      <div className="flex-1 flex flex-col md:ml-[280px]">
+      <div className="flex-1 flex flex-col md:ml-[280px]  overflow-hidden">
         {/* Topbar */}
         <header className="bg-white h-[72px] flex gap-4 justify-between items-center px-4 shadow border-b border-[#E5E7EB]">
           <button
@@ -216,7 +216,7 @@ const DriverLayout = () => {
           </div>
         </header>
 
-        <main className="p-6 flex-1 bg-gray-100">
+        <main className="p-6 flex-1 bg-gray-100 overflow-y-auto">
           <Outlet />
         </main>
       </div>
