@@ -72,7 +72,7 @@ const inspectionCategories = [
     otherDefects: ['N/A', 'No Defects']
   },
   {
-    id: ' driver-seat',
+    id: 'driver-seat',
     title: 'Instructions for Driver Seat',
     status: 'N/A',
     minorDefects: ['Loose or insecure mounting or electrical connection'],

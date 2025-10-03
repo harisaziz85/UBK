@@ -35,6 +35,7 @@ import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
 import VehicleInspectionSystem from "./driver/Inspection/StartInspection";
 import AllDrivers from "./admin/AllDrivers";
 import AddDriver from "./admin/AddDriver";
+import DateInputCanada from "./driver/Inspection/Clender";
 
 
 function App() {

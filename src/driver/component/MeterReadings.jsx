@@ -203,45 +203,46 @@ const MeterReadings = () => {
               </div>
             </div>
 
-            {/* Inspection Item Pass Rate */}
-            <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition">
-              <h6 className="font-semibold mb-4">Inspection Item Pass Rate</h6>
-              <div className="flex items-end justify-between">
-                <div>
-                  <h2 className="text-4xl font-bold text-blue-500 mb-0">0%</h2>
-                  <p className="text-gray-500 text-sm">This Week</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center text-blue-500 mb-1">
-                    <TrendingUp size={16} className="mr-1" />
-                    <span className="font-semibold">19</span>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Change From Last Week
-                  </p>
-                </div>
-              </div>
-            </div>
+{/* Inspection Item Pass Rate */}
+<div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition flex flex-col justify-between">
+  <h6 className="font-semibold mb-4">Inspection Item Pass Rate</h6>
+  
+  <div className="flex items-end justify-between mt-auto">
+    <div>
+      <h2 className="text-4xl font-bold text-blue-500 mb-0">0%</h2>
+      <p className="text-gray-500 text-sm">This Week</p>
+    </div>
+    <div className="text-right">
+      <div className="flex items-center text-blue-500 mb-1">
+        <TrendingUp size={16} className="mr-1" />
+        <span className="font-semibold">19</span>
+      </div>
+      <p className="text-gray-400 text-xs">Change From Last Week</p>
+    </div>
+  </div>
+</div>
 
-            {/* Inspection Item Failure Rate */}
-            <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition">
-              <h6 className="font-semibold mb-4">Inspection Item Failure Rate</h6>
-              <div className="flex items-end justify-between">
-                <div>
-                  <h2 className="text-4xl font-bold text-red-500 mb-0">0%</h2>
-                  <p className="text-gray-500 text-sm">This Week</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center text-blue-500 mb-1">
-                    <TrendingUp size={16} className="mr-1" />
-                    <span className="font-semibold">19</span>
-                  </div>
-                  <p className="text-gray-400 text-xs">
-                    Change From Last Week
-                  </p>
-                </div>
-              </div>
-            </div>
+{/* Inspection Item Failure Rate */}
+<div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition flex flex-col justify-between">
+  <h6 className="font-semibold mb-4">Inspection Item Failure Rate</h6>
+  
+  <div className="flex items-end justify-between mt-auto">
+    <div>
+      <h2 className="text-4xl font-bold text-red-500 mb-0">0%</h2>
+      <p className="text-gray-500 text-sm">This Week</p>
+    </div>
+    <div className="text-right">
+      <div className="flex items-center text-blue-500 mb-1">
+        <TrendingUp size={16} className="mr-1" />
+        <span className="font-semibold">19</span>
+      </div>
+      <p className="text-gray-400 text-xs">Change From Last Week</p>
+    </div>
+  </div>
+</div>
+
+
+
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { X, Camera } from "lucide-react";
 
-const CameraModal = ({ context, onClose }) => {
+const CameraModal = ({ context, onClose, onSave }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -31,21 +31,28 @@ const CameraModal = ({ context, onClose }) => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (canvas && video) {
-      const context = canvas.getContext("2d");
+      const context2d = canvas.getContext("2d");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context2d.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/png");
       setCapturedImage(dataUrl);
       console.log("Captured Image:", dataUrl); // send to backend if needed
     }
   };
 
+  const handleSave = () => {
+    if (capturedImage) {
+      onSave(capturedImage, context);
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full overflow-hidden">
         {/* Header */}
-        <div className="border-b px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-[#E9E9E9] px-6 py-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">
             Take Photo - {context}
           </h3>
@@ -68,21 +75,21 @@ const CameraModal = ({ context, onClose }) => {
           <div className="flex gap-4 mt-4 w-full">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+              className=" cursor-pointer flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
             >
               Cancel
             </button>
             {!capturedImage ? (
               <button
                 onClick={capturePhoto}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center"
+                className="cursor-pointer flex-1 px-6 py-3 bg-[#043677] text-white rounded-lg font-medium  flex items-center justify-center"
               >
                 <Camera className="mr-2" size={18} /> Capture
               </button>
             ) : (
               <button
-                onClick={onClose}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+                onClick={handleSave}
+                className=" cursor-pointer flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
               >
                 Save
               </button>

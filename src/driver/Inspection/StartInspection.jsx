@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+// src/components/VehicleInspectionSystem.jsx
+import React, { useEffect, useState } from 'react';
 import { X, Camera, ChevronDown } from 'lucide-react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import inspectionCategories from './InspectionPopupData';
 import InspectionModal from './InspectionModal';
 import CameraModal from './CameraModel';
-
+import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 
 const VehicleInspectionSystem = () => {
@@ -11,7 +15,14 @@ const VehicleInspectionSystem = () => {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoContext, setPhotoContext] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
+  const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
+  const [vehicleList, setVehicleList] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const navigate = useNavigate();
+
+
+  const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
 
   const [inspectionData, setInspectionData] = useState({
     date: '',
@@ -19,6 +30,280 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
     inspectedBy: 'Ali Janna'
   });
 
+  const [inspections, setInspections] = useState(
+    inspectionCategories.map(cat => ({
+      ...cat,
+      minorChecked: new Set(),
+      majorChecked: new Set(),
+      otherChecked: new Set(),
+    }))
+  );
+
+  const [vehicleImages, setVehicleImages] = useState({
+    front: null,
+    driverSide: null,
+    rear: null,
+    passengerSide: null
+  });
+
+  const [checklistImages, setChecklistImages] = useState({});
+
+  const [remarks, setRemarks] = useState('');
+
+  const [declarationConfirmed, setDeclarationConfirmed] = useState(false);
+
+  const [declarationSignature, setDeclarationSignature] = useState('');
+
+  const [loading, setLoading] = useState(false);
+
+  const mapKebabToCamel = {
+    'air-brake': 'airBrakeSystem',
+    'cab': 'cab',
+    'cargo-securement': 'cargoSecurement',
+    'coupling-devices': 'couplingDevices',
+    'dangerous-goods': 'dangerousGoods',
+    'driver-controls': 'driverControls',
+    'driver-seat': 'driverSeat',
+    'electric-brake': 'electricBrakeSystem',
+    'emergency-equipment': 'emergencyEquipment',
+    'exhaust-system': 'exhaustSystem',
+    'frame-cargo-body': 'frameCargoBody',
+    'fuel-system': 'fuelSystem',
+    'general': 'general',
+    'glass-mirrors': 'glassMirrors',
+    'heater-defroster': 'heaterDefroster',
+    'horn': 'horn',
+    'hydraulic-brake': 'hydraulicBrakeSystem',
+    'lamps-reflectors': 'lampsReflectors',
+    'steering': 'steering',
+    'suspension': 'suspensionSystem',
+    'tires': 'tires',
+    'wheels-hubs': 'wheelsHubsFasteners',
+    'windshield-wiper': 'windshieldWipers',
+  };
+
+
+
+useEffect(() => {
+  const fetchVehicles = async () => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const res = await axios.get(`${Baseurl}/driver/vechile/my`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.data.vehicles) {
+        setVehicleList(res.data.vehicles); // ✅ match your API response
+        console.log("Vehicles fetched:", res.data.vehicles);
+      }
+    } catch (err) {
+      console.error("Error fetching vehicles", err);
+    }
+  };
+
+  fetchVehicles();
+}, []);
+
+
+const handleSelectVehicle = (e) => {
+  const vehicleId = e.target.value;
+  setSelectedVehicleId(vehicleId);
+
+  const vehicle = vehicleList.find((v) => v._id === vehicleId);
+
+  if (vehicle) {
+    setSelectedVehicle(vehicle);
+    setInspectionData({
+      ...inspectionData,
+      inspectedBy: "Ali ", // adjust if backend sends assigned driver
+    });
+  }
+};
+
+
+
+
+
+  const formatDate = (isoDate) => {
+    if (!isoDate) return "N/A";
+    return new Date(isoDate).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  const handlePhotoSave = (dataUrl, context) => {
+    if (context.endsWith(' Defect')) {
+      const title = context.slice(0, -7);
+      const item = inspections.find(i => i.title === title);
+      if (item) {
+        setChecklistImages(prev => ({ ...prev, [item.id]: dataUrl }));
+      }
+    } else {
+      let side = context;
+      if (context === 'driver') side = 'driverSide';
+      else if (context === 'passenger') side = 'passengerSide';
+      setVehicleImages(prev => ({ ...prev, [side]: dataUrl }));
+    }
+  };
+
+  const openPhotoModal = (context) => {
+    setPhotoContext(context);
+    setShowPhotoModal(true);
+  };
+
+  // helper to convert base64 → Blob
+  const dataURLtoBlob = (dataUrl) => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  // helper to log FormData contents
+  const printFormData = (formData) => {
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+  };
+
+
+  const handleSaveInspection = async () => {
+    if (!selectedVehicleId) {
+      toast.error("Please select a vehicle");
+      return;
+    }
+
+    // check fail items must have photo
+    const fails = inspections.filter(
+      (item) => getStatus(item)?.toLowerCase() === "fail"
+    );
+    for (const failItem of fails) {
+      if (!checklistImages[failItem.id]) {
+        toast.error(`Please take photo for ${failItem.title}`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Please login to continue");
+      setLoading(false);
+      return;
+    }
+
+    const formData = new FormData();
+
+    // ✅ Vehicle + required fields
+    formData.append("vehicleId", selectedVehicleId);
+
+   const hasFail = inspections.some(
+    (item) => getStatus(item)?.toLowerCase() === "fail"
+  );
+  const overallStatus = hasFail ? "failed" : "passed";
+  formData.append("inspectionStatus", overallStatus);
+
+
+    // required text fields
+    formData.append("remarks", remarks);
+    formData.append("declarationConfirmed", declarationConfirmed);
+    formData.append("declarationSignature", declarationSignature);
+    formData.append("currentMilage", Number(inspectionData.currentMileage) || 0);
+    formData.append("inspectedOn", inspectionData.date); // backend wants inspectedOn
+
+    // ✅ Vehicle images
+    Object.entries(vehicleImages).forEach(([key, dataUrl]) => {
+      if (dataUrl) {
+        const blob = dataURLtoBlob(dataUrl);
+        formData.append(key, blob, `${key}.png`);
+      }
+    });
+
+    // ✅ Checklist object
+    const checklistObj = {};
+    inspections.forEach((item) => {
+      const camelKey = mapKebabToCamel[item.id] || item.id;
+      const status = getStatus(item);
+      const value = status === "Pass";
+
+      checklistObj[camelKey] = { value };
+    });
+
+    // ✅ Checklist images
+    inspections.forEach((item) => {
+      const status = getStatus(item);
+      if (status === "Fail" && checklistImages[item.id]) {
+        const camelKey = mapKebabToCamel[item.id] || item.id;
+        const blob = dataURLtoBlob(checklistImages[item.id]);
+        formData.append(`${camelKey}Image`, blob, `${camelKey}.png`);
+      }
+    });
+
+    formData.append("checklist", JSON.stringify(checklistObj));
+
+    // ✅ Debug log
+    printFormData(formData);
+
+    // ✅ API call
+    try {
+      const res = await axios.post(`${Baseurl}/common/inspection/create`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.inspection) {
+        toast.success("Inspection saved successfully!");
+
+          setTimeout(() => {
+    navigate("/tripinspection");
+  }, 3000);
+        // Reset form
+        setSelectedVehicleId("");
+        setSelectedVehicle(null);
+        setInspectionData({
+          date: '',
+          currentMileage: '',
+          inspectedBy: ''
+        });
+        setInspections(
+          inspectionCategories.map(cat => ({
+            ...cat,
+            minorChecked: new Set(),
+            majorChecked: new Set(),
+            otherChecked: new Set(),
+          }))
+        );
+        setVehicleImages({
+          front: null,
+          driverSide: null,
+          rear: null,
+          passengerSide: null
+        });
+        setChecklistImages({});
+        setRemarks('');
+        setDeclarationConfirmed(false);
+        setDeclarationSignature('');
+      } else {
+        toast.error(res.data.message || "Failed to save inspection");
+      }
+    } catch (err) {
+      console.error("Error saving inspection", err);
+      toast.error("Something went wrong while saving");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -33,17 +318,32 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
   ];
 
   const openInspectionModal = (item) => {
-    setSelectedInspectionItem(item);
-     setIsModalOpen(true);
+    const inspection = inspections.find(i => i.id === item.id);
+    setSelectedInspectionItem(inspection);
+    setIsModalOpen(true);
   };
 
   const closeInspectionModal = () => {
     setSelectedInspectionItem(null);
+    setIsModalOpen(false);
   };
 
-  const openPhotoModal = (context) => {
-    setPhotoContext(context);
-    setShowPhotoModal(true);
+  const handleSave = (updatedItem) => {
+    setInspections(prev => 
+      prev.map(i => 
+        i.id === updatedItem.id 
+          ? { ...updatedItem } 
+          : i
+      )
+    );
+    closeInspectionModal();
+  };
+
+  const getStatus = (item) => {
+    if (item.majorChecked.size > 0) return 'Fail';
+    if (item.minorChecked.size > 0) return 'Pass';
+    if (item.otherChecked.size > 0) return 'N/A';
+    return 'N/A';
   };
 
   const getStatusColor = (status) => {
@@ -62,7 +362,6 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
         </div>
       </div>
 
-
       {/* Instructions Section */}
       {activeTab === 'instructions' && (
         <div className="max-w-7xl mx-auto px-4 py-6">
@@ -78,14 +377,12 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
                   <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
                   <p className="text-xs text-gray-600 mb-3">Major Defects</p>
                   <ul className="text-xs text-gray-700 space-y-1 mb-4">
-
-                    {inspectionCategories.find(cat => cat.id === card.id)?.instructions.slice(0, 2).map((inst, idx) => (
+                    {inspectionCategories.find(cat => cat.id === card.id)?.instructions?.slice(0, 2).map((inst, idx) => (
                       <li key={idx} className="flex items-start">
                         <span className="mr-2">□</span>
                         <span>{inst}</span>
                       </li>
                     ))}
-
                   </ul>
                   <button className="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
                     Done
@@ -97,21 +394,33 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
         </div>
       )}
 
-      {/* Main Content */}
-      {activeTab === 'checklist' && (
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Vehicle Selection */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Vehicle for Inspection
-            </label>
-            <div className="relative">
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>Search Vehicle</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" size={20} />
-            </div>
-          </div>
+              {/* Main Content */}
+              {activeTab === 'checklist' && (
+                <div className="max-w-7xl mx-auto px-4 py-6">
+
+                          {/* Vehicle Dropdown */}
+                  <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Vehicle for Inspection
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedVehicleId}
+                        onChange={handleSelectVehicle}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Select Vehicle</option>
+                        {vehicleList.map((vehicle) => (
+                          <option key={vehicle._id} value={vehicle._id}>
+                            {vehicle.name} ({vehicle.licensePlate})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" size={20} />
+                    </div>
+                  </div>
+
+
 
           {/* Vehicle Details */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -120,22 +429,23 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Name</label>
                 <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-                  REQ-4052
+                  {selectedVehicle?.name}
                 </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Plate</label>
                 <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-                  REQ-4052
+                  {selectedVehicle?.licensePlate}
                 </div>
               </div>
             </div>
             <div className="mb-4">
               <label className="block text-sm text-gray-600 mb-1">Province</label>
               <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-                REQ-4052
+                {selectedVehicle?.registrationState || "N/A"}
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Date</label>
@@ -156,152 +466,333 @@ const [selectedInspectionItem, setSelectedInspectionItem] = useState(null);
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+
             </div>
           </div>
-
 
           {/* Photo Section */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Photos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 cursor-pointer" onClick={() => openPhotoModal('front')}>
-                <Camera className="mx-auto mb-2 text-gray-400" size={32} />
-                <p className="text-sm font-medium text-gray-700">Front of the Truck</p>
-                <p className="text-xs text-gray-500 mt-1">Take Photo of the Front of the Truck</p>
+              <div 
+                className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer group" 
+                onClick={() => openPhotoModal('front')}
+              >
+                {vehicleImages.front ? (
+                  <>
+                    <img src={vehicleImages.front} alt="Front of the Truck" className="w-full h-32 object-cover rounded" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setVehicleImages(prev => ({ ...prev, front: null }));
+                      }} 
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p className="text-sm font-medium text-gray-700">Front of the Truck</p>
+                    <p className="text-xs text-gray-500 mt-1">Take Photo of the Front of the Truck</p>
+                  </>
+                )}
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 cursor-pointer" onClick={() => openPhotoModal('driver')}>
-                <Camera className="mx-auto mb-2 text-gray-400" size={32} />
-                <p className="text-sm font-medium text-gray-700">Driver Side the Truck</p>
-                <p className="text-xs text-gray-500 mt-1">Take Photo of the Driver Side of the Truck</p>
+              <div 
+                className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer group" 
+                onClick={() => openPhotoModal('driver')}
+              >
+                {vehicleImages.driverSide ? (
+                  <>
+                    <img src={vehicleImages.driverSide} alt="Driver Side of the Truck" className="w-full h-32 object-cover rounded" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setVehicleImages(prev => ({ ...prev, driverSide: null }));
+                      }} 
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p className="text-sm font-medium text-gray-700">Driver Side the Truck</p>
+                    <p className="text-xs text-gray-500 mt-1">Take Photo of the Driver Side of the Truck</p>
+                  </>
+                )}
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 cursor-pointer" onClick={() => openPhotoModal('rear')}>
-                <Camera className="mx-auto mb-2 text-gray-400" size={32} />
-                <p className="text-sm font-medium text-gray-700">Rear of the Truck</p>
-                <p className="text-xs text-gray-500 mt-1">Take photo of the Rear of the Truck</p>
+              <div 
+                className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer group" 
+                onClick={() => openPhotoModal('rear')}
+              >
+                {vehicleImages.rear ? (
+                  <>
+                    <img src={vehicleImages.rear} alt="Rear of the Truck" className="w-full h-32 object-cover rounded" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setVehicleImages(prev => ({ ...prev, rear: null }));
+                      }} 
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p className="text-sm font-medium text-gray-700">Rear of the Truck</p>
+                    <p className="text-xs text-gray-500 mt-1">Take photo of the Rear of the Truck</p>
+                  </>
+                )}
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 cursor-pointer" onClick={() => openPhotoModal('passenger')}>
-                <Camera className="mx-auto mb-2 text-gray-400" size={32} />
-                <p className="text-sm font-medium text-gray-700">Passenger Side of the Truck</p>
-                <p className="text-xs text-gray-500 mt-1">Take photo of the passenger Side of the Truck</p>
+              <div 
+                className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 cursor-pointer group" 
+                onClick={() => openPhotoModal('passenger')}
+              >
+                {vehicleImages.passengerSide ? (
+                  <>
+                    <img src={vehicleImages.passengerSide} alt="Passenger Side of the Truck" className="w-full h-32 object-cover rounded" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setVehicleImages(prev => ({ ...prev, passengerSide: null }));
+                      }} 
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p className="text-sm font-medium text-gray-700">Passenger Side of the Truck</p>
+                    <p className="text-xs text-gray-500 mt-1">Take photo of the passenger Side of the Truck</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
+
 
 
           {/* Items Checklist */}
-          <div className=" p-6 mb-6">
+          <div className="p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Items Checklist</h2>
-            <div className="space-y-2">
-              {inspectionCategories.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between py-6 px-4 border border-[#E9E9E9] rounded-[6px] bg-[#FFFFFF] hover:bg-gray-50 cursor-pointer"
-                  onClick={() => openInspectionModal(item)}
-                >
-                  <span className="text-[#333333CC] roboto-medium text-[14px]">{item.title}</span>
-                  <div className="flex flex-col items-center gap-4">
-                    <span className={`robotosemibold text-[13px] ${getStatusColor(item.status)}`}>
-                      {item.status}
-                    </span>
-                    <button className="text-blue-600 text-sm hover:underline">
-                      View Instructions
-                    </button>
+
+            {(() => {
+              // ✅ calculate before looping
+              const firstFailIndex = inspections.findIndex(item => getStatus(item)?.toLowerCase() === "fail");
+
+              // ✅ TRUE if any explicit fail
+              const hasFail = inspections.some(item => getStatus(item)?.toLowerCase() === "fail");
+
+              // ✅ default Pass until a fail exists
+              const overallStatus = hasFail ? "Fail" : "Pass";
+
+              return (
+                <>
+                  <div className="space-y-2">
+                    {inspections.map((item, index) => {
+                      const status = getStatus(item);
+                      const isFail = status?.toLowerCase() === "fail";
+                      const isDisabled = firstFailIndex !== -1 && index > firstFailIndex;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex items-center justify-between py-6 px-4 border border-[#E9E9E9] rounded-[6px] 
+                            ${isDisabled ? "bg-gray-100 opacity-60 cursor-not-allowed" : "bg-white hover:bg-gray-50 cursor-pointer"}`}
+                          onClick={() => !isDisabled && openInspectionModal(item)}
+                        >
+                          <span className="text-[#333333CC] roboto-medium text-[14px]">
+                            {item.title}
+                            {isFail && (
+                              <div className="flex flex-col items-center gap-2 pt-2">
+                                <span className="text-xs robotomedium text-[#333333CC]">
+                                  Photo required
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openPhotoModal(`${item.title} Defect`);
+                                  }}
+                                  className="cursor-pointer flex robotomedium bg-[#00000014] items-center gap-1 text-[#00000099] py-[8px] px-[16px] rounded-[8px] text-xs hover:underline"
+                                >
+                                  <Camera size={18} />
+                                  Open Camera
+                                </button>
+                                {checklistImages[item.id] && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <img 
+                                      src={checklistImages[item.id]} 
+                                      alt={`${item.title} defect`} 
+                                      className="w-16 h-16 object-cover rounded" 
+                                    />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setChecklistImages(prev => ({ ...prev, [item.id]: null }));
+                                      }}
+                                      className="text-xs text-red-500 hover:underline"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </span>
+
+                          <div className="flex flex-col items-center gap-4">
+                            <span className={`robotosemibold text-[13px] ${getStatusColor(status)}`}>
+                              {status || "Pending"}
+                            </span>
+                            <button
+                              className={`text-sm hover:underline ${
+                                isDisabled ? "text-gray-400 cursor-not-allowed" : "text-blue-600"
+                              }`}
+                              disabled={isDisabled}
+                            >
+                              View Instructions
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
-            </div>
+
+                  {/* ✅ Overall Status */}
+                  <div className="mt-6 flex justify-end">
+                    {overallStatus === "Pass" ? (
+                      <span className="text-green-600 font-semibold text-lg">Pass</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold text-lg">Fail</span>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           {/* Inspection Remarks */}
-         <div className=" p-6 mb-6">
+          <div className=" p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Inspection Remarks</h2>
-                <span className="text-green-600 font-semibold">Pass</span>
+              <h2 className="text-lg font-semibold text-gray-900">Inspection Remarks</h2>
             </div>
             
             {/* Input field instead of button */}
             <input
-                type="text"
-                placeholder="Enter remarks..."
-                className="w-full px-4 py-8  bg-[#FBFBFB] rounded-[8px] text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                style={{border:"1px solid #E9E9E9"}}
+              type="text"
+              placeholder="Enter remarks..."
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="w-full px-4 py-8  bg-[#FBFBFB] rounded-[8px] text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              style={{border:"1px solid #E9E9E9"}}
             />
-            </div>
-
+          </div>
 
           {/* Initial Inspection By */}
-         <div className="p-6 mb-6">
-  <h2 className="text-lg font-semibold text-gray-900 mb-4">Initial Inspection by</h2>
-  <div className="space-y-4">
-    <div>
-      <label className="block text-sm text-gray-600 mb-1">Inspected On</label>
-      <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-        10/08/2025
-      </div>
-    </div>
-    <div>
-      <label className="block text-sm text-gray-600 mb-1">Inspected By</label>
-      <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-        {inspectionData.inspectedBy}
-      </div>
-    </div>
-    <div className="space-y-3">
-    <label className="block text-sm font-medium text-gray-700 mb-2">Driver's Sign</label>
+          <div className="p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Initial Inspection by</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Inspected On</label>
+                <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
+                  {inspectionData.date ? formatDate(inspectionData.date) : formatDate(new Date())}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Inspected By</label>
+                <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
+                  {inspectionData.inspectedBy}
+                </div>
+              </div>
 
-      <div className="flex items-start">
-        <input type="checkbox" className="mt-1 mr-3" />
-        <label className="text-sm text-gray-700">
-          I declare that the vehicle(s) listed has been inspected in Accordance with Ontario Schedule 1 Daily Inspections of trucks, tractors,
-          <br />
-          and trailers (Reg. 199/07)
-        </label>
-      </div>
-      
-    </div>
-    <div>
-      <div className="relative">
-        <div className="bg-gray-50 px-4 py-3 rounded border border-gray-200 min-h-[60px] text-gray-700">
-          <textarea
-            placeholder="Enter signature here..."
-            className="w-full h-12 border-none bg-transparent resize-none outline-none text-sm"
-          />
-        </div>
-      
-      </div>
-    </div>
-  </div>
-</div>
+              {/* Driver's Sign Section */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Driver's Sign</label>
+                <div className="flex items-start">
+                  <input 
+                    type="checkbox" 
+                    checked={declarationConfirmed}
+                    onChange={(e) => setDeclarationConfirmed(e.target.checked)}
+                    className="mt-1 mr-3" 
+                  />
+                  <label className="text-sm text-gray-700">
+                    I declare that the vehicle(s) listed has been inspected in Accordance with Ontario Schedule 1 Daily Inspections...
+                  </label>
+                </div>
+              </div>
+              <div>
+                <div className="relative">
+                  <div className="bg-gray-50 px-4 py-3 rounded border border-gray-200 min-h-[60px] text-gray-700">
+                    <textarea
+                      placeholder="Enter signature here..."
+                      value={declarationSignature}
+                      onChange={(e) => setDeclarationSignature(e.target.value)}
+                      className="w-full h-12 border-none bg-transparent resize-none outline-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between gap-4">
             <button className=" cursor-pointer px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
-                Cancel
+              Cancel
             </button>
-            <button className=" cursor-pointer px-6 py-3 bg-[#043677] text-white rounded-lg font-medium hover:bg-[#043677]">
-                Save Inspection
+            <button 
+              className=" cursor-pointer px-6 py-3 bg-[#043677] text-white rounded-lg font-medium hover:bg-[#043677] disabled:opacity-50"
+              disabled={loading}
+              onClick={handleSaveInspection}
+            >
+              {loading ? 'Saving...' : 'Save Inspection'}
             </button>
-            </div>
+          </div>
 
         </div>
       )}
 
+      <ToastContainer position="top-right" autoClose={3000} />
 
       {/* Inspection Item Modal */}
       {isModalOpen && selectedInspectionItem && (
         <InspectionModal
           item={selectedInspectionItem}
           onClose={closeInspectionModal}
-          onSave={closeInspectionModal}
+          onSave={handleSave}
         />
       )}
 
-            {/* Photo Modal */}
-            {showPhotoModal && (
-            <CameraModal
-                context={photoContext}
-                onClose={() => setShowPhotoModal(false)}
-            />
-            )}
-
+      {/* Photo Modal */}
+      {showPhotoModal && (
+        <CameraModal
+          context={photoContext}
+          onClose={() => setShowPhotoModal(false)}
+          onSave={handlePhotoSave}
+        />
+      )}
 
     </div>
   );
