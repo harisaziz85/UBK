@@ -54,15 +54,9 @@ const MainContent = () => {
               <ChevronDown size={18} />
             </button>
 
-            <button className="flex items-center  justify-center  roboto-medium gap-2 px-4 py-2 cursor-pointer bg-[#E6E6E633] rounded-[52px] text-[#333333B2] hover:bg-gray-50">
-              <span>Vehicle</span>
-              <ChevronDown size={18} />
-            </button>
+        
 
-            <button className="flex items-center justify-center roboto-medium cursor-pointer gap-2 px-4 py-2 bg-[#E6E6E633] rounded-[52px] text-[#333333B2] hover:bg-gray-50">
-              <Filter size={18} />
-              <span>Filters</span>
-            </button>
+          
           </div>
         </div>
 

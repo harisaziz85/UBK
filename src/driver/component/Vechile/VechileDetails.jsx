@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, Search, FileText, MoreVertical } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 
 const VehicleDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [vehicle, setVehicle] = useState(null);
+  const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -36,6 +38,7 @@ const VehicleDetailsPage = () => {
 
         const data = await response.json();
         setVehicle(data.vehicle);
+        setInspections((data.inspections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -138,7 +141,7 @@ const VehicleDetailsPage = () => {
     { name: "Inspection4.pdf", type: "pdf" },
   ];
 
-const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A" , profileImage: "/placeholder-avatar.png" };
+  const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A" , profileImage: "/placeholder-avatar.png" };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -329,7 +332,101 @@ const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: 
           </div>
         )}
 
-        {activeTab === "inspections" && <p>Inspections tab</p>}
+        {activeTab === "inspections" && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+              <h2 className="text-[24px] roboto-semi-bold text-[#333333]">Inspections</h2>
+            </div>
+            <div className="overflow-x-auto rounded-lg shadow">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead style={{ backgroundColor: "#04367714" }}>
+                  <tr>
+                    <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      <input type="checkbox" />
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Submitted At
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Submission
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Vehicle
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Date
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Inspection Form
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspections.map((insp) => {
+                    const submittedAt = new Date(insp.createdAt).toLocaleString();
+                    const date = new Date(insp.createdAt).toLocaleDateString();
+                    const status = insp.inspectionStatus === 'passed' ? 'Pass' : 'Fail';
+                    const vehicleImg = insp.vehicleImage || vehicle.photo;
+                    const vehicleName = `${vehicle.name} (${vehicle.licensePlate})`;
+                    return (
+                      <tr key={insp.inspectionId} onClick={() => navigate(`/inspection/${insp.inspectionId}`)} className="cursor-pointer bg-white hover:bg-[#04367714]">
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <input type="checkbox" />
+                        </td>
+                        <td className="p-3 whitespace-nowrap border-b roboto-regular" style={{ borderColor: "#33333333" }}>
+                          {submittedAt}
+                        </td>
+                        <td
+                          className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600"
+                          style={{ borderColor: "#33333333" }}
+                        >
+                          {insp.inspectionId.slice(0, 7)}
+                        </td>
+                        <td
+                          className="p-3 whitespace-nowrap border-b flex items-center roboto-regular gap-2 text-blue-600"
+                          style={{ borderColor: "#33333333" }}
+                        >
+                          <img
+                            src={vehicleImg}
+                            alt="vehicle"
+                            className="w-8 h-8 rounded object-cover"
+                            onError={(e) => {
+                              e.target.src = '/placeholder-avatar.png';
+                            }}
+                          />
+                          {vehicleName}
+                        </td>
+                        <td className="p-3 whitespace-nowrap border-b roboto-regular " style={{ borderColor: "#33333333" }}>
+                          {date}
+                        </td>
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <span className="flex items-center gap-2">
+                            <span className="whitespace-nowrap w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
+                            Pre-Trip Inspection
+                          </span>
+                        </td>
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <span 
+                            className={`px-3 py-1 roboto-medium rounded-full text-xs ${
+                              status === "Pass" 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

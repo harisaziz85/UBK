@@ -357,7 +357,7 @@ const DriverLayout = () => {
           </div>
         </header>
 
-        <main className="p-6 flex-1 bg-gray-100 overflow-y-auto">
+        <main className=" p-4 sm:p-6 flex-1 bg-gray-100 overflow-y-auto">
           <Outlet />
         </main>
       </div>

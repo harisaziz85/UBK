@@ -396,7 +396,7 @@ const handleSelectVehicle = (e) => {
 
               {/* Main Content */}
               {activeTab === 'checklist' && (
-                <div className="max-w-7xl mx-auto px-4 py-6">
+                <div className="max-w-7xl mx-auto px-0 sm:px-4 py-6">
 
                           {/* Vehicle Dropdown */}
                   <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -580,7 +580,7 @@ const handleSelectVehicle = (e) => {
 
 
           {/* Items Checklist */}
-          <div className="p-6 mb-6">
+          <div className="p-0 sm:p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Items Checklist</h2>
 
             {(() => {
@@ -710,7 +710,7 @@ const handleSelectVehicle = (e) => {
           </div>
 
           {/* Initial Inspection By */}
-          <div className="p-6 mb-6">
+          <div className="p-0 sm:p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Initial Inspection by</h2>
             <div className="space-y-4">
               <div>

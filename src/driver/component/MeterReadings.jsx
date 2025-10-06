@@ -27,20 +27,33 @@ ChartJS.register(
 const MeterReadings = () => {
   const [activeTab, setActiveTab] = useState("thisWeek");
   const [stats, setStats] = useState(null);
+  const [recentConversations, setRecentConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
+  const formatRelativeTime = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = now - date;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    return `${days} days ago`;
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
           console.error("No token found. Please log in.");
+          setLoading(false);
           return;
         }
 
-        const response = await fetch(`${baseUrl}/common/stats`, {
+        // Fetch stats
+        const statsResponse = await fetch(`${baseUrl}/common/stats`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -48,20 +61,40 @@ const MeterReadings = () => {
           },
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch stats");
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData.data.inspections);
         }
 
-        const data = await response.json();
-        setStats(data.data.inspections);
+        // Fetch recent conversations
+        const commentsResponse = await fetch(`${baseUrl}/common/comment/recent`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json();
+          const transformed = commentsData.recentConversations.map((conv, index) => ({
+            id: conv.otherUser._id,
+            user: conv.otherUser.name,
+            avatar: conv.otherUser.profileImage || `https://i.pravatar.cc/150?img=${index + 1}` ,
+            action: `Message from ${conv.otherUser.name}`,
+            message: conv.lastMessage,
+            time: formatRelativeTime(conv.lastMessageAt),
+          }));
+          setRecentConversations(transformed);
+        }
       } catch (err) {
-        console.error("Error fetching stats:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, [baseUrl]);
 
   // Chart data
@@ -144,45 +177,18 @@ const MeterReadings = () => {
     },
   };
 
-  const recentComments = [
-    {
-      id: 1,
-      user: "Ali Jama",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      action: "commented on Driver: Huzaifa",
-      message: "Waiting for response, Check status",
-      time: "11 days ago",
-    },
-    {
-      id: 2,
-      user: "Ali Jama",
-      avatar: "https://i.pravatar.cc/150?img=13",
-      action: "commented on Vehicle: Ex-098666",
-      message: "Fuel updated...",
-      time: "11 days ago",
-    },
-    {
-      id: 3,
-      user: "Ali Jama",
-      avatar: "https://i.pravatar.cc/150?img=14",
-      action: "commented on Vehicle: Ex-098666",
-      message: "Fuel updated...",
-      time: "11 days ago",
-    },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100">
         {/* Header Skeleton */}
         <div className="bg-white">
-          <div className="px-6 py-3">
+          <div className=" px-0 sm:px-6 py-3">
             <Skeleton height={24} width={100} />
           </div>
         </div>
 
         {/* Main Content Skeleton */}
-        <div className="px-6 py-6">
+        <div className="px-0 sm:px-6 py-6">
           {/* Inspections Section Skeleton */}
           <div className="mb-6">
             <Skeleton height={20} width={120} className="mb-3" />
@@ -277,13 +283,13 @@ const MeterReadings = () => {
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <div className=" ">
-        <div className="px-6 py-3">
+        <div className=" px-0 sm:px-6 py-3">
           <h4 className="robotosemibold text-[24px]">Dashboard</h4>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-6 py-6">
+      <div className="px-0 sm:px-6 py-6">
         {/* Inspections Section */}
         <div className="mb-6">
           <h5 className="font-semibold mb-3">Inspections</h5>
@@ -338,7 +344,7 @@ const MeterReadings = () => {
     <div className="text-right">
       <div className={`flex items-center mb-1 ${passChangeSign === '+' ? 'text-[#007BC4]' : 'text-red-500'}`}>
         {passChangeSign === '+' ? (
-        <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
 </svg>
 
@@ -348,7 +354,7 @@ const MeterReadings = () => {
 </svg>
 
         )}
-        <span className="robotosemibold text-[24px] ">{passChangeSign}{passChangeValue}%</span>
+        <span className="robotomedium text-[24px]">{passChangeSign}{passChangeValue}%</span>
       </div>
 
       <p className="text-gray-400 text-xs">Change From Last Week</p>
@@ -371,17 +377,17 @@ const MeterReadings = () => {
     <div className="text-right">
         <div className={`flex items-center mb-1 ${failChangeSign === '+' ? 'text-red-500' : 'text-green-500'}`}>
           {failChangeSign === '+' ? (
-          <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
 </svg>
 
           ) : (
-         <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
 </svg>
 
           )}
-          <span className="robotosemibold text-[24px] ">{failChangeSign}{failChangeValue}%</span>
+          <span className="robotomedium text-[24px]">{failChangeSign}{failChangeValue}%</span>
         </div>
       <p className="text-gray-400 text-xs">Change From Last Week</p>
     </div>
@@ -393,6 +399,9 @@ const MeterReadings = () => {
           </div>
         </div>
 
+
+
+
         {/* Recent Comments Section */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -401,11 +410,11 @@ const MeterReadings = () => {
 
           <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition">
             <div>
-              {recentComments.map((comment, index) => (
+              {recentConversations.map((comment, index) => (
                 <div
                   key={comment.id}
                   className={`flex items-start p-3 ${
-                    index !== recentComments.length - 1
+                    index !== recentConversations.length - 1
                       ? "border-b border-gray-200"
                       : ""
                   }`}

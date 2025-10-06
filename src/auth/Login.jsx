@@ -7,6 +7,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
+
+
 const Login = () => {
   const [activeTab, setActiveTab] = useState("email");
   const [formData, setFormData] = useState({
@@ -16,6 +18,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const baseurl = 'https://ubktowingbackend-production.up.railway.app/api'
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,7 +36,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        '/api/common/auth/admin/login',  // Proxy کے ذریعے full URL
+        `${baseurl}/common/auth/admin/login`,  // Proxy کے ذریعے full URL
         apiData
       );
       
