@@ -35,6 +35,12 @@ import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
 import VehicleInspectionSystem from "./driver/Inspection/StartInspection";
 import AllDrivers from "./admin/AllDrivers";
 import AddDriver from "./admin/AddDriver";
+import Vahicles from "./admin/Vahicles";
+import CreateVehicle from "./admin/CreateVehicle";
+import DocumentDetails from "./admin/DocumentDetails";
+import DriverDetailsPage from "./admin/DriverDetailsPage";
+import AssignedVehicles from "./admin/components/AssignedVehicles";
+import UnassignedVehicles from "./admin/components/UnassignedVehicles";
 
 
 function App() {
@@ -72,10 +78,23 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard/>} />
           <Route path="/admin/drivers" element={<AllDrivers/>} />
           <Route path="/admin/add-drivers" element={<AddDriver/>} />
+          <Route path="/admin/vehicles" element={<Vahicles/>} />
+          <Route path="/admin/unassigned-vehicles" element={<UnassignedVehicles/>} />
+          <Route path="/admin/assigned-vehicles" element={<AssignedVehicles/>} />
+
+          <Route path="/admin/createvehicles" element={<CreateVehicle/>} />
+          <Route path="/admin/doc" element={<AdminDoc/>} />
+          <Route path="/admin/document/details" element={<DocumentDetails/>} />
+          <Route path="/admin/driver/details/:id" element={<DriverDetailsPage />} />
+          <Route path="/admin/vehicle-assignment" element={<VehicleAssignment/>} />
+          <Route path="/admin/forms" element={<AdminForms/>} />
+
+
+
+
 
           <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
-          <Route path="/admin/forms" element={<AdminForms/>} />
-          <Route path="/admin/doc" element={<AdminDoc/>} />
+        
           <Route path="/admin/pretripsafety" element={<Pretripsafety/>} />
           <Route path="/admin/detailpage" element={<Detailspage/>} />
           <Route path="/admin/ubktowing" element={<UBKTowing/>} />
