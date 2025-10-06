@@ -1,58 +1,4 @@
-// import React from "react";
-// import {
-//   ScatterChart,
-//   Scatter,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   Legend,
-//   ResponsiveContainer,
-// } from "recharts";
-// import { Card } from "react-bootstrap";
-
-// const data = [
-//   { date: "March 24", value: 15 },
-//   { date: "March 24", value: 42 },
-//   { date: "March 24", value: 67 },
-//   { date: "March 24", value: 64 },
-//   { date: "March 24", value: 28 },
-//   { date: "March 24", value: 20 },
-//   { date: "March 24", value: 16 },
-//   { date: "March 24", value: 61 },
-//   { date: "March 24", value: 29 },
-//   { date: "March 24", value: 38 },
-//   { date: "March 24", value: 53 },
-// ];
-
-// const MeterReadings = () => {
-//   return (
-//     <div className="container mt-4">
-//       <Card className="p-3 shadow-sm">
-//         <h5 className="mb-3 fw-bold">Latest Meter Readings</h5>
-//         <ResponsiveContainer width="100%" height={400}>
-//           <ScatterChart
-//             margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-//           >
-//             <CartesianGrid />
-//             <XAxis dataKey="date" />
-//             <YAxis dataKey="value" />
-//             <Tooltip />
-//             <Legend />
-//             <Scatter name="Kilometers" data={data} fill="#8884d8" />
-//           </ScatterChart>
-//         </ResponsiveContainer>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default MeterReadings;
-
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -65,6 +11,8 @@ import {
   Legend,
 } from "chart.js";
 import { TrendingUp } from "lucide-react";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 ChartJS.register(
   CategoryScale,
@@ -78,10 +26,80 @@ ChartJS.register(
 
 const MeterReadings = () => {
   const [activeTab, setActiveTab] = useState("thisWeek");
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          console.error("No token found. Please log in.");
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/common/stats`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch stats");
+        }
+
+        const data = await response.json();
+        setStats(data.data.inspections);
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [baseUrl]);
 
   // Chart data
-  const submissionsData = {
-    labels: ["Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu"],
+  const inspections = stats || {
+    thisWeek: 0,
+    lastWeek: 0,
+    changePercent: "0",
+    passedPercentage: "0.00",
+    failedPercentage: "100.00",
+    passedChangePercent: "0",
+    failedChangePercent: "0",
+    daily: [
+      { day: "Sun", count: 0 },
+      { day: "Mon", count: 0 },
+      { day: "Tue", count: 0 },
+      { day: "Wed", count: 0 },
+      { day: "Thu", count: 0 },
+      { day: "Fri", count: 0 },
+      { day: "Sat", count: 0 },
+    ],
+  };
+
+  const submissionsData = inspections ? {
+    labels: inspections.daily.map(d => d.day),
+    datasets: [
+      {
+        data: inspections.daily.map(d => d.count),
+        borderColor: "#60A5FA",
+        backgroundColor: "rgba(96, 165, 250, 0.1)",
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#60A5FA",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+      },
+    ],
+  } : {
+    labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     datasets: [
       {
         data: [0, 0, 0, 0, 0, 0, 0],
@@ -153,12 +171,114 @@ const MeterReadings = () => {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        {/* Header Skeleton */}
+        <div className="bg-white">
+          <div className="px-6 py-3">
+            <Skeleton height={24} width={100} />
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="px-6 py-6">
+          {/* Inspections Section Skeleton */}
+          <div className="mb-6">
+            <Skeleton height={20} width={120} className="mb-3" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Inspection Submissions Card Skeleton */}
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <Skeleton height={16} width={150} className="mb-3" />
+                <div className="flex gap-4 mb-3 text-sm">
+                  <Skeleton height={20} width={80} />
+                  <Skeleton height={20} width={80} />
+                </div>
+                <div className="h-32">
+                  <Skeleton height={128} />
+                </div>
+              </div>
+
+              {/* Inspection Item Pass Rate Skeleton */}
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <Skeleton height={16} width={150} className="mb-4" />
+                <div className="flex items-end justify-between mt-auto">
+                  <div>
+                    <Skeleton height={32} width={50} />
+                    <Skeleton height={12} width={80} className="mt-1" />
+                  </div>
+                  <div className="text-right">
+                    <Skeleton height={16} width={60} className="mb-1" />
+                    <Skeleton height={12} width={120} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Inspection Item Failure Rate Skeleton */}
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <Skeleton height={16} width={150} className="mb-4" />
+                <div className="flex items-end justify-between mt-auto">
+                  <div>
+                    <Skeleton height={32} width={50} />
+                    <Skeleton height={12} width={80} className="mt-1" />
+                  </div>
+                  <div className="text-right">
+                    <Skeleton height={16} width={60} className="mb-1" />
+                    <Skeleton height={12} width={120} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Comments Section Skeleton */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton height={20} width={120} />
+            </div>
+            <div className="bg-white rounded-xl shadow-sm">
+              <div>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-start p-3 border-b border-gray-200">
+                    <Skeleton circle height={40} width={40} />
+                    <div className="flex-1 ml-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Skeleton height={12} width={200} className="mb-1" />
+                          <Skeleton height={12} width={150} />
+                        </div>
+                        <Skeleton height={10} width={60} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const changeSign = inspections.changePercent.startsWith('-') ? '-' : '+';
+  const changeValue = Math.abs(parseFloat(inspections.changePercent)).toFixed(2);
+
+  // Pass change
+  const passChangeSign = inspections.passedChangePercent?.startsWith('-') ? '-' : '+';
+  const passChangeValue = Math.abs(parseFloat(inspections.passedChangePercent || "0")).toFixed(2);
+
+  // Fail change
+  const failChangeSign = inspections.failedChangePercent?.startsWith('-') ? '-' : '+';
+  const failChangeValue = Math.abs(parseFloat(inspections.failedChangePercent || "0")).toFixed(2);
+
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-white ">
+      <div className=" ">
         <div className="px-6 py-3">
-          <h4 className="font-semibold text-lg">Dashboard</h4>
+          <h4 className="robotosemibold text-[24px]">Dashboard</h4>
         </div>
       </div>
 
@@ -203,24 +323,41 @@ const MeterReadings = () => {
               </div>
             </div>
 
+
+
 {/* Inspection Item Pass Rate */}
 <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition flex flex-col justify-between">
   <h6 className="font-semibold mb-4">Inspection Item Pass Rate</h6>
   
   <div className="flex items-end justify-between mt-auto">
     <div>
-      <h2 className="text-4xl font-bold text-blue-500 mb-0">0%</h2>
+      <h2 className="text-4xl font-bold text-[#007BC4] mb-0">{inspections.passedPercentage}%</h2>
       <p className="text-gray-500 text-sm">This Week</p>
     </div>
+
     <div className="text-right">
-      <div className="flex items-center text-blue-500 mb-1">
-        <TrendingUp size={16} className="mr-1" />
-        <span className="font-semibold">19</span>
+      <div className={`flex items-center mb-1 ${passChangeSign === '+' ? 'text-[#007BC4]' : 'text-red-500'}`}>
+        {passChangeSign === '+' ? (
+        <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
+</svg>
+
+        ) : (
+         <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
+</svg>
+
+        )}
+        <span className="robotosemibold text-[24px] ">{passChangeSign}{passChangeValue}%</span>
       </div>
+
       <p className="text-gray-400 text-xs">Change From Last Week</p>
     </div>
+
+
   </div>
 </div>
+
 
 {/* Inspection Item Failure Rate */}
 <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition flex flex-col justify-between">
@@ -228,14 +365,24 @@ const MeterReadings = () => {
   
   <div className="flex items-end justify-between mt-auto">
     <div>
-      <h2 className="text-4xl font-bold text-red-500 mb-0">0%</h2>
+      <h2 className="text-4xl font-bold text-red-500 mb-0">{inspections.failedPercentage}%</h2>
       <p className="text-gray-500 text-sm">This Week</p>
     </div>
     <div className="text-right">
-      <div className="flex items-center text-blue-500 mb-1">
-        <TrendingUp size={16} className="mr-1" />
-        <span className="font-semibold">19</span>
-      </div>
+        <div className={`flex items-center mb-1 ${failChangeSign === '+' ? 'text-red-500' : 'text-green-500'}`}>
+          {failChangeSign === '+' ? (
+          <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
+</svg>
+
+          ) : (
+         <svg width="22" height="19" viewBox="0 0 22 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11 0.5L21.3923 18.5H0.607696L11 0.5Z" fill="#007BC4"/>
+</svg>
+
+          )}
+          <span className="robotosemibold text-[24px] ">{failChangeSign}{failChangeValue}%</span>
+        </div>
       <p className="text-gray-400 text-xs">Change From Last Week</p>
     </div>
   </div>

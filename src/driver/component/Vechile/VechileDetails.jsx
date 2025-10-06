@@ -1,14 +1,135 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, Search, FileText, MoreVertical } from "lucide-react";
 import { useParams } from "react-router-dom";
-import vehicles from "./VechileData";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 const VehicleDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [vehicle, setVehicle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { id } = useParams();
-  const vehicle = vehicles.find((v) => v.id === parseInt(id));
 
-  if (!vehicle) return <p className="p-6">Vehicle not found.</p>;
+  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
+
+  useEffect(() => {
+    const fetchVehicle = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setError("No token found. Please log in.");
+          return;
+        }
+
+        const response = await fetch(`${baseUrl}/admin/vehicle/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch vehicle");
+        }
+
+        const data = await response.json();
+        setVehicle(data.vehicle);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicle();
+  }, [id, baseUrl]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Vehicle Header Skeleton */}
+        <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative">
+              <Skeleton circle height={64} width={64} />
+            </div>
+            <div className="flex-1">
+              <Skeleton height={24} width={200} />
+              <Skeleton height={16} width={150} className="mt-1" />
+              <Skeleton height={16} width={250} className="mt-1" />
+            </div>
+          </div>
+          {/* Tabs Skeleton */}
+          <div className="flex gap-6 mt-4 overflow-x-auto">
+            <Skeleton height={20} width={80} />
+            <Skeleton height={20} width={80} />
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="px-4 lg:px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column Skeleton */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+                  <Skeleton height={24} width={150} />
+                </div>
+                <div className="px-4 lg:px-6 py-4">
+                  <div className="flex flex-col gap-4">
+                    {[...Array(12)].map((_, i) => (
+                      <div key={i} className="flex flex-row items-center gap-16 p-4 border-b border-[#33333333] pb-2">
+                        <Skeleton height={16} width={100} />
+                        <Skeleton height={16} width={200} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <Skeleton height={20} width={100} />
+                  <div className="flex flex-row gap-2">
+                    <Skeleton height={24} width={24} />
+                    <Skeleton height={24} width={62} />
+                    <Skeleton height={24} width={24} />
+                  </div>
+                </div>
+                <div className="px-4 lg:px-6 py-4">
+                  <div className="relative mb-4">
+                    <Skeleton height={40} width="100%" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex flex-col items-center">
+                          <Skeleton circle height={48} width={48} className="mb-2" />
+                          <div className="flex items-center gap-1 mb-1">
+                            <Skeleton height={12} width={80} />
+                            <Skeleton height={14} width={14} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !vehicle) {
+    return <p className="p-6">Vehicle not found or error loading.</p>;
+  }
 
   const documents = [
     { name: "Inspection1.pdf", type: "pdf" },
@@ -17,6 +138,8 @@ const VehicleDetailsPage = () => {
     { name: "Inspection4.pdf", type: "pdf" },
   ];
 
+const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A" , profileImage: "/placeholder-avatar.png" };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Vehicle Header */}
@@ -24,9 +147,12 @@ const VehicleDetailsPage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative">
             <img
-              src={vehicle.image}
+              src={vehicle.photo}
               alt={vehicle.name}
               className="w-16 h-16 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = '/placeholder-avatar.png'; // fallback image
+              }}
             />
           </div>
           <div className="flex-1">
@@ -34,10 +160,10 @@ const VehicleDetailsPage = () => {
               {vehicle.name}
             </h1>
             <p className="text-sm text-[#4B5563] roboto-medium mt-1">
-              {vehicle.year} • {vehicle.make} • {vehicle.license}
+              {vehicle.year} • {vehicle.make} • {vehicle.licensePlate}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-             <span className="text-[#4B5563] roboto-medium">{vehicle.meter}</span>  • <span className="text-[#043677] roboto-medium">  {vehicle.operator.name} {vehicle.operator.id}</span>
+             <span className="text-[#4B5563] roboto-medium">{vehicle.currentMilage}</span>  • <span className="text-[#043677] roboto-medium">  {operator.name} {operator.employeeNumber}</span>
             </p>
           </div>
         </div>
@@ -82,19 +208,19 @@ const VehicleDetailsPage = () => {
                 <div className="px-4 lg:px-6 py-4">
                   <div className="flex flex-col gap-4">
                     <DetailRow  label="Name" value={vehicle.name} />
-                    <DetailRow label="Status" value={vehicle.status} status />
-                    <DetailRow label="Meter" value={vehicle.meter} />
+                    <DetailRow label="Status" value="Active" status />
+                    <DetailRow label="Meter" value={vehicle.currentMilage} />
                     <DetailRow
                       label="Operator"
                       value={
                         <div className="flex items-center gap-2">
                           <img
-                            src={vehicle.operator.image}
-                            alt={vehicle.operator.name}
+                            src={operator.profileImage} // default placeholder
+                            alt={operator.name}
                             className="w-6 h-6 rounded-full"
                           />
                           <span>
-                            {vehicle.operator.name} {vehicle.operator.id}
+                            {operator.name} {operator.employeeNumber}
                           </span>
                         </div>
                       }
@@ -112,7 +238,7 @@ const VehicleDetailsPage = () => {
                         </div>
                       }
                     />
-                    <DetailRow label="License Plate" value={vehicle.license} />
+                    <DetailRow label="License Plate" value={vehicle.licensePlate} />
                     <DetailRow label="Year" value={vehicle.year} />
                     <DetailRow label="Make" value={vehicle.make} />
                     <DetailRow label="Model" value={vehicle.model} />

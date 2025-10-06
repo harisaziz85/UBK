@@ -16,7 +16,7 @@ const TripInspection = () => {
   const [total, setTotal] = useState(0);
   const navigation = useNavigate();
 
-  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api"; // Replace with your actual base URL, e.g., 'https://yourapi.com'
+  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api"; 
   const itemsPerPage = 10;
 
   const fetchInspections = async (page) => {
@@ -103,7 +103,7 @@ const TripInspection = () => {
   const isNextDisabled = currentPage === totalPages;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className=" py-4 sm:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div
         className="flex justify-between items-center mb-4 p-3 rounded"
@@ -128,22 +128,22 @@ const TripInspection = () => {
               <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
                 <input type="checkbox" />
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Submitted At
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Submission
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Vehicle
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Date
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Inspection Form
               </th>
-              <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Status
               </th>
             </tr>
@@ -184,17 +184,17 @@ const TripInspection = () => {
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
                     <input type="checkbox" />
                   </td>
-                  <td className="p-3 border-b roboto-regular" style={{ borderColor: "#33333333" }}>
+                  <td className="p-3 whitespace-nowrap border-b roboto-regular" style={{ borderColor: "#33333333" }}>
                     {insp.submittedAt}
                   </td>
                   <td
-                    className="p-3 border-b roboto-regular text-blue-600"
+                    className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600"
                     style={{ borderColor: "#33333333" }}
                   >
                     {insp.id.slice(0, 7)}
                   </td>
                   <td
-                    className="p-3 border-b flex items-center roboto-regular gap-2 text-blue-600"
+                    className="p-3 whitespace-nowrap border-b flex items-center roboto-regular gap-2 text-blue-600"
                     style={{ borderColor: "#33333333" }}
                   >
                     <img
@@ -204,12 +204,12 @@ const TripInspection = () => {
                     />
                     {insp.vehicle}
                   </td>
-                  <td className="p-3 border-b roboto-regular " style={{ borderColor: "#33333333" }}>
+                  <td className="p-3 whitespace-nowrap border-b roboto-regular " style={{ borderColor: "#33333333" }}>
                     {insp.date}
                   </td>
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
                     <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
+                      <span className=" whitespace-nowrap w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
                       {insp.form}
                     </span>
                   </td>

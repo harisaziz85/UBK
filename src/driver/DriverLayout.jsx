@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { FaTachometerAlt, FaHistory, FaClipboardCheck, FaCar, FaFileAlt, FaCog, FaSignOutAlt } from "react-icons/fa";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { FaTachometerAlt, FaHistory, FaClipboardCheck, FaCar, FaFileAlt, FaCog, FaSignOutAlt, FaUser, FaLock } from "react-icons/fa";
 import { MdOutlineDashboardCustomize } from "react-icons/md";
 import { FaWpforms } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { VscBell } from "react-icons/vsc";
 import { LiaUserCircleSolid } from "react-icons/lia";
+import { confirmAlert } from 'react-confirm-alert';
+
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CustomSearchDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +37,7 @@ const CustomSearchDropdown = () => {
 
   return (
     <div className="relative">
+      <ToastContainer/>
       <div
         className="flex items-center border border-gray-300 rounded-full px-3 py-2 me-2 bg-white cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
@@ -74,12 +80,14 @@ const VehicleDropdown = ({ setSidebarOpen }) => {
 
   const options = [
     { value: "vehiclelist", label: "Vehicle List", path: "/vehiclelist" },
-    { value: "meterhistory", label: "Meter History", path: "/meterhistory" },
+    // { value: "meterhistory", label: "Meter History", path: "/meterhistory" },
     // { value: "vehicleassignment", label: "Vehicle Assignment", path: "/vehicleassignment" }
   ];
 
   return (
     <div className="relative">
+            <ToastContainer/>
+
       <NavLink
         to="/vehiclelist"
         className={({ isActive }) =>
@@ -116,11 +124,143 @@ const VehicleDropdown = ({ setSidebarOpen }) => {
   );
 };
 
+const ProfileDropdown = ({ user }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const displayName = user?.name || "Test";
+  const profileImage = user?.profileImage;
+  const firstInitial = displayName.charAt(0).toUpperCase();
+
+  const renderAvatar = () => {
+    if (profileImage) {
+      return (
+        <img
+          src={profileImage}
+          alt="Profile"
+          className="w-10 h-10 rounded-full object-cover border border-gray-300"
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+      );
+    }
+    return (
+      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center border border-gray-300">
+        <span className="text-sm font-medium text-gray-600">{firstInitial}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="relative">
+      <div
+        className="cursor-pointer hover:opacity-80"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {renderAvatar()}
+      </div>
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg z-10 w-48 border border-gray-300">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              {renderAvatar()}
+              <span className="text-sm font-medium text-gray-800">{displayName}</span>
+            </div>
+          </div>
+          <div>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 border-b border-gray-200 ${
+                  isActive ? 'bg-gray-100 text-black' : 'text-gray-700'
+                }`
+              }
+              onClick={() => setIsOpen(false)}
+            >
+              <FaUser className="w-4 h-4 text-gray-500" />
+              <span>User Profile</span>
+            </NavLink>
+            <NavLink
+              to="/updatepassword"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 ${
+                  isActive ? 'bg-gray-100 text-black' : 'text-gray-700'
+                }`
+              }
+              onClick={() => setIsOpen(false)}
+            >
+              <FaLock className="w-4 h-4 text-gray-500" />
+              <span>Login & Password</span>
+            </NavLink>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DriverLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        const response = await fetch(`${baseUrl}/common/profile/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    };
+
+    fetchUser();
+  }, [baseUrl]);
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    confirmAlert({
+      title: 'Confirm to logout',
+      message: 'Are you sure you want to logout?',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: () => {
+            localStorage.removeItem('authToken');
+            toast.success('Logged out successfully');
+            setIsOpen(false);
+           setTimeout(() => {
+            navigate('/login');
+          }, 3000)
+          }
+        },
+        {
+          label: 'No',
+          onClick: () => {}
+        }
+      ]
+    });
+  };
 
   return (
     <div className="flex min-h-screen">
+      <ToastContainer />
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 w-64 md:w-[280px] bg-[#043677] h-[100vh] text-white p-4 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
@@ -156,7 +296,8 @@ const DriverLayout = () => {
           >
             <FaWpforms className="w-5 h-5" /> Forms
           </NavLink>
-          <NavLink
+
+          {/* <NavLink
             to="/truckdocuments"
             className={({ isActive }) =>
               `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${isActive ? 'bg-white text-black rounded' : ''}`
@@ -164,11 +305,12 @@ const DriverLayout = () => {
             onClick={() => setIsOpen(false)}
           >
             <FaFileAlt className="w-5 h-5" /> Truck Documents
-          </NavLink>
+          </NavLink> */}
+
           <VehicleDropdown setSidebarOpen={setIsOpen} />
           <div className="mt-auto">
             <NavLink
-              to="/settings"
+              to="/updatepassword"
               className={({ isActive }) =>
                 `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${isActive ? 'bg-white text-black rounded' : ''}`
               }
@@ -176,15 +318,14 @@ const DriverLayout = () => {
             >
               <FaCog className="w-5 h-5" /> Settings
             </NavLink>
-            <NavLink
-              to="/logout"
-              className={({ isActive }) =>
-                `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${isActive ? 'bg-white text-black rounded' : ''}`
-              }
-              onClick={() => setIsOpen(false)}
+
+            <div
+              className="flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium cursor-pointer"
+              onClick={handleLogout}
             >
               <FaSignOutAlt className="w-5 h-5" /> Logout
-            </NavLink>
+            </div>
+            
           </div>
         </nav>
       </aside>
@@ -212,7 +353,7 @@ const DriverLayout = () => {
           <div className="hidden md:flex items-center gap-4">
             <CustomSearchDropdown />
             <VscBell className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[24px]" />
-            <LiaUserCircleSolid className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[34px]" />
+            <ProfileDropdown user={user} />
           </div>
         </header>
 

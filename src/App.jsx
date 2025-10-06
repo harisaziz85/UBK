@@ -30,12 +30,12 @@ import AdminGeneralsetting from "./admin/AdminGeneralsetting";
 import AdminDashboard from "./admin/AdminDashboard";
 import ConsentForm from "./driver/component/Postform/ConsentForm";
 import VehiclesTable from "./driver/component/Vechile/VechicleTable";
-import VehicleDetailsPage from "./driver/Inspection/InspectionDetails";
 import MeterHistoryTable from "./driver/component/Vechile/HistoryMeterTable";
 import VehicleInspectionSystem from "./driver/Inspection/StartInspection";
 import AllDrivers from "./admin/AllDrivers";
 import AddDriver from "./admin/AddDriver";
 import DateInputCanada from "./driver/Inspection/Clender";
+import VehicleDetailsPage from "./driver/component/Vechile/VechileDetails";
 
 
 function App() {
@@ -64,6 +64,8 @@ function App() {
          <Route path="/tripinspection" element={<TripInspection />} />
         <Route path='/start-inspection' element={<VehicleInspectionSystem/>}/>
         <Route path="/inspection/:id" element={<InspectionDetails/>}/>
+        {/* profile */}
+         <Route path="/profile" element={<Adminprofile/>} />
         </Route>
 
         {/* Admin Routes */}
