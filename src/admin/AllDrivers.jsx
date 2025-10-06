@@ -103,6 +103,11 @@ const AllDrivers = () => {
     }
   };
 
+  // Navigate to driver details page
+  const handleRowClick = (id) => {
+    navigate(`/admin/driver/details/${id}`);
+  };
+
   // Filtered drivers by search
   const filteredDrivers = drivers.filter(
     (d) =>
@@ -153,7 +158,7 @@ const AllDrivers = () => {
       {/* Top Bar with Search + Add Button */}
       <div className="flex items-center justify-between">
         <p className="robotosemibold text-[24px]">Drivers</p>
-        <button 
+        <button
           onClick={() => navigate("/admin/add-drivers")} // Navigate to /admin/add-drivers
           className="bg-[#043677] h-[40px] px-4 py-2 flex gap-2 items-center justify-center text-white rounded-md text-sm robotomedium hover:bg-[#032c5a] cursor-pointer transition"
         >
@@ -249,14 +254,18 @@ const AllDrivers = () => {
               {filteredDrivers.map((driver) => (
                 <tr
                   key={driver.id}
-                  className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition"
+                  className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition cursor-pointer"
+                  onClick={() => handleRowClick(driver.id)} // Add onClick to navigate to driver details
                 >
                   {/* Checkbox */}
                   <td className="px-3 py-2 text-center">
                     <input
                       type="checkbox"
                       checked={selected.includes(driver.id)}
-                      onChange={() => handleCheckboxChange(driver.id)}
+                      onChange={(e) => {
+                        e.stopPropagation(); // Prevent row click when clicking checkbox
+                        handleCheckboxChange(driver.id);
+                      }}
                     />
                   </td>
 
@@ -293,7 +302,10 @@ const AllDrivers = () => {
                   </td>
 
                   {/* Actions */}
-                  <td className="flex gap-3 justify-center px-3 py-2">
+                  <td
+                    className="flex gap-3 justify-center px-3 py-2"
+                    onClick={(e) => e.stopPropagation()} // Prevent row click when clicking action icons
+                  >
                     <Phone className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
                     <MessageSquare className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
                     <Mail className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />

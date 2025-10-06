@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { FaTachometerAlt, FaUsers, FaCar, FaFileAlt, FaCog, FaSignOutAlt } from "react-icons/fa";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { FaCar, FaUsers, FaFileAlt, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { MdOutlineDashboardCustomize, MdKeyboardArrowDown } from "react-icons/md";
-import { FaWpforms, FaUser, FaLock } from "react-icons/fa";
 import { FaSearch } from "react-icons/fa";
 import { LuUserRound } from "react-icons/lu";
 import { LuKeyRound } from "react-icons/lu";
@@ -73,26 +72,20 @@ const AdminVehicleDropdown = ({ setSidebarOpen }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const options = [
-    { value: "vehiclelist", label: "Vehicle List", path: "/admin/vehiclelist" },
-    { value: "vehicleassignment", label: "Vehicle Assignment", path: "/admin/vehicleassignment" },
-    { value: "maintenance", label: "Maintenance Records", path: "/admin/maintenance" },
+    { value: "vehiclelist", label: "Vehicle List", path: "/admin/vehicles" },
+    { value: "vehicleassignment", label: "Vehicle Assignment", path: "/admin/vehicle-assignment" },
   ];
 
   return (
     <div className="relative">
-      <NavLink
-        to="/admin/vehiclelist"
-        className={({ isActive }) =>
-          `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium cursor-pointer ${
-            isActive ? "bg-white text-black rounded" : "text-white"
-          }`
-        }
+      <div
+        className="flex items-center gap-2 text-[14px] robotomedium px-6 py-2 cursor-pointer text-white"
         onClick={() => setIsOpen(!isOpen)}
       >
         <FaCar className="w-5 h-5" />
         <span>Vehicles</span>
         <MdKeyboardArrowDown className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-      </NavLink>
+      </div>
       {isOpen && (
         <div className="mt-2 bg-white text-black rounded-md shadow-lg z-10">
           {options.map((option) => (
@@ -119,7 +112,9 @@ const AdminVehicleDropdown = ({ setSidebarOpen }) => {
 const AdminLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState({ profilePicture: null });
+  const navigate = useNavigate();
 
   // Fetch user profile data on mount
   useEffect(() => {
@@ -139,6 +134,14 @@ const AdminLayout = () => {
 
     fetchUserProfile();
   }, []);
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/login');
+    setIsLogoutModalOpen(false);
+    setIsOpen(false);
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -162,7 +165,7 @@ const AdminLayout = () => {
             <MdOutlineDashboardCustomize className="w-5 h-5" /> Dashboard
           </NavLink>
           <NavLink
-            to="/admin/users"
+            to="/admin/doc"
             className={({ isActive }) =>
               `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
                 isActive ? "bg-white text-black rounded" : ""
@@ -170,20 +173,31 @@ const AdminLayout = () => {
             }
             onClick={() => setIsOpen(false)}
           >
-            <FaUsers className="w-5 h-5" /> Users
-          </NavLink>
-          <NavLink
-            to="/admin/reports"
-            className={({ isActive }) =>
-              `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
-                isActive ? "bg-white text-black rounded" : ""
-              }`
-            }
-            onClick={() => setIsOpen(false)}
-          >
-            <FaFileAlt className="w-5 h-5" /> Reports
+            <FaFileAlt className="w-5 h-5" /> Documents
           </NavLink>
           <AdminVehicleDropdown setSidebarOpen={setIsOpen} />
+          <NavLink
+            to="/admin/drivers"
+            className={({ isActive }) =>
+              `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
+                isActive ? "bg-white text-black rounded" : ""
+              }`
+            }
+            onClick={() => setIsOpen(false)}
+          >
+            <FaUsers className="w-5 h-5" /> Drivers
+          </NavLink>
+          <NavLink
+            to="/admin/pretripsafety"
+            className={({ isActive }) =>
+              `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
+                isActive ? "bg-white text-black rounded" : ""
+              }`
+            }
+            onClick={() => setIsOpen(false)}
+          >
+            <FaFileAlt className="w-5 h-5" /> Pre-Trip Inspection
+          </NavLink>
           <div className="mt-auto">
             <NavLink
               to="/admin/settings"
@@ -196,17 +210,12 @@ const AdminLayout = () => {
             >
               <FaCog className="w-5 h-5" /> Settings
             </NavLink>
-            <NavLink
-              to="/logout"
-              className={({ isActive }) =>
-                `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
-                  isActive ? "bg-white text-black rounded" : ""
-                }`
-              }
-              onClick={() => setIsOpen(false)}
+            <div
+              className="flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium cursor-pointer"
+              onClick={() => setIsLogoutModalOpen(true)}
             >
               <FaSignOutAlt className="w-5 h-5" /> Logout
-            </NavLink>
+            </div>
           </div>
         </nav>
       </aside>
@@ -252,24 +261,50 @@ const AdminLayout = () => {
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10">
                   <NavLink
                     to="/admin/profile"
-                    className="flex items-center justify-between robotoregular text-[14px]  gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    className="flex items-center justify-between robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
                     onClick={() => setIsProfileModalOpen(false)}
-                  >User Profile
-                    <LuUserRound className="" /> 
+                  >
+                    User Profile
+                    <LuUserRound className="" />
                   </NavLink>
-                  <hr className="text-[#33333333]"/>
+                  <hr className="text-[#33333333]" />
                   <NavLink
                     to="/admin/update-password"
-                    className="flex items-center justify-between  robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    className="flex items-center justify-between robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
                     onClick={() => setIsProfileModalOpen(false)}
-                  >Password
-                    <LuKeyRound className="" /> 
+                  >
+                    Password
+                    <LuKeyRound className="" />
                   </NavLink>
                 </div>
               )}
             </div>
           </div>
         </header>
+
+        {/* Logout Confirmation Modal */}
+        {isLogoutModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-md p-6 w-80">
+              <h2 className="text-lg font-semibold text-[#043677] mb-4">Confirm Logout</h2>
+              <p className="text-sm text-gray-600 mb-6">Are you sure you want to logout?</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  onClick={() => setIsLogoutModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-[#043677] text-white rounded hover:bg-[#032f5e]"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="p-6 flex-1 bg-gray-100">
           <Outlet />
