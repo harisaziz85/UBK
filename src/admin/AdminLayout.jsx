@@ -113,7 +113,7 @@ const AdminLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState({ profilePicture: null });
+  const [userProfile, setUserProfile] = useState({ profileImage: null, name: "Super Admin" });
   const navigate = useNavigate();
 
   // Fetch user profile data on mount
@@ -121,12 +121,15 @@ const AdminLayout = () => {
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await axios.get('/api/common/profile/me', {
+        const response = await axios.get('https://ubktowingbackend-production.up.railway.app/api/common/profile/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUserProfile(response.data);
+        setUserProfile({
+          profileImage: response.data.user.profileImage || null,
+          name: response.data.user.name || "Super Admin",
+        });
       } catch (error) {
         console.error('Error fetching user profile:', error);
       }
@@ -200,7 +203,7 @@ const AdminLayout = () => {
           </NavLink>
           <div className="mt-auto">
             <NavLink
-              to="/admin/settings"
+              to="/admin/profile"
               className={({ isActive }) =>
                 `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
                   isActive ? "bg-white text-black rounded" : ""
@@ -244,9 +247,9 @@ const AdminLayout = () => {
             <CustomSearchDropdown />
             <VscBell className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[24px]" />
             <div className="relative">
-              {userProfile.profilePicture ? (
+              {userProfile.profileImage ? (
                 <img
-                  src={userProfile.profilePicture}
+                  src={userProfile.profileImage}
                   alt="User Profile"
                   className="w-10 h-10 rounded-full cursor-pointer object-cover"
                   onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
@@ -258,7 +261,19 @@ const AdminLayout = () => {
                 />
               )}
               {isProfileModalOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-10 p-2">
+                  <div className="flex items-center gap-3 p-2 border-b">
+                    {userProfile.profileImage ? (
+                      <img
+                        src={userProfile.profileImage}
+                        alt="User Profile"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <LiaUserCircleSolid className="text-gray-500 text-2xl" />
+                    )}
+                    <span className="font-medium">{userProfile.name}</span>
+                  </div>
                   <NavLink
                     to="/admin/profile"
                     className="flex items-center justify-between robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"

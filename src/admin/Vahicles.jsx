@@ -50,7 +50,7 @@ const Vehicles = () => {
       <Vehicletopbar />
 
       {/* Table */}
-      <div className="mt-6 bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="mt-6 bg-white  overflow-hidden ">
         {/* Table Header */}
         <div className="bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-10 items-center py-3 px-4">
           <div className="flex items-center space-x-2">
