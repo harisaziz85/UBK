@@ -1,16 +1,185 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const VehicleAssignment = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const vehicles = Array(8).fill({
-    id: "EX06-02",
-    status: "Active - WL",
-    image: "https://via.placeholder.com/60x40?text=Car",
-  });
+  const [vehicles, setVehicles] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [vehicleLoading, setVehicleLoading] = useState(false);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalVehicles, setTotalVehicles] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("Vehicle");
+  const [sortOrder, setSortOrder] = useState("A-Z");
 
   const days = Array.from({ length: 13 }, (_, i) => i + 1);
+
+  // Fetch vehicles with pagination
+  const fetchVehicles = async (page = 1, search = "", limit = 10) => {
+    setVehicleLoading(true);
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      toast.error("Please log in to access this data.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setVehicleLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://ubktowingbackend-production.up.railway.app/api/admin/vehicle?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Vehicles fetch error:", response.status, errorText);
+        if (response.status === 401) {
+          throw new Error("Unauthorized: Please log in again.");
+        }
+        throw new Error(`Failed to fetch vehicles: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Vehicles response:", data);
+
+      // Map API response to match component structure
+      const mappedVehicles = (data.vehicles || []).map((vehicle) => ({
+        id: vehicle._id,
+        name: vehicle.name || "N/A",
+        status: vehicle.assignment?.driverId ? "Assigned" : "Unassigned",
+        image: vehicle.photo || "https://via.placeholder.com/60x40?text=Car",
+        vin: vehicle.vin || "N/A",
+        year: vehicle.year || "N/A",
+        make: vehicle.make || "N/A",
+        model: vehicle.model || "N/A",
+        color: vehicle.color || "N/A",
+        currentMilage: vehicle.currentMilage || 0,
+        type: vehicle.type || "Car",
+        fuelType: vehicle.fuelType || "N/A",
+        licensePlate: vehicle.licensePlate || "N/A",
+        driverId: vehicle.assignment?.driverId?._id || null,
+        driverName: vehicle.assignment?.driverId?.name || "N/A",
+        driverEmployeeNumber: vehicle.assignment?.driverId?.employeeNumber || "N/A",
+        startDate: vehicle.assignment?.startDate
+          ? new Date(vehicle.assignment.startDate).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }) + " " + new Date(vehicle.assignment.startDate).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
+        endDate: vehicle.assignment?.endDate
+          ? new Date(vehicle.assignment.endDate).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }) + " " + new Date(vehicle.assignment.endDate).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "N/A",
+        _id: vehicle._id,
+        documents: [],
+      }));
+
+      setVehicles(mappedVehicles);
+      setTotalPages(data.pages || 1);
+      setTotalVehicles(data.total || 0);
+      setCurrentPage(page);
+      setLoading(false);
+      setVehicleLoading(false);
+    } catch (err) {
+      console.error("Error fetching vehicles:", err);
+      toast.error(err.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setLoading(false);
+      setVehicleLoading(false);
+    }
+  };
+
+  // Fetch documents for a specific vehicle
+  const fetchVehicleDocuments = async (vehicleId) => {
+    if (!vehicleId) return;
+
+    setDocumentsLoading(true);
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      toast.error("Please log in to access documents.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setDocumentsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://ubktowingbackend-production.up.railway.app/api/common/document/by-vehicle/${vehicleId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Documents fetch error:", response.status, errorText);
+        if (response.status === 401) {
+          throw new Error("Unauthorized: Please log in again.");
+        }
+        throw new Error(`Failed to fetch documents: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Documents response:", data);
+      setDocuments(data.documents || []);
+      setDocumentsLoading(false);
+    } catch (err) {
+      console.error("Error fetching documents:", err);
+      toast.error(err.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setDocuments([]);
+      setDocumentsLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchVehicles(1, searchTerm);
+  }, []);
+
+  // Fetch documents when vehicle is selected
+  useEffect(() => {
+    if (selectedVehicle) {
+      fetchVehicleDocuments(selectedVehicle._id);
+    }
+  }, [selectedVehicle]);
 
   const handleVehicleClick = (vehicle) => {
     setSelectedVehicle(vehicle);
@@ -18,10 +187,47 @@ const VehicleAssignment = () => {
 
   const closePanel = () => {
     setSelectedVehicle(null);
+    setDocuments([]);
   };
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    fetchVehicles(1, e.target.value);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchVehicles(page, searchTerm);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    setFilterType(e.target.value);
+    // Add filtering logic if needed (e.g., filter by type, status)
+  };
+
+  const handleSortChange = () => {
+    setSortOrder(sortOrder === "A-Z" ? "Z-A" : "A-Z");
+    // Sort vehicles locally or modify API call if backend supports sorting
+    const sortedVehicles = [...vehicles].sort((a, b) => {
+      if (sortOrder === "A-Z") {
+        return b.name.localeCompare(a.name);
+      }
+      return a.name.localeCompare(b.name);
+    });
+    setVehicles(sortedVehicles);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50 justify-center items-center">
+        <p className="text-gray-500">Loading vehicles...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative p-6 bg-gray-50 min-h-screen overflow-hidden">
@@ -38,8 +244,9 @@ const VehicleAssignment = () => {
         <button
           onClick={openModal}
           className="mt-3 sm:mt-0 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-md text-sm font-medium shadow"
+          disabled={vehicleLoading}
         >
-          + Add Assignment
+          {vehicleLoading ? "Loading..." : "+ Add Assignment"}
         </button>
       </div>
 
@@ -48,16 +255,56 @@ const VehicleAssignment = () => {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search vehicles..."
+            value={searchTerm}
+            onChange={handleSearch}
             className="w-full sm:w-64 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
+            disabled={vehicleLoading}
           />
         </div>
         <div className="flex items-center gap-3">
-          <select className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700">
+          <select
+            value={filterType}
+            onChange={handleFilterChange}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700"
+            disabled={vehicleLoading}
+          >
             <option>Vehicle</option>
+            <option>Operator</option>
+            <option>Status</option>
           </select>
-          <button className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-            A - Z
+          <button
+            onClick={handleSortChange}
+            className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+            disabled={vehicleLoading}
+          >
+            {sortOrder}
+          </button>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-sm text-gray-600">
+          Showing {vehicles.length} of {totalVehicles} vehicles
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1 || vehicleLoading}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || vehicleLoading}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+          >
+            Next
           </button>
         </div>
       </div>
@@ -94,22 +341,32 @@ const VehicleAssignment = () => {
         {/* Table Body */}
         {vehicles.map((vehicle, index) => (
           <div
-            key={index}
+            key={vehicle._id}
             onClick={() => handleVehicleClick(vehicle)}
-            className="grid grid-cols-[200px_repeat(13,1fr)] border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer"
+            className="grid grid-cols-[200px_repeat(13,1fr)] border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
           >
             {/* Vehicle Info */}
             <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
               <img
                 src={vehicle.image}
-                alt="vehicle"
+                alt={vehicle.name}
                 className="w-12 h-8 rounded object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/60x40?text=Car";
+                }}
               />
               <div>
-                <p className="text-sm font-medium text-gray-800">{vehicle.id}</p>
+                <p className="text-sm font-medium text-gray-800">{vehicle.name}</p>
                 <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+                  <span
+                    className={`w-2 h-2 rounded-full inline-block ${
+                      vehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
                   {vehicle.status}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {vehicle.make} {vehicle.model}
                 </p>
               </div>
             </div>
@@ -119,15 +376,15 @@ const VehicleAssignment = () => {
               <div
                 key={day}
                 className={`border-l border-gray-200 px-2 py-3 text-sm ${
-                  index === 0 && day === 4
+                  vehicle.driverId && day === 4
                     ? "bg-blue-50 text-blue-800 font-medium"
                     : ""
                 }`}
               >
-                {index === 0 && day === 4 && (
+                {vehicle.driverId && day === 4 && (
                   <div>
-                    <p>John Doe EMP112233</p>
-                    <p className="text-xs text-gray-500">04/09/2025 3:05pm</p>
+                    <p>{vehicle.driverName}</p>
+                    <p className="text-xs text-gray-500">{vehicle.startDate}</p>
                   </div>
                 )}
               </div>
@@ -136,52 +393,136 @@ const VehicleAssignment = () => {
         ))}
       </div>
 
+      {/* Pagination Footer */}
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-600">
+          Showing {vehicles.length} of {totalVehicles} vehicles
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1 || vehicleLoading}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || vehicleLoading}
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       {/* Right Slide Panel */}
       {selectedVehicle && (
-        <div className="fixed top-0 right-0 w-full sm:w-[400px] h-full bg-white shadow-2xl border-l border-gray-200 z-50 animate-slideIn">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl border-l border-gray-200 z-50 animate-slideIn overflow-y-auto">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
             <h2 className="text-lg font-semibold text-gray-800">
-              Assignment #1333
+              Assignment #{selectedVehicle.id.slice(-4)}
             </h2>
             <button
               onClick={closePanel}
               className="text-gray-500 hover:text-gray-700 text-sm"
             >
-              Close
+              ×
             </button>
           </div>
 
           <div className="p-6 space-y-5">
-            <button className="w-full border border-gray-300 rounded-md py-2 hover:bg-gray-100">
+            <button
+              className="w-full border border-red-300 text-red-700 rounded-md py-2 hover:bg-red-50"
+              disabled={vehicleLoading}
+            >
               Unassign Vehicle
             </button>
 
             {/* Assigned Vehicle */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
                 Assigned Vehicle
               </h3>
               <div className="flex items-center gap-3">
                 <img
                   src={selectedVehicle.image}
-                  alt="vehicle"
-                  className="w-12 h-8 rounded object-cover"
+                  alt={selectedVehicle.name}
+                  className="w-16 h-10 rounded object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/80x50?text=Car";
+                  }}
                 />
                 <div>
                   <p className="text-sm font-medium text-gray-800">
-                    {selectedVehicle.id}
+                    {selectedVehicle.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
                   </p>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
-                    {selectedVehicle.status}
+                    <span
+                      className={`w-2 h-2 rounded-full inline-block ${
+                        selectedVehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></span>
+                    {selectedVehicle.status} • {selectedVehicle.type}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    VIN: {selectedVehicle.vin} • {selectedVehicle.currentMilage} km
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Operator */}
+            {/* Documents Section */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                Documents ({documents.length})
+                {documentsLoading && (
+                  <span className="text-xs text-gray-500 ml-2">Loading...</span>
+                )}
+              </h3>
+              {documents.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {documents.map((doc, index) => (
+                    <div key={doc._id || index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">{doc.title || doc.name || "Document"}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.type || "File"} • {new Date(doc.createdAt || doc.uploadDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            doc.status === "approved"
+                              ? "bg-green-100 text-green-800"
+                              : doc.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {doc.status || "Unknown"}
+                        </span>
+                        <button className="text-xs text-blue-600 hover:text-blue-800">View</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : !documentsLoading ? (
+                <p className="text-sm text-gray-500 italic">No documents found for this vehicle.</p>
+              ) : (
+                <p className="text-sm text-gray-500">Loading documents...</p>
+              )}
+            </div>
+
+            {/* Operator */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
                 Operator
               </h3>
               <div className="flex items-center gap-3">
@@ -191,32 +532,53 @@ const VehicleAssignment = () => {
                   className="w-12 h-8 rounded object-cover"
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-800">John Doe</p>
-                  <p className="text-xs text-gray-500">EMP112233</p>
+                  <p className="text-sm font-medium text-gray-800">{selectedVehicle.driverName}</p>
+                  <p className="text-xs text-gray-500">{selectedVehicle.driverEmployeeNumber}</p>
                 </div>
               </div>
             </div>
 
             {/* Dates */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                Start Date
-              </h3>
-              <p className="text-sm text-blue-800">
-                04/09/2025 - 04/09/2025
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                  Start Date
+                </h3>
+                <p className="text-sm text-blue-800">{selectedVehicle.startDate}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                  End Date
+                </h3>
+                <p className="text-sm text-blue-800">{selectedVehicle.endDate}</p>
+              </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                End Date
-              </h3>
-              <p className="text-sm text-blue-800">
-                04/09/2025 - 04/09/2025
-              </p>
+            {/* Additional Vehicle Info */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">Color</p>
+                <p className="font-medium">{selectedVehicle.color}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Fuel Type</p>
+                <p className="font-medium">{selectedVehicle.fuelType}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">License Plate</p>
+                <p className="font-medium">{selectedVehicle.licensePlate}</p>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Overlay for mobile slide panel */}
+      {selectedVehicle && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={closePanel}
+        />
       )}
 
       {/* Add Assignment Modal */}
@@ -227,10 +589,15 @@ const VehicleAssignment = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Vehicle</label>
-                <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700">
+                <select
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
+                  disabled={vehicleLoading}
+                >
                   <option>Select Vehicle</option>
-                  {vehicles.map((vehicle, index) => (
-                    <option key={index} value={vehicle.id}>{vehicle.id}</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle._id} value={vehicle._id}>
+                      {vehicle.name} - {vehicle.make} {vehicle.model}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -238,7 +605,13 @@ const VehicleAssignment = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Operator</label>
                 <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700">
                   <option>Select Operator</option>
-                  <option>John Doe EMP112233</option>
+                  {vehicles
+                    .filter((v) => v.driverId)
+                    .map((v) => (
+                      <option key={v.driverId} value={v.driverId}>
+                        {v.driverName} ({v.driverEmployeeNumber})
+                      </option>
+                    ))}
                 </select>
               </div>
               <div className="flex gap-4">
@@ -261,11 +634,13 @@ const VehicleAssignment = () => {
                 <button
                   onClick={closeModal}
                   className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  disabled={vehicleLoading}
                 >
                   Cancel
                 </button>
                 <button
-                  className="px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800"
+                  className="px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50"
+                  disabled={vehicleLoading}
                 >
                   Save
                 </button>
@@ -274,6 +649,8 @@ const VehicleAssignment = () => {
           </div>
         </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 };
