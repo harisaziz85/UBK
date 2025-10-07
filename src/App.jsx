@@ -98,7 +98,7 @@ function App() {
 
           <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
         
-          <Route path="/admin/pretripsafety" element={<Pretripsafety/>} />
+          <Route path="/admin/pretripsafety" element={<VehicleInspectionSystem/>} />
           <Route path="/admin/detailpage" element={<Detailspage/>} />
           <Route path="/admin/ubktowing" element={<UBKTowing/>} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory/>} />

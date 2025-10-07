@@ -67,9 +67,7 @@ const DatePickerComponent = ({ label, value, onChange }) => {
   return (
     <div className="relative">
       <style>{customStyles}</style>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label} <span className="text-[#043677]">*</span>
-      </label>
+     
       <div
         className="relative w-full flex items-center border rounded-lg transition-colors border-gray-300 hover:border-[#043677]"
       >
@@ -77,7 +75,7 @@ const DatePickerComponent = ({ label, value, onChange }) => {
           selected={selectedDate}
           onChange={handleInputChange}
           minDate={new Date()}
-          className="w-full px-4 py-3 rounded-lg cursor-pointer bg-white text-gray-900 caret-transparent focus:border-[#043677] focus:ring-2 focus:ring-[#043677]"
+          className="w-full px-4 py-3 rounded-lg cursor-pointer bg-[#FBFBFB] text-gray-900 caret-transparent focus:border-[#043677] focus:ring-2 focus:ring-[#043677]"
           ref={dateInputRef}
           dateFormat="MM/dd/yyyy"
           placeholderText="MM/DD/YYYY"
