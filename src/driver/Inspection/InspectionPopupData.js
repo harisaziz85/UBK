@@ -23,7 +23,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Occupant compartment door fails to close securely'],
     majorDefects: ['Any cab or sleeper door fails to close securely'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
 
 
@@ -36,7 +36,7 @@ const inspectionCategories = [
       'Insecure cargo',
       'Absence, failure, malfunction or deterioration of required cargo securement device or load covering'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
 
   {
@@ -49,7 +49,7 @@ const inspectionCategories = [
       'Coupling or locking mechanism is damaged or fails to lock',
       'Defective, incorrect or missing safety chain or cable'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
 
   {
@@ -58,7 +58,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Dangerous goods requirements not met'],
     majorDefects: [],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
   
   {
@@ -69,7 +69,7 @@ const inspectionCategories = [
       'Accelerator pedal, clutch, gauges, controls and visual indicators or instruments fail to function properly'
     ],
     majorDefects: [],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
   {
     id: 'driver-seat',
@@ -77,7 +77,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Loose or insecure mounting or electrical connection'],
     majorDefects: ['Inoperative breakaway device'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'electric-brake',
@@ -85,7 +85,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Loose or insecure wiring or electrical connection'],
     majorDefects: ['Inoperative breakaway device'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'emergency-equipment',
@@ -93,7 +93,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Not all required equipment is present'],
     majorDefects: ['Required emergency equipment is missing or inoperative'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'exhaust-system',
@@ -101,7 +101,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Leak at a location forward of the cab'],
     majorDefects: ['Leak that would permit entry of exhaust fumes into the cab'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'frame-cargo-body',
@@ -109,7 +109,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Minor damage or corrosion'],
     majorDefects: ['Frame or body component is broken, cracked or sagging'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'fuel-system',
@@ -117,7 +117,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Leak in fuel system'],
     majorDefects: ['Fuel leak in system likely to create fire hazard'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'general',
@@ -125,7 +125,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Vehicle dirty or cluttered'],
     majorDefects: ['Serious structural or safety defect observed'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'glass-mirrors',
@@ -133,7 +133,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Crack or chip in windshield or mirror'],
     majorDefects: ['Windshield or mirror broken and impairs vision'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
   {
     id: 'heater-defroster',
@@ -141,7 +141,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Defroster or heater is not fully effective'],
     majorDefects: ['Defroster or heater inoperative'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'horn',
@@ -149,7 +149,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Vehicle has inoperative horn'],
     majorDefects: [],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'hydraulic-brake',
@@ -163,7 +163,7 @@ const inspectionCategories = [
       'Brake fluid reservoir is less than ¼ full',
       'Parking brake is inoperative'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'lamps-reflectors',
@@ -177,7 +177,7 @@ const inspectionCategories = [
       'When use of lamps is required: Failure of both low-beam headlamps, Failure of both tail lamps, Failure of both stop lamps',
       'At all times: Failure of a required lamp or reflector'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'steering',
@@ -188,7 +188,7 @@ const inspectionCategories = [
       'Steering wheel is loose, or does not respond normally',
       'Steering wheel lash (free play) exceeds prescribed limit'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
   {
     id: 'suspension',
@@ -196,7 +196,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Air suspension leak'],
     majorDefects: ['Air suspension incapable of supporting load'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'tires',
@@ -204,7 +204,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Tire tread worn close to legal limit'],
     majorDefects: ['Tire tread worn beyond legal limit, tire cut or bulge'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'wheels-hubs',
@@ -212,7 +212,7 @@ const inspectionCategories = [
     status: 'N/A',
     minorDefects: ['Loose or missing fasteners'],
     majorDefects: ['Wheel cracked or broken, hub oil leak or bearing failure'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   },
   {
     id: 'windshield-wiper',
@@ -220,7 +220,7 @@ const inspectionCategories = [
     status: 'fass',
     minorDefects: ['Wiper blade is missing, damaged or ineffective'],
     majorDefects: ['Both windshield wipers inoperative'],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: ['No Defects']
   }
 ];
 

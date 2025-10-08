@@ -182,6 +182,47 @@ const handleSelectVehicle = (e) => {
       return;
     }
 
+    if (!inspectionData.date) {
+      toast.error("Please select the date");
+      return;
+    }
+
+    if (!inspectionData.currentMileage.trim()) {
+      toast.error("Please enter current mileage");
+      return;
+    }
+
+    if (!remarks.trim()) {
+      toast.error("Please enter inspection remarks");
+      return;
+    }
+
+    if (!declarationConfirmed) {
+      toast.error("Please confirm the declaration");
+      return;
+    }
+
+    if (!declarationSignature.trim()) {
+      toast.error("Please provide driver's signature");
+      return;
+    }
+
+    if (!vehicleImages.front || !vehicleImages.driverSide || !vehicleImages.rear || !vehicleImages.passengerSide) {
+      toast.error("Please take all vehicle photos");
+      return;
+    }
+
+    const hasAnyFail = inspections.some(item => getStatus(item)?.toLowerCase() === "fail");
+    const incompleteActiveItems = inspections.filter(item => {
+      const status = getStatus(item);
+      const isDisabled = hasAnyFail && !status;
+      return !isDisabled && !status;
+    });
+    if (incompleteActiveItems.length > 0) {
+      toast.error("Please complete all active inspection items");
+      return;
+    }
+
     // check fail items must have photo
     const fails = inspections.filter(
       (item) => getStatus(item)?.toLowerCase() === "fail"
@@ -341,9 +382,9 @@ const handleSelectVehicle = (e) => {
 
   const getStatus = (item) => {
     if (item.majorChecked.size > 0) return 'Fail';
-    if (item.minorChecked.size > 0) return 'Pass';
+    if (item.minorChecked.size > 0 || item.otherChecked.has('No Defects')) return 'Pass';
     if (item.otherChecked.size > 0) return 'N/A';
-    return 'N/A';
+    return null;
   };
 
   const getStatusColor = (status) => {
@@ -585,7 +626,7 @@ const handleSelectVehicle = (e) => {
 
             {(() => {
               // ✅ calculate before looping
-              const firstFailIndex = inspections.findIndex(item => getStatus(item)?.toLowerCase() === "fail");
+              const hasAnyFail = inspections.some(item => getStatus(item)?.toLowerCase() === "fail");
 
               // ✅ TRUE if any explicit fail
               const hasFail = inspections.some(item => getStatus(item)?.toLowerCase() === "fail");
@@ -599,7 +640,7 @@ const handleSelectVehicle = (e) => {
                     {inspections.map((item, index) => {
                       const status = getStatus(item);
                       const isFail = status?.toLowerCase() === "fail";
-                      const isDisabled = firstFailIndex !== -1 && index > firstFailIndex;
+                      const isDisabled = hasAnyFail && !status;
 
                       return (
                         <div
@@ -649,7 +690,7 @@ const handleSelectVehicle = (e) => {
 
                           <div className="flex flex-col items-center gap-4">
                             <span className={`robotosemibold text-[13px] ${getStatusColor(status)}`}>
-                              {status || "Pending"}
+                              {status}
                             </span>
                             <button
                               className={`text-sm hover:underline ${
@@ -719,12 +760,13 @@ const handleSelectVehicle = (e) => {
                   {inspectionData.date ? formatDate(inspectionData.date) : formatDate(new Date())}
                 </div>
               </div>
-              <div>
+
+              {/* <div>
                 <label className="block text-sm text-gray-600 mb-1">Inspected By</label>
                 <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
                   {inspectionData.inspectedBy}
                 </div>
-              </div>
+              </div> */}
 
               {/* Driver's Sign Section */}
               <div className="space-y-3">

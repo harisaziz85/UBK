@@ -54,9 +54,7 @@ const CustomTimePicker = ({ label, value, onChange }) => {
 
   return (
     <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label} <span className="text-[#043677]">*</span>
-      </label>
+     
       <div
         className="relative flex justify-between items-center border rounded-lg px-3 py-3 cursor-pointer transition-colors border-gray-300 hover:border-[#043677]"
         onClick={togglePicker}

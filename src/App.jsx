@@ -114,6 +114,16 @@ function App() {
           <Route path="/admin/inspectionform" element={<Inspectionform />} />
           <Route path="/admin/inspectionschedules" element={<Inspectionschdues />} />
           <Route path="/admin/inspection-failure-items" element={<Inspectionfailureitems />} />
+          <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
+        
+          <Route path="/admin/pretripsafety" element={<VehicleInspectionSystem/>} />
+          <Route path="/admin/detailpage" element={<Detailspage/>} />
+          <Route path="/admin/ubktowing" element={<UBKTowing/>} />
+          <Route path="/admin/inspectionhistory" element={<InspectionHistory/>} />
+          <Route path="/admin/inspectiondetails" element={<InspectionDetails/>} />
+          <Route path="/admin/inspectionform" element={<Inspectionform/>} />
+          <Route path="/admin/inspectionschedules" element={<Inspectionschdues/>} />
+          <Route path="/admin/inspection-failure-items" element={<Inspectionfailureitems/>} />
 
 
 
