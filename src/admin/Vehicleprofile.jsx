@@ -1,9 +1,68 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaFilePdf } from "react-icons/fa";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useParams } from "react-router-dom"; // To get vehicleId from URL
 
 const Vehicleprofile = () => {
+  const { vehicleId } = useParams(); // Get vehicleId from URL
   const [dragActive, setDragActive] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [vehicleData, setVehicleData] = useState(null);
+  const [inspections, setInspections] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
+
+  // Fetch vehicle data
+  useEffect(() => {
+    const fetchVehicleData = async () => {
+      setIsLoading(true);
+      const token = localStorage.getItem("authToken");
+
+      if (!token) {
+        toast.error("No authentication token found. Please log in.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `${baseUrl}/admin/vehicle/${vehicleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const { vehicle, inspections } = response.data;
+        setVehicleData(vehicle);
+        setInspections(inspections);
+        toast.success("Vehicle data fetched successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      } catch (err) {
+        console.error("Error fetching vehicle data:", err);
+        toast.error(
+          err.response?.data?.message || "Failed to fetch vehicle data.",
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVehicleData();
+  }, [vehicleId]);
 
   // Handle file drop
   const handleDrop = (event) => {
@@ -18,6 +77,10 @@ const Vehicleprofile = () => {
         reader.readAsDataURL(file);
       } else {
         console.log("Please drop an image file.");
+        toast.error("Please drop an image file.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     }
   };
@@ -45,6 +108,10 @@ const Vehicleprofile = () => {
         reader.readAsDataURL(file);
       } else {
         console.log("Please select an image file.");
+        toast.error("Please select an image file.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     }
   };
@@ -54,28 +121,40 @@ const Vehicleprofile = () => {
     document.getElementById("fileInput").click();
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading vehicle data...</p>
+      </div>
+    );
+  }
+
+  if (!vehicleData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-lg text-red-600">Failed to load vehicle data.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">FD-37481</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">
+          {vehicleData.name}
+        </h1>
         <p className="text-gray-600">
-          GMC • 2010 • TY-889 • 13133 Km •{" "}
+          {vehicleData.make} • {vehicleData.year} • {vehicleData.licensePlate} •{" "}
+          {vehicleData.currentMeter} Km •{" "}
           <span className="text-blue-600 cursor-pointer hover:underline">
-            John Doe EMP112233
+            {inspections[0]?.inspectedBy?.name || "Unassigned"} {inspections[0]?.inspectedBy?.id || ""}
           </span>
         </p>
       </div>
 
       {/* Overview Tabs */}
-      <div className="flex space-x-6 border-b border-gray-200 mb-6">
-        <button className="pb-2 border-b-2 border-blue-600 text-blue-600 font-medium">
-          Overview
-        </button>
-        <button className="pb-2 text-gray-500 hover:text-gray-700">
-          Inspection History
-        </button>
-      </div>
+    
 
       {/* Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -84,58 +163,60 @@ const Vehicleprofile = () => {
           <h2 className="text-lg font-semibold mb-4">Vehicle Details</h2>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-700">
             <p className="font-medium">Name</p>
-            <p>FD-37481</p>
+            <p>{vehicleData.name}</p>
 
             <p className="font-medium">Status</p>
-            <p className="text-green-600">● Assigned</p>
+            <p className="text-green-600">
+              ● {vehicleData.assignment ? "Assigned" : "Unassigned"}
+            </p>
 
             <p className="font-medium">Meter</p>
-            <p>13133 Km</p>
+            <p>{vehicleData.currentMeter} Km</p>
 
             <p className="font-medium">Operator</p>
             <div className="flex items-center space-x-2">
               <img
-                src="https://via.placeholder.com/32"
+                src={inspections[0]?.inspectedBy?.profileImage || "https://via.placeholder.com/32"}
                 alt="operator"
                 className="w-8 h-8 rounded-full"
               />
-              <p>John Doe EMP112233</p>
+              <p>{inspections[0]?.inspectedBy?.name || "Unassigned"} {inspections[0]?.inspectedBy?.id || ""}</p>
             </div>
 
             <p className="font-medium">Type</p>
-            <p>WL</p>
+            <p>{vehicleData.type}</p>
 
             <p className="font-medium">Fuel Type</p>
-            <p>Gasoline</p>
+            <p>{vehicleData.fuelType}</p>
 
             <p className="font-medium">VIN/SN</p>
             <div className="flex items-center space-x-2">
-              <span>2131454545451</span>
+              <span>{vehicleData.vin}</span>
               <button className="text-blue-600 hover:underline text-sm">
                 Decode VIN
               </button>
             </div>
 
             <p className="font-medium">License Plate</p>
-            <p>254654</p>
+            <p>{vehicleData.licensePlate}</p>
 
             <p className="font-medium">Year</p>
-            <p>2010</p>
+            <p>{vehicleData.year}</p>
 
             <p className="font-medium">Make</p>
-            <p>GMC</p>
+            <p>{vehicleData.make}</p>
 
             <p className="font-medium">Model</p>
-            <p>Sierra 64672576</p>
+            <p>{vehicleData.model}</p>
 
             <p className="font-medium">Registration State/Province</p>
-            <p>Ontario</p>
+            <p>{vehicleData.registrationState}</p>
 
             <p className="font-medium">Color</p>
-            <p>White</p>
+            <p>{vehicleData.color}</p>
 
             <p className="font-medium">Ownership</p>
-            <p>Owned</p>
+            <p>{vehicleData.ownership}</p>
           </div>
         </div>
 
@@ -152,22 +233,41 @@ const Vehicleprofile = () => {
             />
           </div>
 
-          {/* Static PDF List */}
+          {/* Dynamic Inspection List */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
+            {inspections.map((inspection) => (
               <div
-                key={i}
+                key={inspection.inspectionId}
                 className="border border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 hover:shadow-sm transition"
               >
-                <FaFilePdf className="text-red-500 text-4xl mb-2" />
-                <p className="text-sm text-gray-700">Inspection{i}.pdf</p>
+                {inspection.vehicleImage ? (
+                  <>
+                    <img
+                      src={inspection.vehicleImage}
+                      alt="Inspection"
+                      className="w-12 h-12 object-cover mb-2"
+                    />
+                    <p className="text-sm text-gray-700">
+                      Inspection {inspection.inspectionId.slice(-4)} ({inspection.inspectionStatus})
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <FaFilePdf className="text-red-500 text-4xl mb-2" />
+                    <p className="text-sm text-gray-700">
+                      Inspection {inspection.inspectionId.slice(-4)} ({inspection.inspectionStatus})
+                    </p>
+                  </>
+                )}
               </div>
             ))}
           </div>
 
           {/* Drag & Drop Area */}
           <div
-            className={`border-2 border-dashed rounded-lg py-8 text-center text-sm ${dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 text-gray-500"}`}
+            className={`border-2 border-dashed rounded-lg py-8 text-center text-sm ${
+              dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 text-gray-500"
+            }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -202,6 +302,7 @@ const Vehicleprofile = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

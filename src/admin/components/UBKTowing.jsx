@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { IoDocumentSharp } from "react-icons/io5";
 
 const UBKTowing = () => {
   const [documents, setDocuments] = useState([
@@ -56,76 +57,77 @@ const UBKTowing = () => {
   );
 
   return (
-    <div className="min-h-screen">
-      <div className="p-4">
-        <h2 className="text-xl font-semibold">Documents</h2>
-        <div className="flex justify-between items-center mb-4">
-          <nav className="flex space-x-4">
-            <a href="#" className="text-blue-400">All Documents</a>
-            <a href="#" className="text-white font-medium">UBK Towing</a>
-          </nav>
+    <div className="w-full p-5">
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-[24px] robotosemibold text-[#1E1E1E]">
+          Documents
+        </h2>
+        <div className="flex space-x-4 items-center">
           <button
             onClick={handleUpload}
-            className="bg-blue-600 text-white px-4 py-2 rounded flex items-center hover:bg-blue-700"
+            className="bg-[#043677] text-white text-[16px] flex gap-2 items-center justify-center robotomedium px-4 py-2 h-[46px] rounded-lg hover:bg-[#032b5c] transition"
           >
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11v1.5a1.5 1.5 0 01-3 0V13H5.5zM8 9v.5a1 1 0 002 0V9h1a1 1 0 100-2H9V6a1 1 0 10-2 0v1H6a1 1 0 100 2h1z" />
-            </svg>
-            Upload Document
+            <IoDocumentSharp className="text-[20px]" /> Upload Document
           </button>
         </div>
-        <div className="flex space-x-4 mb-4">
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-2 rounded-full bg-white text-gray-900 w-1/3"
-          />
-          <select
-            value={fileType}
-            onChange={(e) => setFileType(e.target.value)}
-            className="p-2 rounded-full bg-white text-gray-900"
-          >
-            <option value="All">Document File Type</option>
-            <option value=".pdf">PDF</option>
-            <option value=".docx">DOCX</option>
-          </select>
-          <button className="p-2 rounded-full bg-gray-500 text-white">Filters</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full  rounded-lg">
-            <thead>
-              <tr className="bg-gray-700">
-                <th className="p-2"></th>
-                <th className="p-2">File Size</th>
-                <th className="p-2">Location</th>
-                <th className="p-2">Attached To</th>
-                <th className="p-2">Labels</th>
-                <th className="p-2">Created on</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDocuments.map((doc) => (
-                <tr
-                  key={doc.id}
-                  onClick={() => handleDocClick(doc)}
-                  className="cursor-pointer hover:bg-gray-700"
-                >
-                  <td className="p-2 flex items-center">
-                    <input type="checkbox" className="mr-2" />
+      </div>
+
+      {/* Search and Filter Section */}
+      <div className="flex space-x-4 mb-4">
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="p-2 rounded-full bg-white text-gray-900 w-1/3 border border-gray-300 focus:outline-none"
+        />
+        <select
+          value={fileType}
+          onChange={(e) => setFileType(e.target.value)}
+          className="p-2 rounded-full bg-white text-gray-900 border border-gray-300 focus:outline-none"
+        >
+          <option value="All">Document File Type</option>
+          <option value=".pdf">PDF</option>
+          <option value=".docx">DOCX</option>
+        </select>
+      </div>
+
+      {/* Table Section */}
+      <div className="overflow-x-auto bg-[white] border border-gray-200">
+        <table className="w-full text-sm text-left text-gray-600">
+          <thead className="bg-[#F5F5F5] text-[#1E1E1E] text-[13px] uppercase font-robotomedium tracking-wide">
+            <tr>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Document Name</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Location</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Labels</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredDocuments.map((doc) => (
+              <tr
+                key={doc.id}
+                onClick={() => handleDocClick(doc)}
+                className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
+              >
+                <td className="px-5 py-4 flex items-center space-x-2">
+                  <input type="checkbox" className="mr-2" />
+                  <span className="robotomedium text-[14px] text-[#333333E5]">
                     <span className="text-red-500">PDF</span> {doc.name}
-                  </td>
-                  <td className="p-2">{doc.size}</td>
-                  <td className="p-2">{doc.location}</td>
-                  <td className="p-2">{doc.attachedTo}</td>
-                  <td className="p-2">{doc.labels}</td>
-                  <td className="p-2">{doc.createdOn}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.size}</td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.location}</td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.attachedTo}</td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.labels}</td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.createdOn}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Sidebar (Details Panel) */}

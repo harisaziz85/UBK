@@ -92,7 +92,7 @@ function App() {
           <Route path="/admin/assigned-vehicles" element={<AssignedVehicles />} />
           <Route path="/admin/createvehicles" element={<CreateVehicle />} />
           <Route path='/admin/vehicle-assignment' element={<VehicleAssignment />} />
-          <Route path='/admin/vehicleprofile' element={<Vehicleprofile />} />
+         <Route path="/admin/vehicleprofile/:vehicleId" element={<Vehicleprofile />} />
           {/* Inspeciton Routes */}
           <Route path='/admin/start-inspection' element={<VehicleInspectionSystem />} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory />} />

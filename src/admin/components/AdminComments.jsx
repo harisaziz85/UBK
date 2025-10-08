@@ -81,17 +81,15 @@ const AdminComments = () => {
                 style={{ display: "none" }}
               />
               <div className="flex-1">
-                <p className="text-sm font-medium">
+                <p className="text-[16px] robotomedium">
                   {comment.otherUser.name || "Unknown User"}
                 </p>
                 <p className="text-sm text-gray-700">
                   {comment.lastMessage || "-"}
                 </p>
-                <span className="text-xs text-gray-500">
-                  Role: {comment.otherUser.role || "-"}
-                </span>
+               
               </div>
-              <span className="text-xs text-gray-500 ml-2">
+              <span className="text-[14px] robotomedium text-[black] ml-2">
                 {comment.lastMessageAt
                   ? new Date(comment.lastMessageAt).toLocaleString()
                   : "-"}

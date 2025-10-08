@@ -2,20 +2,25 @@ import React, { useEffect, useState } from 'react';
 import Vehicletopbar from './components/Vehicletopbar';
 import { FaRegClock, FaRegCommentDots } from "react-icons/fa";
 import axios from 'axios';
-import AssignedVehicles from './components/AssignedVehicles';
-import UnassignedVehicles from './components/UnassignedVehicles';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // Initialize navigate hook
 
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const token = localStorage.getItem('authToken'); // ✅ Get saved token
+        const token = localStorage.getItem('authToken'); // Get saved token
 
         if (!token) {
-          console.error("No token found — please log in again.");
+          toast.error("No token found — please log in again.", {
+            position: "top-right",
+            autoClose: 3000,
+          });
           setLoading(false);
           return;
         }
@@ -24,18 +29,30 @@ const Vehicles = () => {
           'https://ubktowingbackend-production.up.railway.app/api/admin/vehicle?page=1&limit=10',
           {
             headers: {
-              Authorization: `Bearer ${token}`, // ✅ Send token here
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
         if (response.data.success && response.data.vehicles) {
           setVehicles(response.data.vehicles);
+          toast.success("Vehicles fetched successfully!", {
+            position: "top-right",
+            autoClose: 2000,
+          });
         } else {
           console.warn("Unexpected API response:", response.data);
+          toast.warn("Unexpected API response.", {
+            position: "top-right",
+            autoClose: 3000,
+          });
         }
       } catch (error) {
         console.error("Error fetching vehicles:", error);
+        toast.error(error.response?.data?.message || "Failed to fetch vehicles.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } finally {
         setLoading(false);
       }
@@ -44,13 +61,18 @@ const Vehicles = () => {
     fetchVehicles();
   }, []);
 
+  // Handle vehicle click to navigate to Vehicleprofile
+  const handleVehicleClick = (vehicleId) => {
+    navigate(`/admin/vehicleprofile/${vehicleId}`);
+  };
+
   return (
     <div className="p-6 bg-[#F9FAFB] min-h-screen">
       {/* Top Bar */}
       <Vehicletopbar />
 
       {/* Table */}
-      <div className="mt-6 bg-white  overflow-hidden ">
+      <div className="mt-6 bg-white overflow-hidden">
         {/* Table Header */}
         <div className="bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-10 items-center py-3 px-4">
           <div className="flex items-center space-x-2">
@@ -81,7 +103,8 @@ const Vehicles = () => {
               vehicles.map((v) => (
                 <div
                   key={v._id}
-                  className="grid grid-cols-10 items-center text-[14px] py-3 px-4 border-b border-gray-200 hover:bg-gray-50"
+                  className="grid grid-cols-10 items-center text-[14px] py-3 px-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleVehicleClick(v._id)} // Navigate on click
                 >
                   {/* Name + Image */}
                   <div className="flex items-center space-x-2">
@@ -140,8 +163,7 @@ const Vehicles = () => {
           </div>
         )}
       </div>
-
-     
+      <ToastContainer />
     </div>
   );
 };

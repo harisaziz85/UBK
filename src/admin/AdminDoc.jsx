@@ -1,10 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaSearch } from "react-icons/fa";
 import axios from "axios";
+import { IoDocumentSharp } from "react-icons/io5";
+
+const Shimmer = () => {
+  return (
+    <>
+      {[...Array(5)].map((_, index) => (
+        <tr key={index} className="border-b border-gray-200">
+          <td className="px-5 py-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+          </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+};
 
 const AdminDoc = () => {
-  const [selectedOption, setSelectedOption] = useState("Filter by Files");
-  const [isOpen, setIsOpen] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -49,11 +79,6 @@ const AdminDoc = () => {
   useEffect(() => {
     fetchDocuments();
   }, [page]);
-
-  const handleOptionSelect = (option) => {
-    setSelectedOption(option);
-    setIsOpen(false);
-  };
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -133,94 +158,40 @@ const AdminDoc = () => {
   };
 
   return (
-    <div className="w-full bg-white shadow-sm rounded-xl border border-gray-200 p-5">
+    <div className="w-full p-5">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-[20px] font-robotomedium text-[#1E1E1E]">Documents</h2>
+        <h2 className="text-[24px] robotosemibold text-[#1E1E1E]">
+          Documents
+        </h2>
 
         <div className="flex space-x-4 items-center">
           {/* Upload Button */}
           <button
             onClick={() => setShowUploadModal(true)}
-            className="bg-[#043677] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#032b5c] transition"
+            className="bg-[#043677] text-white text-[16px] flex gap-2 items-center justify-center robotomedium px-4 py-2 h-[46px] rounded-lg hover:bg-[#032b5c] transition"
           >
-            + Upload Document
+            <IoDocumentSharp className="text-[20px]" /> Upload Document
           </button>
-
-          {/* Search Input */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#043677]"
-            />
-            <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 text-sm" />
-          </div>
-
-          {/* Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="px-3 py-2 border border-gray-300 rounded-lg flex items-center text-sm hover:bg-gray-50 focus:outline-none"
-            >
-              {selectedOption}
-              <svg
-                className="w-4 h-4 ml-2 text-gray-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {isOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                <ul className="py-1 text-sm text-gray-700">
-                  <li
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => handleOptionSelect("All Files")}
-                  >
-                    All
-                  </li>
-                  <li
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => handleOptionSelect("PDF")}
-                  >
-                    PDF
-                  </li>
-                  <li
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => handleOptionSelect("Images")}
-                  >
-                    Image
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
+      <div className="overflow-x-auto bg-[white] lg border border-gray-200">
         <table className="w-full text-sm text-left text-gray-600">
-          <thead className="bg-[#F3F4F6] text-[#1E1E1E] text-[13px] uppercase font-robotomedium tracking-wide">
+          <thead className="bg-[#F5F5F5] text-[#1E1E1E] text-[13px] uppercase font-robotomedium tracking-wide">
             <tr>
-              <th className="px-5 py-3">Document Name</th>
-              <th className="px-5 py-3">File Size</th>
-              <th className="px-5 py-3">Uploaded By</th>
-              <th className="px-5 py-3">Expiry</th>
-              <th className="px-5 py-3">Attached To</th>
-              <th className="px-5 py-3">Created On</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Document Name</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan="6" className="text-center py-6 text-gray-500">
-                  Loading documents...
-                </td>
-              </tr>
+              <Shimmer />
             ) : documents.length > 0 ? (
               documents.map((doc) => (
                 <tr
@@ -229,20 +200,28 @@ const AdminDoc = () => {
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
                   <td className="px-5 py-4 flex items-center space-x-2">
-                    <img
-                      src={doc.fileUrl}
-                      alt="file"
-                      className="w-10 h-10 rounded object-cover"
-                    />
-                    <span className="font-medium text-[#043677]">{doc.title}</span>
+                    {doc.fileUrl ? (
+                      <img
+                        src={doc.fileUrl}
+                        alt="file"
+                        className="w-10 h-10 rounded object-cover"
+                      />
+                    ) : (
+                      <IoDocumentSharp className="w-10 h-10 text-gray-500" />
+                    )}
+                    <span className="robotomedium text-[14px] text-[#333333E5]">
+                      {doc.title}
+                    </span>
                   </td>
-                  <td className="px-5 py-4">—</td>
-                  <td className="px-5 py-4">{doc.uploadedBy?.name || "—"}</td>
-                  <td className="px-5 py-4">
-                    {doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : "—"}
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">—</td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.uploadedBy?.name || "—"}</td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
+                    {doc.expiryDate
+                      ? new Date(doc.expiryDate).toLocaleDateString()
+                      : "—"}
                   </td>
-                  <td className="px-5 py-4">{doc.vehicleId ? "Linked" : "—"}</td>
-                  <td className="px-5 py-4">
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.vehicleId ? "Linked" : "—"}</td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
@@ -291,7 +270,7 @@ const AdminDoc = () => {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-[#00000083] bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 w-[400px]">
             <h3 className="text-lg font-robotomedium mb-4">Upload Document</h3>
             <form onSubmit={handleUpload} className="space-y-4">

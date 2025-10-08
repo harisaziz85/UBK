@@ -3,7 +3,63 @@ import { FaSearch, FaBell, FaUserCircle, FaComments, FaFolder, FaComment, FaEye 
 import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import "bootstrap/dist/css/bootstrap.min.css";
+
+const Shimmer = ({ type }) => {
+  if (type === "driver") {
+    return (
+      <div className="flex h-screen bg-gray-100 justify-center items-center">
+        <div className="bg-white p-4 shadow-md w-full max-w-4xl">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="flex-1">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-60 bg-gray-200 rounded animate-pulse mb-1"></div>
+              <div className="h-4 w-80 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="flex space-x-4">
+            <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "inspections") {
+    return (
+      <div className="bg-white p-4 shadow-md">
+        <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+        <table className="table table-striped table-bordered w-100">
+          <thead className="bg-primary text-white">
+            <tr>
+              <th>Created At</th>
+              <th>ID</th>
+              <th>Vehicle</th>
+              <th>Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...Array(5)].map((_, index) => (
+              <tr key={index}>
+                <td><div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div></td>
+                <td><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></td>
+                <td><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></td>
+                <td><div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div></td>
+                <td><div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 const DriverDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("Overview");
@@ -186,11 +242,7 @@ const DriverDetailsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-screen bg-gray-100 justify-center items-center">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <Shimmer type="driver" />;
   }
 
   if (error) {
@@ -205,41 +257,57 @@ const DriverDetailsPage = () => {
     <div className="flex h-screen bg-gray-100">
       <div className="flex-1 flex flex-col">
         <div className="p-6">
-          <div className="bg-white p-4 shadow-md mb-6">
-            <div className="flex items-center space-x-4 mb-4">
-              <img src={driver.profileImage} alt={driver.name} className="w-12 h-12 rounded-full" />
+          <div className=" p-4  mb-6">
+            <div className="flex items-end space-x-4 mb-4">
+              <img src={driver.profileImage} alt={driver.name} className="w-[100px] h-[100px] rounded-full" />
               <div>
-                <h2 className="text-lg font-semibold">{driver.name}</h2>
-                <p className="text-gray-600">{driver.email}</p>
-                <p className="text-gray-600">
+                <h2 className="text-[24px] robotomedium">{driver.name}</h2>
+                <p className="text-gray-600 robotomedium text-[14px]">{driver.email}</p>
+                <p className="text-gray-600 robotomedium text-[14px]">
                   Group: {driver.group} | Classifications: {driver.classifications}
                 </p>
               </div>
-              <button className="ml-auto bg-blue-600 text-white px-4 py-2 rounded">
+              <button className="ml-auto bg-[#043677] text-white px-4 py-2 rounded">
                 Edit Driver
               </button>
             </div>
-            <div className="flex space-x-4">
-              <button
-                className={`px-4 py-2 ${activeTab === "Overview" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded`}
-                onClick={() => setActiveTab("Overview")}
-              >
-                Overview
-              </button>
-              <button
-                className={`px-4 py-2 ${activeTab === "Inspections" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded`}
-                onClick={() => setActiveTab("Inspections")}
-              >
-                Inspections
-              </button>
-              <button
-                className={`px-4 py-2 ${activeTab === "Assigned Vehicles" ? "bg-blue-600 text-white" : "bg-gray-200"} rounded`}
-                onClick={() => setActiveTab("Assigned Vehicles")}
-              >
-                Assigned Vehicles
-              </button>
-            </div>
           </div>
+
+          <div className="flex space-x-4 mb-[40px]">
+  <button
+    className={`px-4 py-2 rounded  robotomedium ${
+      activeTab === "Overview"
+        ? "text-[#043677] underline"
+        : "text-gray-600"
+    }`}
+    onClick={() => setActiveTab("Overview")}
+  >
+    Overview
+  </button>
+
+  <button
+    className={`px-4 py-2 rounded robotomedium  ${
+      activeTab === "Inspections"
+        ? "text-[#043677] underline"
+        : "text-gray-600"
+    }`}
+    onClick={() => setActiveTab("Inspections")}
+  >
+    Inspections
+  </button>
+
+  <button
+    className={`px-4 py-2 rounded robotomedium  ${
+      activeTab === "Assigned Vehicles"
+        ? "text-[#043677] underline"
+        : "text-gray-600"
+    }`}
+    onClick={() => setActiveTab("Assigned Vehicles")}
+  >
+    Assigned Vehicles
+  </button>
+</div>
+
           {activeTab === "Overview" && (
             <div className="flex space-x-6">
               <div className="flex-1">
@@ -430,7 +498,7 @@ const DriverDetailsPage = () => {
             <div className="bg-white p-4 shadow-md">
               <h3 className="text-lg font-semibold mb-4">Inspections</h3>
               {inspectionsLoading ? (
-                <p>Loading inspections...</p>
+                <Shimmer type="inspections" />
               ) : inspections.length === 0 ? (
                 <p>No inspections found.</p>
               ) : (
