@@ -42,6 +42,7 @@ import DocumentDetails from "./admin/DocumentDetails";
 import DriverDetailsPage from "./admin/DriverDetailsPage";
 import AssignedVehicles from "./admin/components/AssignedVehicles";
 import UnassignedVehicles from "./admin/components/UnassignedVehicles";
+import Storagepdf from "./driver/component/Postform/pdf/Storagepgf";
 
 
 function App() {
@@ -70,6 +71,7 @@ function App() {
          <Route path="/tripinspection" element={<TripInspection />} />
         <Route path='/start-inspection' element={<VehicleInspectionSystem/>}/>
         <Route path="/inspection/:id" element={<InspectionDetails/>}/>
+        <Route path="/storage" element={<Storagepdf/>}/>
         {/* profile */}
          <Route path="/profile" element={<Adminprofile/>} />
         </Route>
@@ -98,7 +100,10 @@ function App() {
 
           <Route path="/admin/general-setting" element={<AdminGeneralsetting/>} />
         
-          <Route path="/admin/pretripsafety" element={<VehicleInspectionSystem/>} />
+          <Route path="/admin/pretripsafety" element={<TripInspection/>} />
+           <Route path="/admin/inspection/:id" element={<InspectionDetails/>}/>
+            <Route path='/admin/start-inspection' element={<VehicleInspectionSystem/>}/>
+
           <Route path="/admin/detailpage" element={<Detailspage/>} />
           <Route path="/admin/ubktowing" element={<UBKTowing/>} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory/>} />
