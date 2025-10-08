@@ -43,6 +43,7 @@ import DriverDetailsPage from "./admin/DriverDetailsPage";
 import AssignedVehicles from "./admin/components/AssignedVehicles";
 import UnassignedVehicles from "./admin/components/UnassignedVehicles";
 import Storagepdf from "./driver/component/Postform/pdf/Storagepgf";
+import Towpdf from "./driver/component/Postform/pdf/Towpdf";
 
 
 function App() {
@@ -72,6 +73,8 @@ function App() {
         <Route path='/start-inspection' element={<VehicleInspectionSystem/>}/>
         <Route path="/inspection/:id" element={<InspectionDetails/>}/>
         <Route path="/storage" element={<Storagepdf/>}/>
+        <Route path='/towpdf' element={<Towpdf/>}/>
+        
         {/* profile */}
          <Route path="/profile" element={<Adminprofile/>} />
         </Route>
