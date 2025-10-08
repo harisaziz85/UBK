@@ -36,20 +36,18 @@ const Shimmer = () => {
 
 const AdminDoc = () => {
   const [documents, setDocuments] = useState([]);
+  const [fileSizes, setFileSizes] = useState({});
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
-
   const [formData, setFormData] = useState({
     title: "",
     expiryDate: "",
     file: null,
   });
-
   const limit = 10;
   const dateInputRef = useRef(null);
   const updateDateInputRef = useRef(null);
@@ -76,9 +74,34 @@ const AdminDoc = () => {
     }
   };
 
+  // Fetch file size
+  const fetchFileSize = async (url, id) => {
+    try {
+      const response = await axios.head(url);
+      const size = response.headers["content-length"];
+      if (size) {
+        const sizeInKB = (size / 1024).toFixed(1) + " KB";
+        setFileSizes((prev) => ({ ...prev, [id]: sizeInKB }));
+      }
+    } catch (error) {
+      console.error("Error fetching file size:", error);
+      setFileSizes((prev) => ({ ...prev, [id]: "—" }));
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, [page]);
+
+  useEffect(() => {
+    documents.forEach((doc) => {
+      if (doc.fileUrl) {
+        fetchFileSize(doc.fileUrl, doc._id);
+      } else {
+        setFileSizes((prev) => ({ ...prev, [doc._id]: "—" }));
+      }
+    });
+  }, [documents]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -151,7 +174,7 @@ const AdminDoc = () => {
     setSelectedDoc(doc);
     setFormData({
       title: doc.title,
-      expiryDate: doc.expiryDate.split("T")[0],
+      expiryDate: doc.expiryDate ? doc.expiryDate.split("T")[0] : "",
       file: null,
     });
     setShowUpdateModal(true);
@@ -164,9 +187,7 @@ const AdminDoc = () => {
         <h2 className="text-[24px] robotosemibold text-[#1E1E1E]">
           Documents
         </h2>
-
         <div className="flex space-x-4 items-center">
-          {/* Upload Button */}
           <button
             onClick={() => setShowUploadModal(true)}
             className="bg-[#043677] text-white text-[16px] flex gap-2 items-center justify-center robotomedium px-4 py-2 h-[46px] rounded-lg hover:bg-[#032b5c] transition"
@@ -177,7 +198,7 @@ const AdminDoc = () => {
       </div>
 
       {/* Table Section */}
-      <div className="overflow-x-auto bg-[white] lg border border-gray-200">
+      <div className="overflow-x-auto bg-[white] border border-gray-200">
         <table className="w-full text-sm text-left text-gray-600">
           <thead className="bg-[#F5F5F5] text-[#1E1E1E] text-[13px] uppercase font-robotomedium tracking-wide">
             <tr>
@@ -200,20 +221,12 @@ const AdminDoc = () => {
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
                   <td className="px-5 py-4 flex items-center space-x-2">
-                    {doc.fileUrl ? (
-                      <img
-                        src={doc.fileUrl}
-                        alt="file"
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                    ) : (
-                      <IoDocumentSharp className="w-10 h-10 text-gray-500" />
-                    )}
+                    <IoDocumentSharp className="w-10 h-10 text-gray-500" />
                     <span className="robotomedium text-[14px] text-[#333333E5]">
                       {doc.title}
                     </span>
                   </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">—</td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{fileSizes[doc._id] || "Loading..."}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.uploadedBy?.name || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {doc.expiryDate
@@ -249,11 +262,9 @@ const AdminDoc = () => {
           >
             Prev
           </button>
-
           <span className="text-sm text-gray-700">
             Page {page} of {totalPages}
           </span>
-
           <button
             className={`px-3 py-1 text-sm rounded border ${
               page === totalPages
@@ -305,7 +316,6 @@ const AdminDoc = () => {
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
               />
-
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
@@ -362,7 +372,6 @@ const AdminDoc = () => {
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
               />
-
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"

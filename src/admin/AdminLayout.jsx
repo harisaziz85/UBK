@@ -191,7 +191,7 @@ const AdminLayout = () => {
             <FaUsers className="w-5 h-5" /> Drivers
           </NavLink>
           <NavLink
-            to="/admin/pretripsafety"
+            to="/admin/start-inspection"
             className={({ isActive }) =>
               `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
                 isActive ? "bg-white text-black rounded" : ""

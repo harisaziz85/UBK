@@ -270,20 +270,24 @@ const AllDrivers = () => {
                   </td>
 
                   {/* Name with image or icon */}
-                  <td className="flex items-center gap-3 px-3 py-2">
-                    {driver.image ? (
-                      <img
-                        src={driver.image}
-                        alt={driver.name}
-                        className="w-10 h-10 rounded-full border border-gray-300 object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center bg-gray-100">
-                        <CgProfile className="w-8 h-8 text-gray-500" />
-                      </div>
-                    )}
-                    <span>{driver.name}</span>
-                  </td>
+                <td className="flex items-center gap-3 px-3 py-2">
+  <div className="w-[50px] h-[50px] flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
+    {driver.image ? (
+      <img
+        src={driver.image}
+        alt={driver.name}
+        className="w-full h-full object-cover"
+      />
+    ) : (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+        <CgProfile className="w-8 h-8 text-gray-500" />
+      </div>
+    )}
+  </div>
+  <span className="truncate max-w-[150px]">{driver.name}</span>
+</td>
+
+
                   {/* Schedule */}
                   <td className="px-3 py-2 text-center">{driver.schedule.Monday}</td>
                   <td className="px-3 py-2 text-center">{driver.schedule.Tuesday}</td>

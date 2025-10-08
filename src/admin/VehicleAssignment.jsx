@@ -7,20 +7,67 @@ const VehicleAssignment = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [vehicleLoading, setVehicleLoading] = useState(false);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalVehicles, setTotalVehicles] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("Vehicle");
-  const [sortOrder, setSortOrder] = useState("A-Z");
+  const [assignmentData, setAssignmentData] = useState({
+    vehicleId: "",
+    driverId: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const days = Array.from({ length: 13 }, (_, i) => i + 1);
 
+  // Fetch all drivers
+  const fetchDrivers = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Please log in to access drivers.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://ubktowingbackend-production.up.railway.app/api/admin/driver/get`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Drivers fetch error:", response.status, errorText);
+        if (response.status === 401) {
+          throw new Error("Unauthorized: Please log in again.");
+        }
+        throw new Error(`Failed to fetch drivers: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      setDrivers(data.drivers || []);
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
+      toast.error(err.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
   // Fetch vehicles with pagination
-  const fetchVehicles = async (page = 1, search = "", limit = 10) => {
+  const fetchVehicles = async (page = 1, limit = 10) => {
     setVehicleLoading(true);
     const token = localStorage.getItem("authToken");
 
@@ -36,7 +83,7 @@ const VehicleAssignment = () => {
 
     try {
       const response = await fetch(
-        `https://ubktowingbackend-production.up.railway.app/api/admin/vehicle?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+        `https://ubktowingbackend-production.up.railway.app/api/admin/vehicle?page=${page}&limit=${limit}`,
         {
           method: "GET",
           headers: {
@@ -58,7 +105,6 @@ const VehicleAssignment = () => {
       const data = await response.json();
       console.log("Vehicles response:", data);
 
-      // Map API response to match component structure
       const mappedVehicles = (data.vehicles || []).map((vehicle) => ({
         id: vehicle._id,
         name: vehicle.name || "N/A",
@@ -81,7 +127,9 @@ const VehicleAssignment = () => {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
-            }) + " " + new Date(vehicle.assignment.startDate).toLocaleTimeString("en-US", {
+            }) +
+            " " +
+            new Date(vehicle.assignment.startDate).toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
             })
@@ -91,7 +139,9 @@ const VehicleAssignment = () => {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
-            }) + " " + new Date(vehicle.assignment.endDate).toLocaleTimeString("en-US", {
+            }) +
+            " " +
+            new Date(vehicle.assignment.endDate).toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
             })
@@ -169,9 +219,66 @@ const VehicleAssignment = () => {
     }
   };
 
+  // Assign vehicle to driver
+  const assignVehicle = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Please log in to assign a vehicle.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    if (!assignmentData.vehicleId || !assignmentData.driverId || !assignmentData.startDate || !assignmentData.endDate) {
+      toast.error("Please fill in all fields.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://ubktowingbackend-production.up.railway.app/api/admin/vehicle/${assignmentData.vehicleId}/assign/${assignmentData.driverId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            startDate: new Date(assignmentData.startDate).toISOString(),
+            endDate: new Date(assignmentData.endDate).toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Assignment error:", response.status, errorText);
+        throw new Error(`Failed to assign vehicle: ${response.status} ${errorText}`);
+      }
+
+      toast.success("Vehicle assigned successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setIsModalOpen(false);
+      fetchVehicles(currentPage); // Refresh vehicle list
+    } catch (err) {
+      console.error("Error assigning vehicle:", err);
+      toast.error(err.message, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
   // Initial load
   useEffect(() => {
-    fetchVehicles(1, searchTerm);
+    fetchVehicles(1);
+    fetchDrivers();
   }, []);
 
   // Fetch documents when vehicle is selected
@@ -191,40 +298,48 @@ const VehicleAssignment = () => {
   };
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setAssignmentData({ vehicleId: "", driverId: "", startDate: "", endDate: "" });
+  };
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    fetchVehicles(1, e.target.value);
+  const handleAssignmentChange = (e) => {
+    const { name, value } = e.target;
+    setAssignmentData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
-      fetchVehicles(page, searchTerm);
+      fetchVehicles(page);
     }
-  };
-
-  const handleFilterChange = (e) => {
-    setFilterType(e.target.value);
-    // Add filtering logic if needed (e.g., filter by type, status)
-  };
-
-  const handleSortChange = () => {
-    setSortOrder(sortOrder === "A-Z" ? "Z-A" : "A-Z");
-    // Sort vehicles locally or modify API call if backend supports sorting
-    const sortedVehicles = [...vehicles].sort((a, b) => {
-      if (sortOrder === "A-Z") {
-        return b.name.localeCompare(a.name);
-      }
-      return a.name.localeCompare(b.name);
-    });
-    setVehicles(sortedVehicles);
   };
 
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-50 justify-center items-center">
-        <p className="text-gray-500">Loading vehicles...</p>
+        <div className="animate-pulse  w-full ">
+          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="space-y-2">
+            {Array(5).fill().map((_, index) => (
+              <div key={index} className="grid grid-cols-[200px_repeat(13,1fr)] bg-white border border-gray-200 rounded">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  </div>
+                </div>
+                {days.map((day) => (
+                  <div key={day} className="border-l border-gray-200 px-2 py-3">
+                    <div className="h-4 bg-gray-200 rounded w-12 mx-auto"></div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -248,39 +363,6 @@ const VehicleAssignment = () => {
         >
           {vehicleLoading ? "Loading..." : "+ Add Assignment"}
         </button>
-      </div>
-
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search vehicles..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="w-full sm:w-64 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
-            disabled={vehicleLoading}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={filterType}
-            onChange={handleFilterChange}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700"
-            disabled={vehicleLoading}
-          >
-            <option>Vehicle</option>
-            <option>Operator</option>
-            <option>Status</option>
-          </select>
-          <button
-            onClick={handleSortChange}
-            className="flex items-center gap-2 border border-gray-300 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-            disabled={vehicleLoading}
-          >
-            {sortOrder}
-          </button>
-        </div>
       </div>
 
       {/* Pagination */}
@@ -339,58 +421,80 @@ const VehicleAssignment = () => {
         </div>
 
         {/* Table Body */}
-        {vehicles.map((vehicle, index) => (
-          <div
-            key={vehicle._id}
-            onClick={() => handleVehicleClick(vehicle)}
-            className="grid grid-cols-[200px_repeat(13,1fr)] border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-          >
-            {/* Vehicle Info */}
-            <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
-              <img
-                src={vehicle.image}
-                alt={vehicle.name}
-                className="w-12 h-8 rounded object-cover"
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/60x40?text=Car";
-                }}
-              />
-              <div>
-                <p className="text-sm font-medium text-gray-800">{vehicle.name}</p>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <span
-                    className={`w-2 h-2 rounded-full inline-block ${
-                      vehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  ></span>
-                  {vehicle.status}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {vehicle.make} {vehicle.model}
-                </p>
-              </div>
-            </div>
-
-            {/* Calendar Cells */}
-            {days.map((day) => (
-              <div
-                key={day}
-                className={`border-l border-gray-200 px-2 py-3 text-sm ${
-                  vehicle.driverId && day === 4
-                    ? "bg-blue-50 text-blue-800 font-medium"
-                    : ""
-                }`}
-              >
-                {vehicle.driverId && day === 4 && (
-                  <div>
-                    <p>{vehicle.driverName}</p>
-                    <p className="text-xs text-gray-500">{vehicle.startDate}</p>
+        {vehicleLoading ? (
+          <div className="animate-pulse space-y-2">
+            {Array(5).fill().map((_, index) => (
+              <div key={index} className="grid grid-cols-[200px_repeat(13,1fr)] bg-white border-t border-gray-200">
+                <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
+                  <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
                   </div>
-                )}
+                </div>
+                {days.map((day) => (
+                  <div key={day} className="border-l border-gray-200 px-2 py-3">
+                    <div className="h-4 bg-gray-200 rounded w-12 mx-auto"></div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
-        ))}
+        ) : (
+          vehicles.map((vehicle) => (
+            <div
+              key={vehicle._id}
+              onClick={() => handleVehicleClick(vehicle)}
+              className="grid grid-cols-[200px_repeat(13,1fr)] border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              {/* Vehicle Info */}
+              <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
+                <img
+                  src={vehicle.image}
+                  alt={vehicle.name}
+                  className="w-12 h-8 rounded object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/60x40?text=Car";
+                  }}
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{vehicle.name}</p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <span
+                      className={`w-2 h-2 rounded-full inline-block ${
+                        vehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></span>
+                    {vehicle.status}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {vehicle.make} {vehicle.model}
+                  </p>
+                </div>
+              </div>
+
+              {/* Calendar Cells */}
+              {days.map((day) => (
+                <div
+                  key={day}
+                  className={`border-l border-gray-200 px-2 py-3 text-sm ${
+                    vehicle.driverId && day === 4
+                      ? "bg-blue-50 text-blue-800 font-medium"
+                      : ""
+                  }`}
+                >
+                  {vehicle.driverId && day === 4 && (
+                    <div>
+                      <p>{vehicle.driverName}</p>
+                      <p className="text-xs text-gray-500">{vehicle.startDate}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination Footer */}
@@ -585,15 +689,26 @@ const VehicleAssignment = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Add Assignment</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">Add Assignment</h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                ×
+              </button>
+            </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Vehicle</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
                 <select
+                  name="vehicleId"
+                  value={assignmentData.vehicleId}
+                  onChange={handleAssignmentChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
                   disabled={vehicleLoading}
                 >
-                  <option>Select Vehicle</option>
+                  <option value="">Select Vehicle</option>
                   {vehicles.map((vehicle) => (
                     <option key={vehicle._id} value={vehicle._id}>
                       {vehicle.name} - {vehicle.make} {vehicle.model}
@@ -602,30 +717,39 @@ const VehicleAssignment = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Operator</label>
-                <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700">
-                  <option>Select Operator</option>
-                  {vehicles
-                    .filter((v) => v.driverId)
-                    .map((v) => (
-                      <option key={v.driverId} value={v.driverId}>
-                        {v.driverName} ({v.driverEmployeeNumber})
-                      </option>
-                    ))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
+                <select
+                  name="driverId"
+                  value={assignmentData.driverId}
+                  onChange={handleAssignmentChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
+                >
+                  <option value="">Select Driver</option>
+                  {drivers.map((driver) => (
+                    <option key={driver._id} value={driver._id}>
+                      {driver.name} ({driver.employeeNumber})
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex gap-4">
                 <div className="w-1/2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
+                    name="startDate"
+                    value={assignmentData.startDate}
+                    onChange={handleAssignmentChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
                   />
                 </div>
                 <div className="w-1/2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
+                    name="endDate"
+                    value={assignmentData.endDate}
+                    onChange={handleAssignmentChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
                   />
                 </div>
@@ -639,10 +763,11 @@ const VehicleAssignment = () => {
                   Cancel
                 </button>
                 <button
+                  onClick={assignVehicle}
                   className="px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50"
                   disabled={vehicleLoading}
                 >
-                  Save
+                  Assign
                 </button>
               </div>
             </div>
