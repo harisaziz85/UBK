@@ -53,7 +53,12 @@ const TripInspection = () => {
           
           vehicleImg: insp.vehicleId.photo || logo, // Use front image or default logo
           vehicle: `${insp.vehicleId.name} (${insp.vehicleId.licensePlate})`,
-          date: new Date(insp.inspectedOn).toLocaleDateString(),
+         date: new Date(insp.inspectedOn).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'UTC'
+        }),
           form: "Pre-Trip Inspection", // Or derive from formFilter/context
           status: insp.inspectionStatus === 'passed' ? 'Pass' : 'Fail',
           // Add other fields if needed, e.g., remarks, inspectedBy
@@ -179,6 +184,8 @@ const TripInspection = () => {
                 </tr>
               ))
             ) : (
+
+
               inspections.map((insp, idx) => (
                 <tr key={insp.id} onClick={() => navigation(`/inspection/${insp.id}`)} className=" cursor-pointer bg-white hover:bg-[#04367714]">
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
@@ -193,26 +200,27 @@ const TripInspection = () => {
                   >
                     {insp.id.slice(0, 7)}
                   </td>
-                  <td
-                    className="p-3 whitespace-nowrap border-b flex items-center roboto-regular gap-2 text-blue-600"
-                    style={{ borderColor: "#33333333" }}
-                  >
+                  <td className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600" style={{ borderColor: "#33333333" }}>
+                  <div className="flex items-center gap-2">
                     <img
                       src={insp.vehicleImg}
                       alt="vehicle"
                       className="w-8 h-8 rounded"
                     />
                     {insp.vehicle}
-                  </td>
+                  </div>
+                </td>
+
                   <td className="p-3 whitespace-nowrap border-b roboto-regular " style={{ borderColor: "#33333333" }}>
                     {insp.date}
                   </td>
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
-                    <span className="flex items-center gap-2">
-                      <span className=" whitespace-nowrap w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
-                      {insp.form}
-                    </span>
-                  </td>
+                  <span className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
+                    {insp.form}
+                  </span>
+                </td>
+
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
                     <span 
                       className={`px-3 py-1 roboto-medium rounded-full text-xs ${

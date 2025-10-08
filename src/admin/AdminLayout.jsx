@@ -201,6 +201,17 @@ const AdminLayout = () => {
           >
             <FaFileAlt className="w-5 h-5" /> Pre-Trip Inspection
           </NavLink>
+          <NavLink
+            to="/admin/forms"
+            className={({ isActive }) =>
+              `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
+                isActive ? "bg-white text-black rounded" : ""
+              }`
+            }
+            onClick={() => setIsOpen(false)}
+          >
+            <FaFileAlt className="w-5 h-5" /> Forms
+          </NavLink>
           <div className="mt-auto">
             <NavLink
               to="/admin/profile"

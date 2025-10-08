@@ -44,6 +44,7 @@ import AssignedVehicles from "./admin/components/AssignedVehicles";
 import UnassignedVehicles from "./admin/components/UnassignedVehicles";
 import Vehicleprofile from "./admin/Vehicleprofile";
 import Storagepdf from "./driver/component/Postform/pdf/Storagepgf";
+import Towpdf from "./driver/component/Postform/pdf/Towpdf";
 
 
 function App() {
@@ -55,7 +56,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Login />} />
 
-        {/* Driver Routes */}
+   {/* Driver Routes */}
         <Route element={<DriverLayout />}>
           <Route path="/driverdashboard" element={<Driverdashboard />} />
           <Route path="/meterhistory" element={<MeterHistoryTable />} />
@@ -63,22 +64,18 @@ function App() {
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/truckdocuments" element={<TruckDock />} />
           <Route path="/form" element={<Froms />} />
-          <Route path="/consent-form" element={<ConsentForm />} />
+          <Route path="/consent-form" element={ <ConsentForm/>} />
           {/* <Route path="/vehicleassignment" element={<VehicleAssignment />} /> */}
           <Route path="/profile" element={<Userprofile />} />
           <Route path="/updatepassword" element={<PassUpdate />} />
           <Route path="/testing" element={<Testing />} />
-          {/* inspections module route */}
-          <Route path="/tripinspection" element={<TripInspection />} />
-          <Route path='/start-inspection' element={<VehicleInspectionSystem />} />
-          <Route path="/inspection/:id" element={<InspectionDetails />} />
-          {/* profile */}
-          <Route path="/profile" element={<Adminprofile />} />
         {/* inspections module route */}
          <Route path="/tripinspection" element={<TripInspection />} />
         <Route path='/start-inspection' element={<VehicleInspectionSystem/>}/>
         <Route path="/inspection/:id" element={<InspectionDetails/>}/>
         <Route path="/storage" element={<Storagepdf/>}/>
+        <Route path='/towpdf' element={<Towpdf/>}/>
+        
         {/* profile */}
          <Route path="/profile" element={<Adminprofile/>} />
         </Route>
@@ -107,6 +104,8 @@ function App() {
           {/* Docuemnts Routes */}
           <Route path="/admin/doc" element={<AdminDoc />} />
           <Route path="/admin/document/details" element={<DocumentDetails />} />
+          <Route path="/admin/ubktowing" element={<UBKTowing/>} />
+
           {/* Forms Route */}
           <Route path="/admin/forms" element={<AdminForms />} />
 
@@ -129,7 +128,6 @@ function App() {
             <Route path='/admin/start-inspection' element={<VehicleInspectionSystem/>}/>
 
           <Route path="/admin/detailpage" element={<Detailspage/>} />
-          <Route path="/admin/ubktowing" element={<UBKTowing/>} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory/>} />
           <Route path="/admin/inspectiondetails" element={<InspectionDetails/>} />
           <Route path="/admin/inspectionform" element={<Inspectionform/>} />

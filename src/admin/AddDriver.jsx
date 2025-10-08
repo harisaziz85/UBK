@@ -165,11 +165,11 @@ const AddDriver = () => {
   };
 
   return (
-    <div className="p-6 bg-[#f9f9f9] min-h-screen">
-      <div className="bg-white rounded-lg shadow-md p-6 space-y-8">
+    <div className="p-6 min-h-screen">
+      <div className="rounded-lg p-6 space-y-8">
         <form onSubmit={handleSubmit}>
           {/* Basic Details */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Basic details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -179,7 +179,7 @@ const AddDriver = () => {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
@@ -190,7 +190,7 @@ const AddDriver = () => {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
@@ -201,13 +201,13 @@ const AddDriver = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
               <div className="md:col-span-2">
                 <label className="text-[14px] robotomedium">Profile Photo</label>
-                <div className="flex flex-col items-center justify-center border border-dashed border-[#333333] rounded-md p-4 h-[120px] text-center cursor-pointer">
+                <div className="flex flex-col items-center justify-center border border-dashed border-[#CCCCCC] rounded-md p-4 h-[120px] text-center cursor-pointer">
                   <Upload className="w-6 h-6 text-gray-500 mb-2" />
                   <label className="flex flex-col items-center cursor-pointer">
                     <span className="bg-gray-100 px-3 py-1 rounded-md text-sm mb-1">
@@ -230,7 +230,7 @@ const AddDriver = () => {
           </div>
 
           {/* Login Information */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Login Information</h2>
             <div className="grid grid-cols-1 gap-6">
               <div>
@@ -240,7 +240,7 @@ const AddDriver = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
@@ -251,7 +251,7 @@ const AddDriver = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
@@ -259,7 +259,7 @@ const AddDriver = () => {
           </div>
 
           {/* Contact Information */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Contact Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -269,7 +269,7 @@ const AddDriver = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
@@ -279,7 +279,7 @@ const AddDriver = () => {
                   name="homePhone"
                   value={formData.homePhone}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div className="md:col-span-2">
@@ -289,7 +289,7 @@ const AddDriver = () => {
                   name="address.street"
                   value={formData.address.street}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
@@ -299,7 +299,7 @@ const AddDriver = () => {
                   name="address.city"
                   value={formData.address.city}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
@@ -309,7 +309,7 @@ const AddDriver = () => {
                   name="address.state"
                   value={formData.address.state}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
@@ -319,7 +319,7 @@ const AddDriver = () => {
                   name="address.zipcode"
                   value={formData.address.zipcode}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
@@ -329,14 +329,14 @@ const AddDriver = () => {
                   name="address.country"
                   value={formData.address.country}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
             </div>
           </div>
 
           {/* Personal Details */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Personal Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -346,19 +346,21 @@ const AddDriver = () => {
                   name="jobTitle"
                   value={formData.jobTitle}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                 />
               </div>
               <div>
-                <label className="text-[14px] robotomedium">DOB</label>
-                <input
-                  type="date"
-                  name="dob"
-                  value={formData.dob}
-                  onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
-                  required
-                />
+                <label className="text-[14px] robotomedium block">DOB</label>
+                <label className="relative block w-full border border-[#CCCCCC] rounded-md h-[42px] cursor-pointer">
+                  <input
+                    type="date"
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleInputChange}
+                    className="w-full h-full px-3 bg-transparent focus:outline-none focus:ring-0 appearance-none cursor-pointer"
+                    required
+                  />
+                </label>
               </div>
               <div>
                 <label className="text-[14px] robotomedium">Employee Number</label>
@@ -367,30 +369,34 @@ const AddDriver = () => {
                   name="employeeNumber"
                   value={formData.employeeNumber}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
               <div>
-                <label className="text-[14px] robotomedium">Start Date</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
-                  required
-                />
+                <label className="text-[14px] robotomedium block">Start Date</label>
+                <label className="relative block w-full border border-[#CCCCCC] rounded-md h-[42px] cursor-pointer">
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    className="w-full h-full px-3 bg-transparent focus:outline-none focus:ring-0 appearance-none cursor-pointer"
+                    required
+                  />
+                </label>
               </div>
               <div>
-                <label className="text-[14px] robotomedium">Leave Date</label>
-                <input
-                  type="date"
-                  name="leaveDate"
-                  value={formData.leaveDate}
-                  onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
-                />
+                <label className="text-[14px] robotomedium block">Leave Date</label>
+                <label className="relative block w-full border border-[#CCCCCC] rounded-md h-[42px] cursor-pointer">
+                  <input
+                    type="date"
+                    name="leaveDate"
+                    value={formData.leaveDate}
+                    onChange={handleInputChange}
+                    className="w-full h-full px-3 bg-transparent focus:outline-none focus:ring-0 appearance-none cursor-pointer"
+                  />
+                </label>
               </div>
               <div>
                 <label className="text-[14px] robotomedium">License Number</label>
@@ -399,7 +405,7 @@ const AddDriver = () => {
                   name="licenseNo"
                   value={formData.licenseNo}
                   onChange={handleInputChange}
-                  className="w-full border border-[#333333] rounded-md h-[42px] px-3 focus:outline-none"
+                  className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
                   required
                 />
               </div>
@@ -407,7 +413,7 @@ const AddDriver = () => {
           </div>
 
           {/* Document Access Permissions */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Document Access Permissions</h2>
             <div className="flex flex-col md:flex-row gap-6">
               <label className="flex items-center gap-2">
@@ -426,7 +432,7 @@ const AddDriver = () => {
           </div>
 
           {/* Custom Fields */}
-          <div>
+          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Custom Fields</h2>
             <div className="grid grid-cols-1 gap-4">
               {[
@@ -444,7 +450,7 @@ const AddDriver = () => {
                     name={`weekdays.${day}`}
                     value={formData.weekdays[day]}
                     onChange={handleInputChange}
-                    className="w-full border border-[#333333] rounded-md h-[42px] px-3 bg-white focus:outline-none"
+                    className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 bg-white focus:outline-none focus:ring-0 appearance-none cursor-pointer"
                   >
                     <option value="">No option selected</option>
                     <option value="09:00 AM – 05:00 PM">09:00 AM – 05:00 PM</option>
@@ -475,5 +481,3 @@ const AddDriver = () => {
 };
 
 export default AddDriver;
-
-// driver

@@ -1,7 +1,7 @@
 const inspectionCategories = [
   {
     id: 'air-brake',
-    title: 'Instructions for Air break system',
+    title: 'Air break system',
     status: 'N/A',
     minorDefects: [
       'Audible air leak.',
@@ -19,7 +19,7 @@ const inspectionCategories = [
 
   {
     id: 'cab',
-    title: 'Instructions for  Cab',
+    title: 'Cab',
     status: 'N/A',
     minorDefects: ['Occupant compartment door fails to close securely'],
     majorDefects: ['Any cab or sleeper door fails to close securely'],
@@ -29,7 +29,7 @@ const inspectionCategories = [
 
   {
     id: 'cargo-securement',
-    title: 'Instructions for  Cargo Securement',
+    title: 'Cargo Securement',
     status: 'N/A',
     minorDefects: ['insecure or improper load covering.'],
     majorDefects: [
@@ -41,7 +41,7 @@ const inspectionCategories = [
 
   {
     id: 'coupling-devices',
-    title: 'Instructions for  Coupling Devices',
+    title: 'Coupling Devices',
     status: 'N/A',
     minorDefects: ['Coupler or mounting has loose or missing fastener'],
     majorDefects: [
@@ -54,7 +54,7 @@ const inspectionCategories = [
 
   {
     id: 'dangerous-goods',
-    title: 'Instructions for  Dangerous Goods',
+    title: 'Dangerous Goods',
     status: 'N/A',
     minorDefects: ['Dangerous goods requirements not met'],
     majorDefects: [],
@@ -63,7 +63,7 @@ const inspectionCategories = [
   
   {
     id: 'driver-controls',
-    title: 'Instructions for  Driver Controls',
+    title: 'Driver Controls',
     status: 'N/A',
     minorDefects: [
       'Accelerator pedal, clutch, gauges, controls and visual indicators or instruments fail to function properly'
@@ -73,7 +73,7 @@ const inspectionCategories = [
   },
   {
     id: 'driver-seat',
-    title: 'Instructions for Driver Seat',
+    title: 'Driver Seat',
     status: 'N/A',
     minorDefects: ['Loose or insecure mounting or electrical connection'],
     majorDefects: ['Inoperative breakaway device'],
@@ -81,7 +81,7 @@ const inspectionCategories = [
   },
   {
     id: 'electric-brake',
-    title: 'Instructions for Electric Brake System',
+    title: 'Electric Brake System',
     status: 'N/A',
     minorDefects: ['Loose or insecure wiring or electrical connection'],
     majorDefects: ['Inoperative breakaway device'],
@@ -97,7 +97,7 @@ const inspectionCategories = [
   },
   {
     id: 'exhaust-system',
-    title: 'Instructions for Exhaust System',
+    title: 'Exhaust System',
     status: 'N/A',
     minorDefects: ['Leak at a location forward of the cab'],
     majorDefects: ['Leak that would permit entry of exhaust fumes into the cab'],
@@ -105,7 +105,7 @@ const inspectionCategories = [
   },
   {
     id: 'frame-cargo-body',
-    title: 'Instructions for Frame & Cargo Body',
+    title: 'Frame & Cargo Body',
     status: 'N/A',
     minorDefects: ['Minor damage or corrosion'],
     majorDefects: ['Frame or body component is broken, cracked or sagging'],
@@ -113,7 +113,7 @@ const inspectionCategories = [
   },
   {
     id: 'fuel-system',
-    title: 'Instructions for Fuel System',
+    title: 'Fuel System',
     status: 'N/A',
     minorDefects: ['Leak in fuel system'],
     majorDefects: ['Fuel leak in system likely to create fire hazard'],
@@ -121,7 +121,7 @@ const inspectionCategories = [
   },
   {
     id: 'general',
-    title: 'Instructions for General',
+    title: 'General',
     status: 'N/A',
     minorDefects: ['Vehicle dirty or cluttered'],
     majorDefects: ['Serious structural or safety defect observed'],
@@ -129,7 +129,7 @@ const inspectionCategories = [
   },
   {
     id: 'glass-mirrors',
-    title: 'Instructions for Glass and Mirrors',
+    title: 'Glass and Mirrors',
     status: 'N/A',
     minorDefects: ['Crack or chip in windshield or mirror'],
     majorDefects: ['Windshield or mirror broken and impairs vision'],
@@ -137,7 +137,7 @@ const inspectionCategories = [
   },
   {
     id: 'heater-defroster',
-    title: 'Instructions for Heater / Defroster',
+    title: 'Heater / Defroster',
     status: 'N/A',
     minorDefects: ['Defroster or heater is not fully effective'],
     majorDefects: ['Defroster or heater inoperative'],
@@ -153,7 +153,7 @@ const inspectionCategories = [
   },
   {
     id: 'hydraulic-brake',
-    title: 'Instructions for Hydraulic Brake System',
+    title: 'Hydraulic Brake System',
     status: 'N/A',
     minorDefects: ['Brake fluid level below indicator minimum level'],
     majorDefects: [
@@ -181,7 +181,7 @@ const inspectionCategories = [
   },
   {
     id: 'steering',
-    title: 'Instructions for Steering',
+    title: 'Steering',
     status: 'N/A',
     minorDefects: ['Steering wheel lash (free play) is greater than normal'],
     majorDefects: [
@@ -192,7 +192,7 @@ const inspectionCategories = [
   },
   {
     id: 'suspension',
-    title: 'Instructions for Suspension System',
+    title: 'Suspension System',
     status: 'N/A',
     minorDefects: ['Air suspension leak'],
     majorDefects: ['Air suspension incapable of supporting load'],
