@@ -6,18 +6,45 @@ import CustomTimePicker from './CustomTimePicker';
 import DatePickerComponent from './CustomDatePicker';
 import { toast, ToastContainer } from 'react-toastify'; // New import
 import 'react-toastify/dist/ReactToastify.css';
-import html2pdf from 'html2pdf.js';
+import domtoimage from 'dom-to-image-more';
+import jsPDF from 'jspdf';
 import StoragePdf from './pdf/Storagepgf';
+import SignatureCanvas from 'react-signature-canvas';
 
-// Placeholder for TowPdf - Create a similar component for 'tow' type, adapting the design as needed
+// Updated TowPdf component - Basic structure to ensure content renders (expand with full layout similar to StoragePdf)
 const TowPdf = ({ data }) => {
-  // Implement similar static rendering for Tow PDF using the provided data
-  // For now, render a placeholder; replace with actual Tow PDF structure mirroring Storagepdf but for tow
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Consent to Tow PDF (Implement similar to StoragePdf)</h1>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-      {/* TODO: Create full TowPdf component analogous to StoragePdf, mapping tow-specific fields like towedTo, serviceDescription, etc. */}
+    <div style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      padding: '0.5in', 
+      width: '7.5in', 
+      backgroundColor: 'white',
+      color: 'black'
+    }}>
+      <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>Consent to Tow</h1>
+      <div style={{ lineHeight: '1.4' }}>
+        <p><strong>Tow Driver Name:</strong> {data.driverName || ''}</p>
+        <p><strong>Truck Number:</strong> {data.truckNumber || ''}</p>
+        <p><strong>Consent Person Name:</strong> {data.consentPersonName || ''}</p>
+        <p><strong>Towed From:</strong> {data.towedFrom || ''}</p>
+        <p><strong>Towed To:</strong> {data.towedTo || ''}</p>
+        <p><strong>Start Date/Time:</strong> {data.startDateTime || ''}</p>
+        <p><strong>Consent Date/Time:</strong> {data.consentDateTime || ''}</p>
+        <p><strong>Consent Method:</strong> {data.consentMethod || ''}</p>
+        <p><strong>Police Directed:</strong> {data.policeDirected ? 'Yes' : 'No'}</p>
+        {data.officerNameBadge && <p><strong>Officer Name & Badge:</strong> {data.officerNameBadge}</p>}
+        <p><strong>Vehicle Year:</strong> {data.year || ''}</p>
+        <p><strong>Make:</strong> {data.make || ''}</p>
+        <p><strong>Model:</strong> {data.model || ''}</p>
+        <p><strong>Color:</strong> {data.color || ''}</p>
+        <p><strong>Plate:</strong> {data.plate || ''}</p>
+        <p><strong>VIN:</strong> {data.vin || ''}</p>
+        <p><strong>Odometer:</strong> {data.currentMileage || ''}</p>
+        {data.serviceDescription && <p><strong>Service Description:</strong> {data.serviceDescription}</p>}
+        <p><strong>Signature:</strong> {data.consentSignature ? <img src={data.consentSignature} alt="Signature" style={{maxWidth: '200px', maxHeight: '100px'}} /> : ''}</p>
+        {/* Add more fields as needed; remove JSON for production */}
+        {/* <pre style={{ whiteSpace: 'pre-wrap', fontSize: '10px' }}>{JSON.stringify(data, null, 2)}</pre> */}
+      </div>
     </div>
   );
 };
@@ -33,6 +60,8 @@ const ConsentForm = () => {
   const [showPdf, setShowPdf] = useState(false);
   const [pdfData, setPdfData] = useState({});
   const pdfRef = useRef(null);
+  const towSignatureRef = useRef();
+  const storageSignatureRef = useRef();
 
   // Shared data for both forms
   const [sharedData, setSharedData] = useState({
@@ -75,8 +104,8 @@ const ConsentForm = () => {
   // Storage specific data
   const [storageSpecific, setStorageSpecific] = useState({
     invoicePO: '',
-    storageType: '', // 'indoor' or 'outdoor'
-    storageAddressConfirmed: false,
+    storageOption: '', // 'default' | 'indoor' | 'outdoor'
+    storageSignature: '',
   });
 
   const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
@@ -142,16 +171,8 @@ const ConsentForm = () => {
     setTowSpecific(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const handleStorageSpecificCheckboxChange = (field) => {
-    setStorageSpecific(prev => ({ ...prev, [field]: !prev[field] }));
-  };
-
   const handleConsentMethodChange = (method) => {
     setSharedData(prev => ({ ...prev, consentMethod: method }));
-  };
-
-  const handleStorageTypeChange = (type) => {
-    setStorageSpecific(prev => ({ ...prev, storageType: type }));
   };
 
   const handleOdometerChange = (e) => {
@@ -187,12 +208,16 @@ const ConsentForm = () => {
       toast.error("You must confirm informed of rights and rate sheet shown.");
       return false;
     }
+    if (!selectedVehicle) {
+      toast.error("Vehicle selection is required.");
+      return false;
+    }
     if (type === 'tow' && !towSpecific.towedTo.trim()) {
       toast.error("Towed To location is required for Tow form.");
       return false;
     }
-    if (type === 'storage' && !storageSpecific.storageType) {
-      toast.error("You must select Indoor or Outdoor storage.");
+    if (type === 'storage' && !storageSpecific.storageOption) {
+      toast.error("You must select one storage option.");
       return false;
     }
     if (sharedData.policeDirected && !sharedData.officerNameBadge.trim()) {
@@ -204,68 +229,61 @@ const ConsentForm = () => {
 
 const generateAndDownloadPDF = async (submitData, type) => {
   try {
-    // ✅ Set the data and show the component
+    console.log("Starting PDF generation with data:", submitData);
+    
+    // ✅ Prepare PDF data
     setPdfData(submitData);
     setShowPdf(true);
 
-    // ✅ Wait for the component to actually render into the DOM
-    await new Promise((resolve) => {
-      const checkRendered = () => {
-        const element = pdfRef.current;
-        if (element && element.offsetHeight > 0) {
-          resolve();
-        } else {
-          setTimeout(checkRendered, 300);
-        }
-      };
-      checkRendered();
-    });
+    // ✅ Wait for React to render the PDF component
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 1s is usually enough
 
     const element = pdfRef.current;
     if (!element) {
+      console.error("PDF container not found");
       toast.error("PDF container not found");
       return;
     }
 
-    // ✅ Force a reflow
-    element.style.display = "block";
-    element.offsetHeight;
+    console.log("PDF element found:", element.innerHTML.substring(0, 200));
+    console.log("Generating PDF...");
 
-    const opt = {
-      margin: [0.5, 0.5, 0.5, 0.5],
-      filename: `${type === "tow" ? "Consent_to_Tow" : "Consent_to_Storage"}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-      },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    // ✅ dom-to-image-more options to handle Google Fonts
+    const options = {
+      bgcolor: '#ffffff',
+      quality: 0.95,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      filter: (node) => node.tagName !== 'LINK', // skip external CSS (Google Fonts)
+      style: {
+        fontFamily: "'Roboto', sans-serif", // force Roboto
+      }
     };
 
-    // ✅ Ensure full render before PDF creation
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    // ✅ Generate PNG from element
+    const imgData = await domtoimage.toPng(element, options);
 
-    await html2pdf().set(opt).from(element).save();
+    // ✅ Create PDF
+    const pdf = new jsPDF('p', 'in', 'letter');
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = 7.5; // inches
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const margin = 0.5;
+    
+    pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
 
+    // ✅ Save PDF
+    pdf.save(`${type === "tow" ? "Consent_to_Tow" : "Consent_to_Storage"}.pdf`);
+    
+    console.log("PDF generated successfully");
+    toast.success("PDF downloaded successfully!");
   } catch (error) {
     console.error("PDF generation error:", error);
-    toast.error("Failed to generate PDF");
+    toast.error(`Failed to generate PDF: ${error.message}`);
   } finally {
-    // Hide preview
     setShowPdf(false);
   }
 };
-
-
-
-
-
 
 
   const handleSubmit = async (type) => {
@@ -357,12 +375,14 @@ const generateAndDownloadPDF = async (submitData, type) => {
           descriptionOfServices: towSpecific.serviceDescription
         };
       } else {
-        const storageType = storageSpecific.storageType.toUpperCase();
-        const storageLocation = `7 Belvia Road Etobicoke Ontario M8W9R2${storageSpecific.storageAddressConfirmed ? ` - ${storageType}` : ''}`;
+        const storageType = storageSpecific.storageOption === 'indoor' ? 'INDOOR' : storageSpecific.storageOption === 'outdoor' ? 'OUTDOOR' : '7 Belvia Road Etobicoke Ontario M8W9R2';
+        // const storageLocation = `7 Belvia Road Etobicoke Ontario M8W9R2${storageType ? ` - ${storageType}` : ''}`;
+        const storageLocation = storageType || null;
         payload.storageDetails = {
           pickupLocation: sharedData.towedFrom,
           startDateTime,
-          storageLocation
+          storageLocation,
+          digitalSignature: storageSpecific.storageSignature
         };
       }
 
@@ -403,10 +423,10 @@ const generateAndDownloadPDF = async (submitData, type) => {
         consentDateTime: formattedConsentDateTime,
         officerNameBadge: `${officerName} & ${badgeNumber}`,
         policeDirected: payload.policeDirected.isDirected,
-        consentSignature: isTow ? towSpecific.secondSignature : '', // Adjust as needed
+        consentSignature: isTow ? towSpecific.secondSignature : storageSpecific.storageSignature, // Adjust as needed
         driverSignature: sharedData.driverName, // Or specific signature field
-        storageAddressConfirmed: storageSpecific.storageAddressConfirmed,
-        storageType: storageSpecific.storageType,
+        storageOption: storageSpecific.storageOption,
+        storageType: storageSpecific.storageOption === 'indoor' ? 'indoor' : storageSpecific.storageOption === 'outdoor' ? 'outdoor' : '',
         // Add any missing mappings, e.g., towDriverPhone: sharedData.consentPhone (if applicable)
         towDriverPhone: sharedData.consentPhone,
       };
@@ -451,8 +471,8 @@ const generateAndDownloadPDF = async (submitData, type) => {
       });
       setStorageSpecific({
         invoicePO: '',
-        storageType: '',
-        storageAddressConfirmed: false,
+        storageOption: '',
+        storageSignature: '',
       });
       setSelectedVehicle('');
       setOdometerValue('');
@@ -639,14 +659,15 @@ const generateAndDownloadPDF = async (submitData, type) => {
 
               {/* Vehicle Selection */}
               <div className="mb-6">
-                <label className="block text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-2">Vehicle</label>
+                <label className="block text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-2">Vehicle <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <select 
                     value={selectedVehicle} 
                     onChange={(e) => setSelectedVehicle(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] appearance-none"
+                    required
                   >
-                    <option value="">Select Vehicle (Optional)</option>
+                    <option value="">Select Vehicle</option>
                     {vehicles.map((vehicle) => (
                       <option key={vehicle._id} value={vehicle._id}>
                         {vehicle.name} - {vehicle.licensePlate}
@@ -807,8 +828,10 @@ const generateAndDownloadPDF = async (submitData, type) => {
 </div>
 
 
-              {formType === 'tow' && (
-                <div className="mb-4">
+               {/* {formType === 'tow' && towSpecific.towedTo.trim() && (
+                <>
+
+                 <div className="mb-4">
                   <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
                     <input
                       type="checkbox"
@@ -819,10 +842,7 @@ const generateAndDownloadPDF = async (submitData, type) => {
                     <span>Acknowledgement of client's revised destination address</span>
                   </label>
                 </div>
-              )}
 
-              {formType === 'tow' && (
-                <>
                   <h3 className="text-lg roboto-semi-bold text-[#333333] mb-4">Signature (Pre-Tow)</h3>
                   <div className="mb-6">
                     <input
@@ -832,8 +852,14 @@ const generateAndDownloadPDF = async (submitData, type) => {
                       placeholder="Add a digital signature"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
                     />
-                  </div>
+                  </div> 
+                </>
+               
+              )}  */}
 
+              {formType === 'tow'  && (
+                <>
+                 
                   <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Description of Services</h3>
                   <div className="mb-6">
                     <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Service Description</label>
@@ -849,46 +875,71 @@ const generateAndDownloadPDF = async (submitData, type) => {
               )}
 
               {/* Storage Locations - Storage Only */}
-              {formType === 'storage' && (
-                <>
-                  <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Storage Locations</h3>
-                  <div className="mb-6 space-y-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={storageSpecific.storageAddressConfirmed} 
-                        onChange={() => handleStorageSpecificCheckboxChange('storageAddressConfirmed')} 
-                        className="rounded w-4 h-4 border-gray-300" 
-                      />
-                      <span className="text-[14px] text-[#333333CC] roboto-regular">Storage address confirmed at 7 Belvia Road Etobicoke Ontario M8W9R2</span>
-                    </label>
-                    <div className="flex gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-                        <input
-                          type="radio"
-                          name="storageType"
-                          value="indoor"
-                          checked={storageSpecific.storageType === 'indoor'}
-                          onChange={(e) => handleStorageTypeChange(e.target.value)}
-                          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-                        />
-                        <span>Indoor <span className="text-red-500">*</span></span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-                        <input
-                          type="radio"
-                          name="storageType"
-                          value="outdoor"
-                          checked={storageSpecific.storageType === 'outdoor'}
-                          onChange={(e) => handleStorageTypeChange(e.target.value)}
-                          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-                        />
-                        <span>Outdoor <span className="text-red-500">*</span></span>
-                      </label>
-                    </div>
-                  </div>
-                </>
-              )}
+{formType === 'storage' && (
+  <>
+    <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">
+      Storage Locations
+    </h3>
+
+    <div className="mb-6 flex flex-wrap items-center gap-6">
+      {/* Default storage location */}
+      <label className="flex items-center gap-3 cursor-pointer max-w-full">
+        <input
+          type="checkbox"
+          checked={storageSpecific.storageOption === 'default'}
+          onChange={() => {
+            setStorageSpecific(prev => ({
+              ...prev,
+              storageOption: prev.storageOption === 'default' ? '' : 'default'
+            }));
+          }}
+          className="rounded w-4 h-4 border-gray-300"
+        />
+        <span className="text-[14px] text-[#333333CC] roboto-regular">
+          Storage address confirmed at 7 Belvia Road Etobicoke Ontario M8W9R2
+        </span>
+      </label>
+
+      {/* Indoor option */}
+      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+        <input
+          type="checkbox"
+          checked={storageSpecific.storageOption === 'indoor'}
+          onChange={() => {
+            setStorageSpecific(prev => ({
+              ...prev,
+              storageOption: prev.storageOption === 'indoor' ? '' : 'indoor'
+            }));
+          }}
+          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+        />
+        <span>
+          Indoor <span className="text-red-500">*</span>
+        </span>
+      </label>
+
+      {/* Outdoor option */}
+      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+        <input
+          type="checkbox"
+          checked={storageSpecific.storageOption === 'outdoor'}
+          onChange={() => {
+            setStorageSpecific(prev => ({
+              ...prev,
+              storageOption: prev.storageOption === 'outdoor' ? '' : 'outdoor'
+            }));
+          }}
+          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+        />
+        <span>
+          Outdoor <span className="text-red-500">*</span>
+        </span>
+      </label>
+    </div>
+  </>
+)}
+
+
 
               {/* Person Giving Consent Information - Common */}
               <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Person Giving Consent Information</h3>
@@ -974,9 +1025,7 @@ const generateAndDownloadPDF = async (submitData, type) => {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
                     />
                   </div>
-                </div>
-              )}
-              <div className="mb-6">
+                    <div className="mb-6">
                 <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Call / Occurrence / Incident #</label>
                 <input 
                   type="text" 
@@ -986,6 +1035,12 @@ const generateAndDownloadPDF = async (submitData, type) => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
                 />
               </div>
+
+                 
+                </div>
+                
+              )}
+             
 
               {/* Date and Time */}
               <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Date and Time</h3>
@@ -1013,31 +1068,45 @@ const generateAndDownloadPDF = async (submitData, type) => {
 
 
               {/* Consent Given - Radio Buttons */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Consent Given</h3>
-              <div className="flex flex-col sm:flex-row gap-6 mb-6">
-                <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-                  <input
-                    type="radio"
-                    name="consentMethod"
-                    value="Phone"
-                    checked={sharedData.consentMethod === 'Phone'}
-                    onChange={(e) => handleConsentMethodChange(e.target.value)}
-                    className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-                  />
-                  <span>Over the Phone <span className="text-red-500">*</span></span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-                  <input
-                    type="radio"
-                    name="consentMethod"
-                    value="Email"
-                    checked={sharedData.consentMethod === 'Email'}
-                    onChange={(e) => handleConsentMethodChange(e.target.value)}
-                    className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-                  />
-                  <span>Over the Email <span className="text-red-500">*</span></span>
-                </label>
-              </div>
+<h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">
+  Consent Given
+</h3>
+<div className="flex flex-col sm:flex-row gap-6 mb-6">
+  {/* Phone checkbox */}
+  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+    <input
+      type="checkbox"
+      checked={sharedData.consentMethod === 'Phone'}
+      onChange={() =>
+        handleConsentMethodChange(
+          sharedData.consentMethod === 'Phone' ? '' : 'Phone'
+        )
+      }
+      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+    />
+    <span>
+      Over the Phone <span className="text-red-500">*</span>
+    </span>
+  </label>
+
+  {/* Email checkbox */}
+  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+    <input
+      type="checkbox"
+      checked={sharedData.consentMethod === 'Email'}
+      onChange={() =>
+        handleConsentMethodChange(
+          sharedData.consentMethod === 'Email' ? '' : 'Email'
+        )
+      }
+      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+    />
+    <span>
+      Over the Email <span className="text-red-500">*</span>
+    </span>
+  </label>
+</div>
+
 
 
               {formType === 'storage' && (
@@ -1160,7 +1229,7 @@ const generateAndDownloadPDF = async (submitData, type) => {
                 pursuant to the Repair and Storage Liens Act.
               </p>
               <div className="space-y-3 mb-6">
-                <label className="flex items-start gap-2 cursor-pointer text-sm text-gray-700">
+                <label className="flex items-start gap-2  text-sm cursor-pointer text-gray-700">
                   <input
                     type="checkbox"
                     checked={sharedData.informedOfRights}
@@ -1191,12 +1260,34 @@ const generateAndDownloadPDF = async (submitData, type) => {
                 <>
                   <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Signature</h3>
                   <div className="mb-6">
-                    <input
-                      type="text"
-                      value={towSpecific.secondSignature}
-                      onChange={(e) => handleTowSpecificInputChange('secondSignature', e.target.value)}
-                      placeholder="Add a digital signature"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
+                    <SignatureCanvas
+                      penColor="black"
+                      canvasProps={{
+                        width: 500,
+                        height: 40,
+                        className: "w-full border border-gray-300 rounded-lg"
+                      }}
+                      ref={towSignatureRef}
+                      onEnd={() => towSignatureRef.current && setTowSpecific(prev => ({ ...prev, secondSignature: towSignatureRef.current.toDataURL('image/png') }))}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Final Signature - Storage Only */}
+              {formType === 'storage' && (
+                <>
+                  <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Signature</h3>
+                  <div className="mb-6">
+                    <SignatureCanvas
+                      penColor="black"
+                      canvasProps={{
+                        width: 500,
+                        height: 40,
+                        className: "w-full border border-gray-300 rounded-lg"
+                      }}
+                      ref={storageSignatureRef}
+                      onEnd={() => storageSignatureRef.current && setStorageSpecific(prev => ({ ...prev, storageSignature: storageSignatureRef.current.toDataURL('image/png') }))}
                     />
                   </div>
                 </>
@@ -1228,9 +1319,23 @@ const generateAndDownloadPDF = async (submitData, type) => {
           </div>
         )}
 
-        {/* Hidden PDF Generator */}
+        {/* Hidden PDF Generator - Updated styles for better rendering */}
         {showPdf && (
-          <div ref={pdfRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div 
+            ref={pdfRef} 
+            style={{ 
+              position: 'fixed', 
+              left: '-9999px', 
+              top: '0', 
+              width: '7.5in', 
+              minHeight: '10in', 
+              visibility: 'hidden', 
+              backgroundColor: 'white',
+              padding: '0.5in',
+              overflow: 'hidden',
+              zIndex: -1
+            }}
+          >
             {formType === 'storage' ? <StoragePdf data={pdfData} /> : <TowPdf data={pdfData} />}
           </div>
         )}

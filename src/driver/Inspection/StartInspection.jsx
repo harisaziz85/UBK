@@ -1,5 +1,5 @@
 // src/components/VehicleInspectionSystem.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { X, Camera, ChevronDown } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,6 +8,7 @@ import InspectionModal from './InspectionModal';
 import CameraModal from './CameraModel';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
+import SignatureCanvas from 'react-signature-canvas';
 
 
 const VehicleInspectionSystem = () => {
@@ -20,6 +21,7 @@ const VehicleInspectionSystem = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const navigate = useNavigate();
+  const driverSignatureRef = useRef();
 
 
   const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
@@ -202,7 +204,7 @@ const handleSelectVehicle = (e) => {
       return;
     }
 
-    if (!declarationSignature.trim()) {
+    if (!declarationSignature) {
       toast.error("Please provide driver's signature");
       return;
     }
@@ -257,7 +259,10 @@ const handleSelectVehicle = (e) => {
     // required text fields
     formData.append("remarks", remarks);
     formData.append("declarationConfirmed", declarationConfirmed);
-    formData.append("declarationSignature", declarationSignature);
+    if (declarationSignature) {
+      const blob = dataURLtoBlob(declarationSignature);
+      formData.append("declarationSignature", blob, "declarationSignature.png");
+    }
     formData.append("currentMilage", Number(inspectionData.currentMileage) || 0);
     formData.append("inspectedOn", inspectionData.date); // backend wants inspectedOn
 
@@ -788,11 +793,15 @@ const handleSelectVehicle = (e) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Driver's Sign</label>
 
                   <div className="bg-gray-50 px-4 py-3 rounded border border-gray-200 min-h-[60px] text-gray-700">
-                    <textarea
-                      placeholder="Enter signature here..."
-                      value={declarationSignature}
-                      onChange={(e) => setDeclarationSignature(e.target.value)}
-                      className="w-full h-12 border-none bg-transparent resize-none outline-none text-sm"
+                    <SignatureCanvas
+                      penColor="black"
+                      canvasProps={{
+                        width: 500,
+                        height: 30,
+                        className: "w-full border-none bg-transparent resize-none outline-none text-sm"
+                      }}
+                      ref={driverSignatureRef}
+                      onEnd={() => driverSignatureRef.current && setDeclarationSignature(driverSignatureRef.current.toDataURL('image/png'))}
                     />
                   </div>
                 </div>

@@ -211,7 +211,7 @@ const VehicleDetailsPage = () => {
                 <div className="px-4 lg:px-6 py-4">
                   <div className="flex flex-col gap-4">
                     <DetailRow  label="Name" value={vehicle.name} />
-                    <DetailRow label="Status" value="Active" status />
+                    <DetailRow label="Status" value="Assign" status />
                     <DetailRow label="Meter" value={vehicle.currentMilage} />
                     <DetailRow
                       label="Operator"

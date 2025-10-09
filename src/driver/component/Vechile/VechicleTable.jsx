@@ -83,7 +83,7 @@ const VehiclesTable = () => {
                             {/* <th className="py-3 px-4 text-left font-medium">Status</th> */}
                             <th className="py-3 px-4 text-left font-medium">Current Meter</th>
                             <th className="py-3 px-4 text-left font-medium">License Plate</th>
-                            <th className="py-3 px-4 text-left font-medium">Watchers</th>
+                            {/* <th className="py-3 px-4 text-left font-medium">Watchers</th> */}
                             <th className="py-3 px-4 text-left font-medium"></th>
                         </tr>
                     </thead>
@@ -140,7 +140,7 @@ const VehiclesTable = () => {
 
                                     <td className="py-4 px-4">{vehicle.currentMilage}</td>
                                     <td className="py-4 px-4">{vehicle.licensePlate}</td>
-                                    <td className="py-4 px-4">0 watcher</td>
+                                    {/* <td className="py-4 px-4">0 watcher</td> */}
                                     <td className="py-4 px-4 flex items-center justify-between">
 
                                         {/* <div className="flex items-center gap-2">

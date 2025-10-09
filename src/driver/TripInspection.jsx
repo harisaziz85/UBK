@@ -48,6 +48,7 @@ const TripInspection = () => {
         // Map API data to component format
         const mappedInspections = data.inspections.map((insp) => ({
           id: insp._id,
+            index: insp.index ,
 
           submittedAt: new Date(insp.createdAt).toLocaleString(), // Format as needed
           
@@ -198,7 +199,7 @@ const TripInspection = () => {
                     className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600"
                     style={{ borderColor: "#33333333" }}
                   >
-                    {insp.id.slice(0, 7)}
+                      {insp.index}
                   </td>
                   <td className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600" style={{ borderColor: "#33333333" }}>
                   <div className="flex items-center gap-2">

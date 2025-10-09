@@ -138,7 +138,7 @@ const InspectionDetails = () => {
             submittedBy: insp.inspectedBy.name,
           });
 
-          setInspection(insp);
+          setInspection({ ...insp, index: data.index });
 
           const items = Object.entries(insp.checklist).map(([key, obj]) => {
             const value = obj.value;
@@ -238,7 +238,7 @@ const InspectionDetails = () => {
         <div className="flex items-center text-sm text-gray-600 mb-2">
           
         </div>
-        <h1 className="text-[24px] text-[#333333] robotosemibold">Submission #{id.slice(0,7)}</h1>
+        <h1 className="text-[24px] text-[#333333] robotosemibold">  Submission #{inspection?.index }</h1>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 px-2 sm:p-6">
@@ -360,7 +360,7 @@ const InspectionDetails = () => {
             ))}
           </div>
 
-          <p className="text-gray-500 text-sm mt-6">Created {createdAgo} ago</p>
+          {/* <p className="text-gray-500 text-sm mt-6">Created {createdAgo} ago</p> */}
         </div>
       </div>
     </div>

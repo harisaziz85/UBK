@@ -45,6 +45,7 @@ import UnassignedVehicles from "./admin/components/UnassignedVehicles";
 import Vehicleprofile from "./admin/Vehicleprofile";
 import Storagepdf from "./driver/component/Postform/pdf/Storagepgf";
 import Towpdf from "./driver/component/Postform/pdf/Towpdf";
+import FormDetails from "./driver/component/Postform/FormDetails";
 
 
 function App() {
@@ -63,8 +64,11 @@ function App() {
           <Route path="/vehiclelist" element={<VehiclesTable />} />
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/truckdocuments" element={<TruckDock />} />
+
+          {/* form */}
           <Route path="/form" element={<Froms />} />
           <Route path="/consent-form" element={ <ConsentForm/>} />
+          <Route path='/form-details/:id' element={<FormDetails/>}/>
           {/* <Route path="/vehicleassignment" element={<VehicleAssignment />} /> */}
           <Route path="/profile" element={<Userprofile />} />
           <Route path="/updatepassword" element={<PassUpdate />} />

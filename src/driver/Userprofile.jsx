@@ -41,6 +41,8 @@ const Userprofile = () => {
         const data = await response.json();
         const user = data.user;
 
+        console.log(data);
+
         setFirstName(user.name.split(" ")[0] || "");
         setLastName(user.name.split(" ").slice(1).join(" ") || "");
         setEmail(user.email || "");

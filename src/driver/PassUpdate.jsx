@@ -150,7 +150,7 @@ const PassUpdate = () => {
             <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              value={user?.username || "Testing2"}
+              value={user?.name || "Testing2"}
               readOnly
               className="w-full border-[#E9E9E9] border bg-[#FBFBFB] rounded-[8px]  pl-10 pr-3 py-[8px] text-sm focus:outline-none focus:ring-0 "
             />

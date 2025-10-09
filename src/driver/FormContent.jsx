@@ -77,6 +77,25 @@ const MainContent = () => {
   const totalPages = Math.ceil(filteredForms.length / PAGE_SIZE);
   const paginatedForms = filteredForms.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const start = (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, filteredForms.length);
+  const total = filteredForms.length;
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const isPrevDisabled = currentPage === 1;
+  const isNextDisabled = currentPage >= totalPages;
+
   return (
     <main className="flex-1 bg-gray-50 p-4 lg:p-6 overflow-auto">
       {/* Header */}
@@ -191,7 +210,7 @@ const MainContent = () => {
             <tbody>
               {loading ? (
                 Array.from({ length: 6 }).map((_, index) => (
-                  <tr key={`skeleton-${index}`} className="border-b border-[#E6E6E6]">
+                  <tr key={`skeleton-${index}`}  className="border-b border-[#E6E6E6]">
                     <td className="py-4 px-4 flex items-center gap-2">
                       <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
                       <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
@@ -221,7 +240,7 @@ const MainContent = () => {
                 </tr>
               ) : (
                 paginatedForms.map((form, index) => (
-                  <tr key={form._id || index} className="border-b border-[#E6E6E6] hover:bg-[#04367714]">
+                  <tr key={form._id || index} onClick={() => navigate(`/form-details/${form._id}`)} className="border-b border-[#E6E6E6] hover:bg-[#04367714]">
                     <td className="py-4 px-4 flex items-center gap-2">
                       <input type="checkbox" className="rounded border-[#808080] w-[20px] h-[20px]" />
                       <span className="roboto-medium text-[#333333E5]">{form._id.substring(0, 7)}</span>
@@ -242,33 +261,26 @@ const MainContent = () => {
           </table>
         </div>
         {!loading && filteredForms.length > 0 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
-            <p className="text-gray-600 text-sm">
-              Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredForms.length)} of {filteredForms.length} results
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-[#CCCCCC61] rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          <div className="flex items-center justify-end mt-4 gap-2 text-sm text-gray-600">
+            <span>{start}–{end} of {total}</span>
+            <div className="flex gap-2">
+              <button 
+                onClick={handlePrev}
+                disabled={isPrevDisabled}
+                className={`px-1 py-1 rounded bg-gray-100 ${isPrevDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'}`}
               >
-                Previous
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.6 6L6.6 12L8 10.6L3.4 6L8 1.4L6.6 0L0.6 6Z" fill="#1D1B20" fill-opacity="0.8"/>
+                </svg>
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1 border  rounded ${currentPage === page ? 'bg-[#043677] text-white' : 'hover:bg-gray-100'}`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className="px-3 py-1 border-[#CCCCCC61] border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              <button 
+                onClick={handleNext}
+                disabled={isNextDisabled}
+                className={`px-1 py-1 rounded bg-gray-100 ${isNextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'}`}
               >
-                Next
+                <svg width="8" height="12" viewBox="0 0 8 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7.4 6L1.4 12L0 10.6L4.6 6L0 1.4L1.4 0L7.4 6Z" fill="#1D1B20" fill-opacity="0.8"/>
+                </svg>
               </button>
             </div>
           </div>

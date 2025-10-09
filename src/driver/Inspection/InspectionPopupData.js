@@ -14,7 +14,7 @@ const inspectionCategories = [
       'Low air warning system fails or system is activated',
       'Inoperative service, parking or emergency brakes'
     ],
-    otherDefects: ['N/A', 'No Defects']
+    otherDefects: [ 'No Defects']
   },
 
   {
