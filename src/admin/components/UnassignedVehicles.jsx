@@ -45,7 +45,7 @@ const UnassignedVehicles = () => {
   return (
     <div className="p-6 bg-[#F9FAFB] min-h-screen">
       <Vehicletopbar />
-      <div className="mt-6 bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div className="mt-6 bg-white  overflow-hidden ">
         <div className="bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-10 items-center py-3 px-4">
           <div className="flex items-center space-x-2">
             <input type="checkbox" className="w-4 h-4 accent-white" />

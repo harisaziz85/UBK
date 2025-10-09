@@ -2,6 +2,28 @@ import React, { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import axios from "axios";
 
+const Shimmer = () => {
+  return (
+    <>
+      {[...Array(5)].map((_, index) => (
+        <div
+          key={index}
+          className="grid grid-cols-5 items-center py-3 px-4 border-b border-gray-200"
+        >
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-10 bg-gray-200 rounded-md animate-pulse"></div>
+        </div>
+      ))}
+    </>
+  );
+};
+
 const AdminForms = () => {
   const [selectedForms, setSelectedForms] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -57,20 +79,12 @@ const AdminForms = () => {
   return (
     <div className="p-6 bg-[#F9FAFB] min-h-screen">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Forms</h2>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="p-2 pl-8 border border-gray-300 rounded"
-          />
-          <FaSearch className="absolute left-2 top-2 text-gray-400" />
-        </div>
+       <p className="robotosemibold text-[24px]">Forms</p>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
         {/* Table Header */}
-        <div className="bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-5 items-center py-3 px-4">
+        <div className="bg-[#04367714] text-black robotomedium text-[14px] robotomedium grid grid-cols-5 items-center py-3 px-4">
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -89,9 +103,7 @@ const AdminForms = () => {
         {/* Table Rows */}
         <div>
           {loading ? (
-            <div className="text-center py-6 text-gray-500 text-[14px]">
-              Loading forms...
-            </div>
+            <Shimmer />
           ) : formsData.length > 0 ? (
             formsData.map((form, index) => (
               <div
