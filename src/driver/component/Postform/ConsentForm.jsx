@@ -10,6 +10,8 @@ import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 import StoragePdf from './pdf/Storagepgf';
 import SignatureCanvas from 'react-signature-canvas';
+import { toPng } from "html-to-image";
+import * as htmlToImage from 'html-to-image';
 
 // Updated TowPdf component - Basic structure to ensure content renders (expand with full layout similar to StoragePdf)
 const TowPdf = ({ data }) => {
@@ -231,13 +233,12 @@ const generateAndDownloadPDF = async (submitData, type) => {
   try {
     console.log("🚀 Starting PDF generation...");
 
-    // Prepare data
+    // Step 1: Prepare and render hidden PDF section
     setPdfData(submitData);
     setShowPdf(true);
 
-    // ✅ Wait for React to render + fonts load + images settle
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await document.fonts.ready;
+    // Step 2: Wait for React render + layout paint
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const element = pdfRef.current;
     if (!element) {
@@ -246,44 +247,39 @@ const generateAndDownloadPDF = async (submitData, type) => {
       return;
     }
 
+    // Step 3: Ensure element is visible for capture (off-screen, not display:none)
+    element.style.position = "absolute";
+    element.style.left = "0px";
+    element.style.display = "block";
+    element.style.visibility = "visible";
+
     console.log("✅ PDF content ready. Capturing...");
 
-    const options = {
-      quality: 0.98,
-      bgcolor: "#ffffff",
+    // Step 4: Capture element → PNG
+    const dataUrl = await htmlToImage.toPng(element, {
+      cacheBust: true,
       useCORS: true,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
-      filter: (node) => node.tagName !== "LINK",
+      skipFonts: true,
+      pixelRatio: 2,
       style: {
-        fontFamily: "'Roboto', sans-serif",
-        transform: "scale(1)",
-        transformOrigin: "top left",
+        fontFamily: "sans-serif",
+        backgroundColor: "#ffffff",
       },
-    };
-
-    // ✅ Convert element → PNG (handles Tailwind + custom fonts)
-    const imgData = await domtoimage.toPng(element, options);
-
-    // ✅ Generate high-resolution PDF
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "in",
-      format: "letter",
-      compress: true,
+      filter: (node) =>
+        !(node.tagName === "LINK" || node.tagName === "STYLE"),
     });
 
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = 8.0;
+    // Step 5: Generate and save PDF
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgProps = pdf.getImageProperties(dataUrl);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    pdf.addImage(imgData, "PNG", 0.25, 0.25, pdfWidth, pdfHeight, "", "FAST");
-
+    pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
     const fileName =
       type === "tow"
         ? "Consent_to_Tow_Form.pdf"
         : "Consent_to_Storage_Form.pdf";
-
     pdf.save(fileName);
 
     console.log("✅ PDF saved successfully");
@@ -292,9 +288,11 @@ const generateAndDownloadPDF = async (submitData, type) => {
     console.error("❌ PDF generation failed:", error);
     toast.error(`Failed to generate PDF: ${error.message}`);
   } finally {
+    // Step 6: Hide PDF section again
     setShowPdf(false);
   }
 };
+
 
 
 useEffect(() => {
@@ -1370,23 +1368,19 @@ useEffect(() => {
         )}
 
         {/* Hidden PDF Generator - Updated styles for better rendering */}
-  {showPdf && (
+{showPdf && (
   <div
     ref={pdfRef}
     style={{
-      position: "fixed",
+      position: "absolute",
+      left: "0px", // keep it off-screen
       top: 0,
-      left: 0,
-      width: "8.5in",
-      minHeight: "11in",
       backgroundColor: "#ffffff",
-      padding: "0.5in",
-      overflow: "hidden",
-      opacity: 0, // Invisible but still rendered (important)
-      pointerEvents: "none",
-      zIndex: -1,
-      transform: "scale(1)",
-      transformOrigin: "top left",
+      width: "1400px", // fixed width for consistent capture
+      minHeight: "5000px",
+      padding: "0px",
+      fontFamily: "sans-serif", // use default font only
+      visibility: "visible",
     }}
   >
     {formType === "storage" ? (
@@ -1396,6 +1390,9 @@ useEffect(() => {
     )}
   </div>
 )}
+
+
+
 
       </div>
     </div>

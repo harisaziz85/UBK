@@ -55,7 +55,7 @@
   const badgeNumber = officerNameBadge ? officerNameBadge.split(' & ')[1] : '';
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-0">
       <div className="max-w-6xl mx-auto bg-white ">
         
         {/* Header Section */}
@@ -167,7 +167,7 @@
               { label: "Make", value: make },
               { label: "Model", value: model },
               { label: "Colour", value: color },
-              { label: "Unit", value: '' }, // No unit in form, empty
+              // { label: "Unit", value: '' }, 
             ].map((field, index) => (
               <div key={index} className="flex items-center w-full">
                 <label className="font-bold whitespace-nowrap mr-1">{field.label}:</label>
@@ -388,15 +388,34 @@
             
             {/* Signature of the person giving consent */}
             <div className="text-center">
-              <span className="w-full border-b-2 border-black px-1 py-1 block">{consentSignature}</span>
-              <label className="block font-bold mt-1">Signature of the person giving consent</label>
+  {/* Signature display */}
+  <span className="w-full border-b-2 border-black px-1 py-1 block">
+    {consentSignature ? (
+      <img
+        src={consentSignature}
+        alt="Digital Signature"
+        className="mx-auto max-h-24"
+      />
+    ) : (
+      "No signature provided"
+    )}
+  </span>
 
-              {/* Checkbox 1 */}
-              <div className="flex justify-center items-center mt-2 gap-2">
-                <span className={`w-4 h-4 border-2 border-black ${consentMethod === 'Phone' ? 'bg-black' : ''}`}></span>
-                <span>Consent given over the phone</span>
-              </div>
-            </div>
+  <label className="block font-bold mt-1">
+    Driver Signature
+  </label>
+
+  {/* Checkbox 1 */}
+  <div className="flex justify-center items-center mt-2 gap-2">
+    <span
+      className={`w-4 h-4 border-2 border-black ${
+        consentMethod === "Phone" ? "bg-black" : ""
+      }`}
+    ></span>
+    <span>Consent given over the phone</span>
+  </div>
+</div>
+
 
             {/* Date and Time of consent */}
             <div className="text-center">
@@ -411,10 +430,10 @@
             </div>
 
             {/* Driver Signature */}
-            <div className="text-center">
+            {/* <div className="text-center">
               <span className="w-full border-b-2 border-black px-1 py-1 block">{driverSignature}</span>
               <label className="block font-bold mt-1">Driver Signature</label>
-            </div>
+            </div> */}
           </div>
         </div>
 
