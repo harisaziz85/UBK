@@ -84,7 +84,7 @@ const Login = () => {
       <div className="text-center">
         <p className="text-[32px] robotosemibold">Welcome Back</p>
         <p className="text-[24px] robotoregular text-[#333333CC] pt-[16px]">
-          Secure access to your fleet anytime, anywhere
+       Access and manage your vehicle, anywhere.
         </p>
       </div>
 
@@ -126,7 +126,7 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
               <div className="w-full">
                 <p className="robotomedium text-[#333333CC]">
-                  Email or User Name
+                  Email
                 </p>
                 <div className="flex items-center h-[47px] bg-[#FAFAFB] px-[16px] mt-[8px] rounded">
                   <FiMail className="text-[20px]" />

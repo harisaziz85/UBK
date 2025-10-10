@@ -50,7 +50,12 @@ const TripInspection = () => {
           id: insp._id,
             index: insp.index ,
 
-          submittedAt: new Date(insp.createdAt).toLocaleString(), // Format as needed
+         submittedAt: new Date(insp.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+
           
           vehicleImg: insp.vehicleId.photo || logo, // Use front image or default logo
           vehicle: `${insp.vehicleId.name} (${insp.vehicleId.licensePlate})`,

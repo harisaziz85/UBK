@@ -215,18 +215,18 @@ const DriverLayout = () => {
 
   return (
     <div className="flex min-h-screen">
-      <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  hideProgressBar={false}
-  newestOnTop={false}
-  closeOnClick
-  rtl={false}
-  pauseOnFocusLoss
-  draggable
-  pauseOnHover
-  theme="colored"
-/>
+              <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
 
       {/* Sidebar */}
       <aside
@@ -285,7 +285,7 @@ const DriverLayout = () => {
         <path d="M6.91209 11.9167H6.91957" stroke={isActive ? 'black' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         <path d="M6.91209 14.4167H6.91957" stroke={isActive ? 'black' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      Trip Inspection
+       Pre Trip Inspection
     </>
   )}
 </NavLink>

@@ -39,7 +39,7 @@ const customStyles = `
   }
 `;
 
-const DatePickerComponent = ({ label, value, onChange }) => {
+const DatePickerComponent = ({ label, value, onChange, minSelectableDate }) => {
   const dateInputRef = useRef(null);
 
   const handleInputChange = (date) => {
@@ -53,9 +53,7 @@ const DatePickerComponent = ({ label, value, onChange }) => {
     onChange(`${year}-${month}-${day}`);
   };
 
-  const preventTextInput = (e) => {
-    e.preventDefault();
-  };
+  const preventTextInput = (e) => e.preventDefault();
 
   const selectedDate = value
     ? (() => {
@@ -64,17 +62,25 @@ const DatePickerComponent = ({ label, value, onChange }) => {
       })()
     : null;
 
+  // ✅ Normalize the minSelectableDate (avoid timezone issues)
+  const minDate =
+    minSelectableDate instanceof Date
+      ? new Date(
+          minSelectableDate.getFullYear(),
+          minSelectableDate.getMonth(),
+          minSelectableDate.getDate()
+        )
+      : new Date();
+
   return (
     <div className="relative">
       <style>{customStyles}</style>
-     
-      <div
-        className="relative w-full flex items-center border rounded-lg transition-colors border-gray-300 hover:border-[#043677]"
-      >
+
+      <div className="relative w-full flex items-center border rounded-lg transition-colors border-gray-300 hover:border-[#043677]">
         <DatePicker
           selected={selectedDate}
           onChange={handleInputChange}
-          minDate={new Date()}
+          minDate={minDate} // ✅ dynamically set the earliest allowed date
           className="w-full px-4 py-3 rounded-lg cursor-pointer bg-[#FBFBFB] text-gray-900 caret-transparent focus:border-[#043677] focus:ring-2 focus:ring-[#043677]"
           ref={dateInputRef}
           dateFormat="MM/dd/yyyy"
@@ -82,10 +88,14 @@ const DatePickerComponent = ({ label, value, onChange }) => {
           preventOpenOnFocus={true}
           onKeyDown={preventTextInput}
         />
-        <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+        <Calendar
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+          size={20}
+        />
       </div>
     </div>
   );
 };
+
 
 export default DatePickerComponent;

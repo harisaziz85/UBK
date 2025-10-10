@@ -500,6 +500,7 @@ const handleSelectVehicle = (e) => {
                   value={inspectionData.date}
                   onChange={(e) => setInspectionData({...inspectionData, date: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   min={new Date().toISOString().split("T")[0]} 
                 />
               </div>
               <div>
@@ -812,9 +813,13 @@ const handleSelectVehicle = (e) => {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <button className=" cursor-pointer px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+                      <button
+              onClick={() => window.history.back()}
+              className="cursor-pointer px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+            >
               Cancel
             </button>
+
             <button 
               className=" cursor-pointer px-6 py-3 bg-[#043677] text-white rounded-lg font-medium hover:bg-[#043677] disabled:opacity-50"
               disabled={loading}

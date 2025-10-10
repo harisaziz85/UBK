@@ -229,61 +229,85 @@ const ConsentForm = () => {
 
 const generateAndDownloadPDF = async (submitData, type) => {
   try {
-    console.log("Starting PDF generation with data:", submitData);
-    
-    // ✅ Prepare PDF data
+    console.log("🚀 Starting PDF generation...");
+
+    // Prepare data
     setPdfData(submitData);
     setShowPdf(true);
 
-    // ✅ Wait for React to render the PDF component
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 1s is usually enough
+    // ✅ Wait for React to render + fonts load + images settle
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await document.fonts.ready;
 
     const element = pdfRef.current;
     if (!element) {
-      console.error("PDF container not found");
+      console.error("❌ PDF container not found");
       toast.error("PDF container not found");
       return;
     }
 
-    console.log("PDF element found:", element.innerHTML.substring(0, 200));
-    console.log("Generating PDF...");
+    console.log("✅ PDF content ready. Capturing...");
 
-    // ✅ dom-to-image-more options to handle Google Fonts
     const options = {
-      bgcolor: '#ffffff',
-      quality: 0.95,
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-      filter: (node) => node.tagName !== 'LINK', // skip external CSS (Google Fonts)
+      quality: 0.98,
+      bgcolor: "#ffffff",
+      useCORS: true,
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      filter: (node) => node.tagName !== "LINK",
       style: {
-        fontFamily: "'Roboto', sans-serif", // force Roboto
-      }
+        fontFamily: "'Roboto', sans-serif",
+        transform: "scale(1)",
+        transformOrigin: "top left",
+      },
     };
 
-    // ✅ Generate PNG from element
+    // ✅ Convert element → PNG (handles Tailwind + custom fonts)
     const imgData = await domtoimage.toPng(element, options);
 
-    // ✅ Create PDF
-    const pdf = new jsPDF('p', 'in', 'letter');
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = 7.5; // inches
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    const margin = 0.5;
-    
-    pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
+    // ✅ Generate high-resolution PDF
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "in",
+      format: "letter",
+      compress: true,
+    });
 
-    // ✅ Save PDF
-    pdf.save(`${type === "tow" ? "Consent_to_Tow" : "Consent_to_Storage"}.pdf`);
-    
-    console.log("PDF generated successfully");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = 8.0;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0.25, 0.25, pdfWidth, pdfHeight, "", "FAST");
+
+    const fileName =
+      type === "tow"
+        ? "Consent_to_Tow_Form.pdf"
+        : "Consent_to_Storage_Form.pdf";
+
+    pdf.save(fileName);
+
+    console.log("✅ PDF saved successfully");
     toast.success("PDF downloaded successfully!");
   } catch (error) {
-    console.error("PDF generation error:", error);
+    console.error("❌ PDF generation failed:", error);
     toast.error(`Failed to generate PDF: ${error.message}`);
   } finally {
     setShowPdf(false);
   }
 };
+
+
+useEffect(() => {
+  if (
+    sharedData.startDate &&
+    towSpecific.endDate &&
+    new Date(sharedData.startDate) > new Date(towSpecific.endDate)
+  ) {
+    handleTowSpecificInputChange('endDate', '');
+  }
+}, [sharedData.startDate]);
+
+
 
 
   const handleSubmit = async (type) => {
@@ -803,15 +827,25 @@ const generateAndDownloadPDF = async (submitData, type) => {
       />
     </div>
 
-    <div>
-      <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-        End Date <span className="text-red-500">*</span>
-      </label>
-      <DatePickerComponent
-        value={towSpecific.endDate}
-        onChange={(value) => handleTowSpecificInputChange('endDate', value)}
-      />
-    </div>
+<div>
+  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+    End Date <span className="text-red-500">*</span>
+  </label>
+  <DatePickerComponent
+  value={towSpecific.endDate}
+  onChange={(value) => handleTowSpecificInputChange('endDate', value)}
+  minSelectableDate={
+    sharedData.startDate
+      ? (() => {
+          const [y, m, d] = sharedData.startDate.split('-').map(Number);
+          return new Date(y, m - 1, d); // ✅ Only allow end date >= start date
+        })()
+      : new Date()
+  }
+/>
+
+</div>
+
 
     <div>
       <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
@@ -977,16 +1011,32 @@ const generateAndDownloadPDF = async (submitData, type) => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
                   />
                 </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Email</label>
-                  <input 
-                    type="email" 
-                    value={sharedData.consentEmail} 
-                    onChange={(e) => handleSharedInputChange('consentEmail', e.target.value)} 
-                    placeholder="e.g., name@example.com" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+               <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={sharedData.consentEmail}
+                    onChange={(e) => handleSharedInputChange('consentEmail', e.target.value)}
+                    placeholder="e.g., name@example.com"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                      sharedData.consentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedData.consentEmail)
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-[#043677]'
+                    }`}
+                    required
                   />
-                </div>
+
+  {/* Show validation message if invalid */}
+            {sharedData.consentEmail &&
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedData.consentEmail) && (
+                <p className="text-red-500 text-sm mt-1">
+                  Please enter a valid email address.
+                </p>
+              )}
+          </div>
+
               </div>
 
               {/* Police Directed */}
@@ -1320,25 +1370,33 @@ const generateAndDownloadPDF = async (submitData, type) => {
         )}
 
         {/* Hidden PDF Generator - Updated styles for better rendering */}
-        {showPdf && (
-          <div 
-            ref={pdfRef} 
-            style={{ 
-              position: 'fixed', 
-              left: '-9999px', 
-              top: '0', 
-              width: '7.5in', 
-              minHeight: '10in', 
-              visibility: 'hidden', 
-              backgroundColor: 'white',
-              padding: '0.5in',
-              overflow: 'hidden',
-              zIndex: -1
-            }}
-          >
-            {formType === 'storage' ? <StoragePdf data={pdfData} /> : <TowPdf data={pdfData} />}
-          </div>
-        )}
+  {showPdf && (
+  <div
+    ref={pdfRef}
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "8.5in",
+      minHeight: "11in",
+      backgroundColor: "#ffffff",
+      padding: "0.5in",
+      overflow: "hidden",
+      opacity: 0, // Invisible but still rendered (important)
+      pointerEvents: "none",
+      zIndex: -1,
+      transform: "scale(1)",
+      transformOrigin: "top left",
+    }}
+  >
+    {formType === "storage" ? (
+      <StoragePdf data={pdfData} />
+    ) : (
+      <TowPdf data={pdfData} />
+    )}
+  </div>
+)}
+
       </div>
     </div>
     
