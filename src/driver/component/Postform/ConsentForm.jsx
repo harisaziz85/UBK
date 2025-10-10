@@ -9,47 +9,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 import StoragePdf from './pdf/Storagepgf';
+import TowPdf from './pdf/Towpdf'
 import SignatureCanvas from 'react-signature-canvas';
 import { toPng } from "html-to-image";
 import * as htmlToImage from 'html-to-image';
 
-// Updated TowPdf component - Basic structure to ensure content renders (expand with full layout similar to StoragePdf)
-const TowPdf = ({ data }) => {
-  return (
-    <div style={{ 
-      fontFamily: 'Arial, sans-serif', 
-      padding: '0.5in', 
-      width: '7.5in', 
-      backgroundColor: 'white',
-      color: 'black'
-    }}>
-      <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>Consent to Tow</h1>
-      <div style={{ lineHeight: '1.4' }}>
-        <p><strong>Tow Driver Name:</strong> {data.driverName || ''}</p>
-        <p><strong>Truck Number:</strong> {data.truckNumber || ''}</p>
-        <p><strong>Consent Person Name:</strong> {data.consentPersonName || ''}</p>
-        <p><strong>Towed From:</strong> {data.towedFrom || ''}</p>
-        <p><strong>Towed To:</strong> {data.towedTo || ''}</p>
-        <p><strong>Start Date/Time:</strong> {data.startDateTime || ''}</p>
-        <p><strong>Consent Date/Time:</strong> {data.consentDateTime || ''}</p>
-        <p><strong>Consent Method:</strong> {data.consentMethod || ''}</p>
-        <p><strong>Police Directed:</strong> {data.policeDirected ? 'Yes' : 'No'}</p>
-        {data.officerNameBadge && <p><strong>Officer Name & Badge:</strong> {data.officerNameBadge}</p>}
-        <p><strong>Vehicle Year:</strong> {data.year || ''}</p>
-        <p><strong>Make:</strong> {data.make || ''}</p>
-        <p><strong>Model:</strong> {data.model || ''}</p>
-        <p><strong>Color:</strong> {data.color || ''}</p>
-        <p><strong>Plate:</strong> {data.plate || ''}</p>
-        <p><strong>VIN:</strong> {data.vin || ''}</p>
-        <p><strong>Odometer:</strong> {data.currentMileage || ''}</p>
-        {data.serviceDescription && <p><strong>Service Description:</strong> {data.serviceDescription}</p>}
-        <p><strong>Signature:</strong> {data.consentSignature ? <img src={data.consentSignature} alt="Signature" style={{maxWidth: '200px', maxHeight: '100px'}} /> : ''}</p>
-        {/* Add more fields as needed; remove JSON for production */}
-        {/* <pre style={{ whiteSpace: 'pre-wrap', fontSize: '10px' }}>{JSON.stringify(data, null, 2)}</pre> */}
-      </div>
-    </div>
-  );
-};
+
 
 // Main Consent Form Component
 const ConsentForm = () => {
