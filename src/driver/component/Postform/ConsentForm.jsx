@@ -198,43 +198,44 @@ const generateAndDownloadPDF = async (submitData, type) => {
   try {
     console.log("🚀 Starting PDF generation...");
 
-    // Step 1: Prepare and render hidden PDF section
+    // Step 1: Prepare PDF data and show hidden component
     setPdfData(submitData);
     setShowPdf(true);
 
-    // Step 2: Wait for React render + layout paint
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Step 2: Wait for React to render and fonts to load
+    await new Promise((resolve) => setTimeout(resolve, 1200));
 
     const element = pdfRef.current;
     if (!element) {
-      console.error("❌ PDF container not found");
       toast.error("PDF container not found");
       return;
     }
 
-    // Step 3: Ensure element is visible for capture (off-screen, not display:none)
+    // Step 3: Move element off-screen but visible for rendering
     element.style.position = "absolute";
     element.style.left = "0px";
-    element.style.display = "block";
+    element.style.top = "0";
+    element.style.opacity = "1";
     element.style.visibility = "visible";
+    element.style.display = "block";
+    element.style.zIndex = "-1";
+    element.style.backgroundColor = "#ffffff";
+    element.style.width = "1400px"; // Match your actual PDF layout width
 
-    console.log("✅ PDF content ready. Capturing...");
+    console.log("✅ Capturing PDF element...");
 
-    // Step 4: Capture element → PNG
+    // Step 4: Capture the element to PNG
     const dataUrl = await htmlToImage.toPng(element, {
       cacheBust: true,
       useCORS: true,
-      skipFonts: true,
+      skipFonts: false,
       pixelRatio: 2,
-      style: {
-        fontFamily: "sans-serif",
-        backgroundColor: "#ffffff",
-      },
+      backgroundColor: "#ffffff",
       filter: (node) =>
         !(node.tagName === "LINK" || node.tagName === "STYLE"),
     });
 
-    // Step 5: Generate and save PDF
+    // Step 5: Generate and download PDF
     const pdf = new jsPDF("p", "mm", "a4");
     const imgProps = pdf.getImageProperties(dataUrl);
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -247,16 +248,18 @@ const generateAndDownloadPDF = async (submitData, type) => {
         : "Consent_to_Storage_Form.pdf";
     pdf.save(fileName);
 
-    console.log("✅ PDF saved successfully");
-    toast.success("PDF downloaded successfully!");
+    toast.success("✅ PDF downloaded successfully!");
   } catch (error) {
     console.error("❌ PDF generation failed:", error);
     toast.error(`Failed to generate PDF: ${error.message}`);
   } finally {
-    // Step 6: Hide PDF section again
+    // Step 6: Hide again
     setShowPdf(false);
   }
 };
+
+
+
 
 
 
@@ -1338,14 +1341,12 @@ useEffect(() => {
     ref={pdfRef}
     style={{
       position: "absolute",
-      left: "0px", // keep it off-screen
+      left: "0px",
       top: 0,
       backgroundColor: "#ffffff",
-      width: "1400px", // fixed width for consistent capture
-      minHeight: "5000px",
-      padding: "0px",
-      fontFamily: "sans-serif", // use default font only
-      visibility: "visible",
+      width: "14000px", // match your PDF layout width
+      height:"2000",
+      padding: "20px",
     }}
   >
     {formType === "storage" ? (
