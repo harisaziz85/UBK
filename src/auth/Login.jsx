@@ -40,9 +40,8 @@ const Login = () => {
         apiData
       );
       
-      const { token, user } = response.data;  // Response structure کے مطابق
+      const { token, user } = response.data; 
       
-      // Token کو localStorage میں save کریں
       localStorage.setItem('authToken', token);
 
       toast.success('Login successful! Redirecting...', {
@@ -56,7 +55,6 @@ const Login = () => {
         password: '',
       });
 
-      // Role-based redirect (2 seconds delay کے ساتھ)
       setTimeout(() => {
         if (user.role === 'admin') {
           navigate('/admin/dashboard');
@@ -68,7 +66,7 @@ const Login = () => {
       }, 2000);
 
     } catch (err) {
-      console.error('Login error:', err);  // Debug کے لیے
+      console.error('Login error:', err);  
       toast.error(err.response?.data?.message || 'An error occurred during login.', {
         position: 'top-right',
         autoClose: 3000,
@@ -102,7 +100,7 @@ const Login = () => {
               onClick={() => setActiveTab("email")}
               className={`flex items-center gap-2 px-6 py-2 w-[50%] justify-center content-center transition-all duration-300 ${
                 activeTab === "email"
-                  ? "bg-[#043677] text-white"
+                  ? "bg-[#043677] text-white rounded-[8px]"
                   : "bg-[#00000000] text-[#333]"
               }`}
             >
@@ -113,7 +111,7 @@ const Login = () => {
               onClick={() => setActiveTab("qr")}
               className={`flex items-center gap-2 py-2 w-[50%] justify-center transition-all duration-300 ${
                 activeTab === "qr"
-                  ? "bg-[#043677] text-white"
+                  ? "bg-[#043677] text-white rounded-[8px]"
                   : "bg-[#00000000] text-[#333]"
               }`}
             >
@@ -171,10 +169,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <p className="text-[#043677] robotomedium text-right cursor-pointer">
-                Forgot Password?
-              </p>
-
+          
               <button 
                 type="submit"
                 className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff] flex items-center justify-center cursor-pointer disabled:opacity-50"
