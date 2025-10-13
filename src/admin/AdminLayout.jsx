@@ -191,7 +191,7 @@ const AdminLayout = () => {
             <FaUsers className="w-5 h-5" /> Drivers
           </NavLink>
           <NavLink
-            to="/admin/start-inspection"
+            to="/admin/inspectionhistory"
             className={({ isActive }) =>
               `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${
                 isActive ? "bg-white text-black rounded" : ""
@@ -272,35 +272,35 @@ const AdminLayout = () => {
                 />
               )}
               {isProfileModalOpen && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-md shadow-lg z-10 p-2">
-                  <div className="flex items-center gap-3 p-2 border-b">
+                <div className="absolute top-full right-0 mt-2 w-[259px] bg-white border border-gray-300 rounded-md shadow-lg z-10 p-2">
+                  <div className="flex items-center gap-3 p-2">
                     {userProfile.profileImage ? (
                       <img
                         src={userProfile.profileImage}
                         alt="User Profile"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-[40px] h-[40px] rounded-full object-cover"
                       />
                     ) : (
                       <LiaUserCircleSolid className="text-gray-500 text-2xl" />
                     )}
-                    <span className="font-medium">{userProfile.name}</span>
+                    <span className="robotoregular text-[16px]">{userProfile.name}</span>
                   </div>
                   <NavLink
                     to="/admin/profile"
-                    className="flex items-center justify-between robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    className="flex items-center justify-between robotoregular text-[16px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
                     onClick={() => setIsProfileModalOpen(false)}
                   >
                     User Profile
-                    <LuUserRound className="" />
+                    <LuUserRound className="text-[20px]" />
                   </NavLink>
                   <hr className="text-[#33333333]" />
                   <NavLink
                     to="/admin/update-password"
-                    className="flex items-center justify-between robotoregular text-[14px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
+                    className="flex items-center justify-between robotoregular text-[16px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
                     onClick={() => setIsProfileModalOpen(false)}
                   >
                     Password
-                    <LuKeyRound className="" />
+                    <LuKeyRound className="text-[20px]" />
                   </NavLink>
                 </div>
               )}

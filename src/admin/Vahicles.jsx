@@ -2,19 +2,19 @@ import React, { useEffect, useState } from 'react';
 import Vehicletopbar from './components/Vehicletopbar';
 import { FaRegClock, FaRegCommentDots } from "react-icons/fa";
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Added for navigation
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const token = localStorage.getItem('authToken'); // Get saved token
+        const token = localStorage.getItem('authToken');
 
         if (!token) {
           toast.error("No token found — please log in again.", {
@@ -36,10 +36,6 @@ const Vehicles = () => {
 
         if (response.data.success && response.data.vehicles) {
           setVehicles(response.data.vehicles);
-          toast.success("Vehicles fetched successfully!", {
-            position: "top-right",
-            autoClose: 2000,
-          });
         } else {
           console.warn("Unexpected API response:", response.data);
           toast.warn("Unexpected API response.", {
@@ -61,9 +57,42 @@ const Vehicles = () => {
     fetchVehicles();
   }, []);
 
-  // Handle vehicle click to navigate to Vehicleprofile
   const handleVehicleClick = (vehicleId) => {
     navigate(`/admin/vehicleprofile/${vehicleId}`);
+  };
+
+  // Shimmer effect component for loading state
+  const Shimmer = () => {
+    return (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-10 items-center py-3 px-4 border-b border-gray-200 animate-pulse"
+          >
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <div className="w-10 h-10 bg-gray-200 rounded-md"></div>
+              <div className="w-24 h-4 bg-gray-200 rounded"></div>
+            </div>
+            <div className="w-20 h-4 bg-gray-200 rounded"></div>
+            <div className="w-12 h-4 bg-gray-200 rounded"></div>
+            <div className="w-16 h-4 bg-gray-200 rounded"></div>
+            <div className="w-16 h-4 bg-gray-200 rounded"></div>
+            <div className="w-20 h-4 bg-gray-200 rounded"></div>
+            <div className="w-16 h-4 bg-gray-200 rounded"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
+              <div className="w-24 h-4 bg-gray-200 rounded"></div>
+            </div>
+            <div className="col-span-2 flex justify-center space-x-4">
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+              <div className="w-4 h-4 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -89,12 +118,8 @@ const Vehicles = () => {
           <span className="col-span-2 text-center">Actions</span>
         </div>
 
-        {/* Loader */}
-        {loading && (
-          <div className="text-center py-6 text-gray-500 text-[14px]">
-            Loading vehicles...
-          </div>
-        )}
+        {/* Shimmer Loader */}
+        {loading && <Shimmer />}
 
         {/* Table Rows */}
         {!loading && (
@@ -104,9 +129,8 @@ const Vehicles = () => {
                 <div
                   key={v._id}
                   className="grid grid-cols-10 items-center text-[14px] py-3 px-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleVehicleClick(v._id)} // Navigate on click
+                  onClick={() => handleVehicleClick(v._id)}
                 >
-                  {/* Name + Image */}
                   <div className="flex items-center space-x-2">
                     <input type="checkbox" className="w-4 h-4 accent-blue-600" />
                     <img
@@ -119,7 +143,6 @@ const Vehicles = () => {
                     />
                     <span className="font-medium">{v.name || "—"}</span>
                   </div>
-
                   <span>{v.licensePlate || "—"}</span>
                   <span>{v.year || "—"}</span>
                   <span>{v.make || "—"}</span>
@@ -132,8 +155,6 @@ const Vehicles = () => {
                       : "—"}
                   </span>
                   <span>{v.color || "—"}</span>
-
-                  {/* Status (Assigned / Unassigned) */}
                   <div className="flex items-center space-x-2">
                     {v.driverId || (v.assignment && v.assignment.driverId) ? (
                       <span className="flex items-center space-x-1">
@@ -147,8 +168,6 @@ const Vehicles = () => {
                       </span>
                     )}
                   </div>
-
-                  {/* Actions */}
                   <div className="col-span-2 flex justify-center space-x-4 text-gray-600">
                     <FaRegClock className="cursor-pointer hover:text-blue-500" size={16} />
                     <FaRegCommentDots className="cursor-pointer hover:text-blue-500" size={16} />

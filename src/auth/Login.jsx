@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { FiMail, FiLock, FiLoader } from "react-icons/fi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { LuScanLine } from "react-icons/lu";
-import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
-
-
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("email");
@@ -19,7 +17,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const baseurl = 'https://ubktowingbackend-production.up.railway.app/api'
+  const baseurl = "https://ubktowingbackend-production.up.railway.app/api";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,43 +34,38 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        `${baseurl}/common/auth/admin/login`,  // Proxy کے ذریعے full URL
+        `${baseurl}/common/auth/admin/login`,
         apiData
       );
-      
-      const { token, user } = response.data;  // Response structure کے مطابق
-      
-      // Token کو localStorage میں save کریں
-      localStorage.setItem('authToken', token);
 
-      toast.success('Login successful! Redirecting...', {
-        position: 'top-right',
+      const { token, user } = response.data;
+      localStorage.setItem("authToken", token);
+
+      toast.success("Login successful! Redirecting...", {
+        position: "top-right",
         autoClose: 2000,
       });
 
-      // Form reset
-      setFormData({
-        email: '',
-        password: '',
-      });
+      setFormData({ email: "", password: "" });
 
-      // Role-based redirect (2 seconds delay کے ساتھ)
       setTimeout(() => {
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (user.role === 'driver') {
-          navigate('/driverdashboard');
+        if (user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (user.role === "driver") {
+          navigate("/driverdashboard");
         } else {
-          toast.error('Unknown role. Please contact admin.');
+          toast.error("Unknown role. Please contact admin.");
         }
       }, 2000);
-
     } catch (err) {
-      console.error('Login error:', err);  // Debug کے لیے
-      toast.error(err.response?.data?.message || 'An error occurred during login.', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
+      console.error("Login error:", err);
+      toast.error(
+        err.response?.data?.message || "An error occurred during login.",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +77,7 @@ const Login = () => {
       <div className="text-center">
         <p className="text-[32px] robotosemibold">Welcome Back</p>
         <p className="text-[24px] robotoregular text-[#333333CC] pt-[16px]">
-       Access and manage your vehicle, anywhere.
+          Access and manage your vehicle, anywhere.
         </p>
       </div>
 
@@ -100,10 +93,10 @@ const Login = () => {
           <div className="flex justify-center mt-[24px] mb-[32px]">
             <button
               onClick={() => setActiveTab("email")}
-              className={`flex items-center gap-2 px-6 py-2 w-[50%] justify-center content-center transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-2 w-[50%] justify-center transition-all duration-300 ${
                 activeTab === "email"
-                  ? "bg-[#043677] text-white"
-                  : "bg-[#00000000] text-[#333]"
+                  ? "bg-[#043677] text-white rounded-[8px]"
+                  : "bg-transparent text-[#333]"
               }`}
             >
               <FiMail /> Email
@@ -113,11 +106,11 @@ const Login = () => {
               onClick={() => setActiveTab("qr")}
               className={`flex items-center gap-2 py-2 w-[50%] justify-center transition-all duration-300 ${
                 activeTab === "qr"
-                  ? "bg-[#043677] text-white"
-                  : "bg-[#00000000] text-[#333]"
+                  ? "bg-[#043677] text-white rounded-[8px]"
+                  : "bg-transparent text-[#333]"
               }`}
             >
-              <span className="text-lg"><LuScanLine /></span> QR Code
+              <LuScanLine className="text-lg" /> QR Code
             </button>
           </div>
 
@@ -125,9 +118,7 @@ const Login = () => {
           {activeTab === "email" && (
             <form onSubmit={handleSubmit}>
               <div className="w-full">
-                <p className="robotomedium text-[#333333CC]">
-                  Email
-                </p>
+                <p className="robotomedium text-[#333333CC]">Email</p>
                 <div className="flex items-center h-[47px] bg-[#FAFAFB] px-[16px] mt-[8px] rounded">
                   <FiMail className="text-[20px]" />
                   <input
@@ -169,15 +160,31 @@ const Login = () => {
                     )}
                   </button>
                 </div>
+
+                {/* 👇 Added Forgot Password + Sign Up Links */}
+                <div className="flex justify-between items-center mt-3 text-[14px]">
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/signup")}
+                    className="text-[#043677] cursor-pointer hover:underline"
+                  >
+                    Don’t have an account? Sign up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/forgot-password")}
+                    className="text-[#043677] cursor-pointer hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                  
+                </div>
               </div>
 
-              <p className="text-[#043677] robotomedium text-right cursor-pointer">
-                Forgot Password?
-              </p>
-
-              <button 
+              <button
                 type="submit"
-                className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-[#ffffff] flex items-center justify-center cursor-pointer disabled:opacity-50"
+                className="bg-[#043677] mt-[32px] w-full h-[47px] robotosemibold rounded-[8px] text-white flex items-center justify-center cursor-pointer disabled:opacity-50"
                 disabled={isLoading}
               >
                 {isLoading && (
@@ -188,11 +195,11 @@ const Login = () => {
             </form>
           )}
 
-          {/* QR Code */}
+          {/* QR Code Tab */}
           {activeTab === "qr" && (
             <div className="flex flex-col items-center">
               <img
-                src="/qr.png" 
+                src="/qr.png"
                 alt="QR Code"
                 className="w-40 h-40 my-6"
               />

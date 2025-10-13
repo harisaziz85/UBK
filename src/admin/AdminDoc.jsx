@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { IoDocumentSharp } from "react-icons/io5";
+import { FaFilePdf } from "react-icons/fa6";
+import Doctopbar from "./components/Doctopbar";
 
 const Shimmer = () => {
   return (
@@ -46,6 +47,7 @@ const AdminDoc = () => {
   const [formData, setFormData] = useState({
     title: "",
     expiryDate: "",
+    category: "",
     file: null,
   });
   const limit = 10;
@@ -119,6 +121,7 @@ const AdminDoc = () => {
       const form = new FormData();
       form.append("title", formData.title);
       form.append("expiryDate", formData.expiryDate);
+      form.append("category", formData.category);
       form.append("file", formData.file);
 
       await axios.post(
@@ -133,7 +136,7 @@ const AdminDoc = () => {
       );
 
       setShowUploadModal(false);
-      setFormData({ title: "", expiryDate: "", file: null });
+      setFormData({ title: "", expiryDate: "", category: "", file: null });
       fetchDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
@@ -148,6 +151,7 @@ const AdminDoc = () => {
       const form = new FormData();
       form.append("title", formData.title);
       form.append("expiryDate", formData.expiryDate);
+      form.append("category", formData.category);
       if (formData.file) form.append("file", formData.file);
 
       await axios.put(
@@ -163,7 +167,7 @@ const AdminDoc = () => {
 
       setShowUpdateModal(false);
       setSelectedDoc(null);
-      setFormData({ title: "", expiryDate: "", file: null });
+      setFormData({ title: "", expiryDate: "", category: "", file: null });
       fetchDocuments();
     } catch (error) {
       console.error("Update failed:", error);
@@ -175,6 +179,7 @@ const AdminDoc = () => {
     setFormData({
       title: doc.title,
       expiryDate: doc.expiryDate ? doc.expiryDate.split("T")[0] : "",
+      category: doc.category || "",
       file: null,
     });
     setShowUpdateModal(true);
@@ -192,11 +197,11 @@ const AdminDoc = () => {
             onClick={() => setShowUploadModal(true)}
             className="bg-[#043677] text-white text-[16px] flex gap-2 items-center justify-center robotomedium px-4 py-2 h-[46px] rounded-lg hover:bg-[#032b5c] transition"
           >
-            <IoDocumentSharp className="text-[20px]" /> Upload Document
+            <FaFilePdf className="text-[20px] text-[#DC2626]" /> Upload Document
           </button>
         </div>
       </div>
-
+      <Doctopbar />
       {/* Table Section */}
       <div className="overflow-x-auto bg-[white] border border-gray-200">
         <table className="w-full text-sm text-left text-gray-600">
@@ -221,7 +226,7 @@ const AdminDoc = () => {
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
                   <td className="px-5 py-4 flex items-center space-x-2">
-                    <IoDocumentSharp className="w-10 h-10 text-gray-500" />
+                    <FaFilePdf className="w-10 h-10 text-[#DC2626]" />
                     <span className="robotomedium text-[14px] text-[#333333E5]">
                       {doc.title}
                     </span>
@@ -252,30 +257,32 @@ const AdminDoc = () => {
 
       {/* Pagination */}
       {!loading && totalPages > 1 && (
-        <div className="flex justify-center items-center mt-6 space-x-3">
-          <button
-            className={`px-3 py-1 text-sm rounded border ${
-              page === 1 ? "bg-gray-200 cursor-not-allowed" : "bg-white hover:bg-gray-100"
-            }`}
-            onClick={() => page > 1 && setPage(page - 1)}
-            disabled={page === 1}
-          >
-            Prev
-          </button>
-          <span className="text-sm text-gray-700">
+        <div className="flex justify-end items-center mt-6 space-x-3 text-sm text-gray-600">
+          <span>
             Page {page} of {totalPages}
           </span>
-          <button
-            className={`px-3 py-1 text-sm rounded border ${
-              page === totalPages
-                ? "bg-gray-200 cursor-not-allowed"
-                : "bg-white hover:bg-gray-100"
-            }`}
-            onClick={() => page < totalPages && setPage(page + 1)}
-            disabled={page === totalPages}
-          >
-            Next
-          </button>
+          <div className="flex space-x-2">
+            <button
+              className={`px-3 py-1 rounded border ${
+                page === 1 ? "bg-gray-200 cursor-not-allowed" : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => page > 1 && setPage(page - 1)}
+              disabled={page === 1}
+            >
+              Prev
+            </button>
+            <button
+              className={`px-3 py-1 rounded border ${
+                page === totalPages
+                  ? "bg-gray-200 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => page < totalPages && setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 
@@ -308,10 +315,21 @@ const AdminDoc = () => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
                 />
               </div>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
+              >
+                <option value="">Select Category</option>
+                <option value="UBK Towing">UBK Towing</option>
+                <option value="CAA">CAA</option>
+              </select>
               <input
                 type="file"
                 name="file"
-                accept="*/*"
+                accept="application/pdf"
                 onChange={handleInputChange}
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
@@ -365,10 +383,21 @@ const AdminDoc = () => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
                 />
               </div>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
+              >
+                <option value="">Select Category</option>
+                <option value="UBK Towing">UBK Towing</option>
+                <option value="CAA">CAA</option>
+              </select>
               <input
                 type="file"
                 name="file"
-                accept="*/*"
+                accept="application/pdf"
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
               />

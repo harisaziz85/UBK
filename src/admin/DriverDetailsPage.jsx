@@ -36,23 +36,23 @@ const Shimmer = ({ type }) => {
         <table className="min-w-full border border-gray-200">
           <thead className="bg-[#04367714] text-black text-sm robotomedium">
             <tr>
-              <th className="px-3 py-2 text-center"><div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto" /></th>
-              <th className="px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
-              <th className="px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
-              <th className="px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
-              <th className="px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
-              <th className="px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
+              <th className="w-[5%] px-3 py-2 text-center"><div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto" /></th>
+              <th className="w-[20%] px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
+              <th className="w-[15%] px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
+              <th className="w-[20%] px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
+              <th className="w-[20%] px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
+              <th className="w-[20%] px-3 py-2 text-left"><div className="w-16 h-4 bg-gray-200 rounded animate-pulse" /></th>
             </tr>
           </thead>
           <tbody>
             {[...Array(5)].map((_, index) => (
-              <tr key={index} className="border-b border-[#E6E6E6]">
-                <td className="px-3 py-2 text-center"><div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto" /></td>
-                <td className="px-3 py-2 text-left"><div className="w-32 h-4 bg-gray-200 rounded animate-pulse" /></td>
-                <td className="px-3 py-2 text-left"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /></td>
-                <td className="px-3 py-2 text-left"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /></td>
-                <td className="px-3 py-2 text-left"><div className="w-28 h-4 bg-gray-200 rounded animate-pulse" /></td>
-                <td className="px-3 py-2 text-left"><div className="w-20 h-4 bg-gray-200 rounded animate-pulse" /></td>
+              <tr key={index} className="border-b border-[#E6E6E6] h-[50px]">
+                <td className="w-[5%] px-3 pt-2 pb-[10px] text-center"><div className="w-4 h-4 bg-gray-200 rounded animate-pulse mx-auto" /></td>
+                <td className="w-[20%] px-3 pt-2 pb-[10px] text-left"><div className="w-32 h-4 bg-gray-200 rounded animate-pulse" /></td>
+                <td className="w-[15%] px-3 pt-2 pb-[10px] text-left"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /></td>
+                <td className="w-[20%] px-3 pt-2 pb-[10px] text-left"><div className="w-24 h-4 bg-gray-200 rounded animate-pulse" /></td>
+                <td className="w-[20%] px-3 pt-2 pb-[10px] text-left"><div className="w-28 h-4 bg-gray-200 rounded animate-pulse" /></td>
+                <td className="w-[20%] px-3 pt-2 pb-[10px] text-left"><div className="w-20 h-4 bg-gray-200 rounded animate-pulse" /></td>
               </tr>
             ))}
           </tbody>
@@ -79,6 +79,10 @@ const DriverDetailsPage = () => {
   const [inspections, setInspections] = useState([]);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [inspectionsLoaded, setInspectionsLoaded] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalInspections, setTotalInspections] = useState(0);
+  const limit = 10;
 
   // Fetch driver details and vehicles
   useEffect(() => {
@@ -198,7 +202,8 @@ const DriverDetailsPage = () => {
 
         const data = await response.json();
         const mappedComments = (data.comments || []).map((comment) => ({
-          user: comment.user || "Unknown User",
+          user: comment.senderId?.name || "Unknown User",
+          userImage: comment.senderId?.profileImage || "https://via.placeholder.com/30",
           time: comment.createdAt
             ? new Date(comment.createdAt).toLocaleTimeString("en-US", {
                 hour: "2-digit",
@@ -223,12 +228,12 @@ const DriverDetailsPage = () => {
   // Fetch inspections
   useEffect(() => {
     if (activeTab === "Inspections" && !inspectionsLoaded) {
-      fetchInspections();
+      fetchInspections(currentPage);
       setInspectionsLoaded(true);
     }
-  }, [activeTab, inspectionsLoaded]);
+  }, [activeTab, inspectionsLoaded, currentPage]);
 
-  const fetchInspections = async () => {
+  const fetchInspections = async (page) => {
     setInspectionsLoading(true);
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -242,7 +247,7 @@ const DriverDetailsPage = () => {
 
     try {
       const response = await fetch(
-        `https://ubktowingbackend-production.up.railway.app/api/admin/driver/inspections/${id}?page=1&limit=10&search=`,
+        `https://ubktowingbackend-production.up.railway.app/api/admin/driver/inspections/${id}?page=${page}&limit=${limit}&search=`,
         {
           method: "GET",
           headers: {
@@ -260,6 +265,8 @@ const DriverDetailsPage = () => {
 
       const data = await response.json();
       setInspections(data.inspections || []);
+      setTotalInspections(data.total || 0);
+      setTotalPages(Math.ceil(data.total / limit));
     } catch (err) {
       console.error("Error fetching inspections:", err);
       toast.error(err.message, {
@@ -309,6 +316,7 @@ const DriverDetailsPage = () => {
           ...comments,
           {
             user: "Current User",
+            userImage: "https://via.placeholder.com/30",
             time: new Date().toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
@@ -345,6 +353,25 @@ const DriverDetailsPage = () => {
     } else {
       setSelected(inspections.map((d) => d._id));
     }
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      fetchInspections(newPage);
+      setSelected([]);
+    }
+  };
+
+  // Handle vehicle row click
+  const handleVehicleClick = (vehicleId) => {
+    navigate(`/admin/vehicleprofile/${vehicleId}`);
+  };
+
+  // Handle inspection row click
+  const handleInspectionClick = (inspectionId) => {
+    navigate(`/admin/inspection/${inspectionId}`);
   };
 
   if (loading) {
@@ -416,80 +443,80 @@ const DriverDetailsPage = () => {
                       <p className="text-gray-500 robotoregular">First Name</p>
                       <p className="robotomedium">{driver.name.split(" ")[0] || "N/A"}</p>
                     </div>
-                    <div  className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
+                    <div className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Last Name</p>
                       <p className="robotomedium">{driver.name.split(" ").slice(1).join(" ") || "N/A"}</p>
                     </div>
-                    <div  className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
+                    <div className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Email</p>
                       <p className="robotomedium">{driver.email}</p>
                     </div>
                   </div>
                   <h3 className="text-[22px] mt-6 mb-4 robotosemibold">Contact Information</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Mobile Phone Number</p>
                       <p className="robotomedium">{driver.mobilePhone}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Home Phone Number</p>
                       <p className="robotomedium">{driver.homePhone}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Address</p>
                       <p className="robotomedium">{driver.address}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">City</p>
                       <p className="robotomedium">{driver.city}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">State/Province</p>
                       <p className="robotomedium">{driver.stateProvince}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">ZIP code</p>
                       <p className="robotomedium">{driver.zipCode}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Country</p>
                       <p className="robotomedium">{driver.country}</p>
                     </div>
                   </div>
                   <h3 className="text-[22px] mt-6 mb-4 robotosemibold">Personal Details</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Job Title</p>
                       <p className="robotomedium">{driver.jobTitle}</p>
                     </div>
-                    <div  className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
+                    <div className="flex justify-between pt-[20px] pb-[10px] border-b border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">DOB</p>
                       <p className="robotomedium">{driver.dob}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Employee Number</p>
                       <p className="robotomedium">{driver.employeeNumber}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Start Date</p>
                       <p className="robotomedium">{driver.startDate}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Leave Date</p>
                       <p className="robotomedium">{driver.leaveDate}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">License Number</p>
                       <p className="robotomedium">{driver.licenseNumber}</p>
                     </div>
                   </div>
                   <h3 className="text-[22px] mt-6 mb-4 robotosemibold">Document Access Permissions</h3>
                   <div className="grid grid-cols-1 gap-4">
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">View Vehicle documents</p>
                       <p className="robotomedium">{driver.viewAccess}</p>
                     </div>
-                    <div  className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
+                    <div className="flex justify-between border-b pt-[20px] pb-[10px] border-[#0000004A]">
                       <p className="text-gray-500 robotoregular">Upload Vehicle documents</p>
                       <p className="robotomedium">{driver.uploadAccess}</p>
                     </div>
@@ -508,8 +535,8 @@ const DriverDetailsPage = () => {
                       comments.map((comment, index) => (
                         <div key={index} className="flex items-start">
                           <img
-                            src="https://via.placeholder.com/30"
-                            alt="User"
+                            src={comment.userImage}
+                            alt={comment.user}
                             className="w-8 h-8 rounded-full mr-2"
                           />
                           <div>
@@ -548,24 +575,25 @@ const DriverDetailsPage = () => {
                 <table className="min-w-full border border-gray-200">
                   <thead className="bg-[#04367714] text-black text-sm robotomedium">
                     <tr>
-                      <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-center">License Plate</th>
-                      <th className="px-3 py-2 text-center">Year</th>
-                      <th className="px-3 py-2 text-center">Make</th>
-                      <th className="px-3 py-2 text-center">Model</th>
-                      <th className="px-3 py-2 text-center">Current Meter</th>
-                      <th className="px-3 py-2 text-center">Color</th>
-                      <th className="px-3 py-2 text-center">Status</th>
-                      <th className="px-3 py-2 text-center">Actions</th>
+                      <th className="w-[20%] px-3 py-2 text-left">Name</th>
+                      <th className="w-[10%] px-3 py-2 text-center">License Plate</th>
+                      <th className="w-[10%] px-3 py-2 text-center">Year</th>
+                      <th className="w-[10%] px-3 py-2 text-center">Make</th>
+                      <th className="w-[10%] px-3 py-2 text-center">Model</th>
+                      <th className="w-[15%] px-3 py-2 text-center">Current Meter</th>
+                      <th className="w-[10%] px-3 py-2 text-center">Color</th>
+                      <th className="w-[10%] px-3 py-2 text-center">Status</th>
+                      <th className="w-[15%] px-3 py-2 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="text-gray-800 robotoregular">
                     {assignedVehicles.map((vehicle) => (
                       <tr
                         key={vehicle._id}
-                        className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition"
+                        className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition cursor-pointer h-[50px]"
+                        onClick={() => handleVehicleClick(vehicle._id)}
                       >
-                        <td className="flex items-center gap-3 px-3 py-2">
+                        <td className="w-[20%] flex items-center gap-3 px-3 pt-2 pb-[10px]">
                           <div className="w-[50px] h-[50px] flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                             <img
                               src={vehicle.photo || "https://via.placeholder.com/50"}
@@ -575,13 +603,13 @@ const DriverDetailsPage = () => {
                           </div>
                           <span className="truncate max-w-[150px]">{vehicle.name || "N/A"}</span>
                         </td>
-                        <td className="px-3 py-2 text-center">{vehicle.licensePlate || "N/A"}</td>
-                        <td className="px-3 py-2 text-center">{vehicle.year || "N/A"}</td>
-                        <td className="px-3 py-2 text-center">{vehicle.make || "N/A"}</td>
-                        <td className="px-3 py-2 text-center">{vehicle.model || "N/A"}</td>
-                        <td className="px-3 py-2 text-center">{vehicle.currentMilage ? `${vehicle.currentMilage} Km` : "N/A"}</td>
-                        <td className="px-3 py-2 text-center">{vehicle.color || "N/A"}</td>
-                        <td className="px-3 py-2 text-center">
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">{vehicle.licensePlate || "N/A"}</td>
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">{vehicle.year || "N/A"}</td>
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">{vehicle.make || "N/A"}</td>
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">{vehicle.model || "N/A"}</td>
+                        <td className="w-[15%] px-3 pt-2 pb-[10px] text-center">{vehicle.currentMilage ? `${vehicle.currentMilage} Km` : "N/A"}</td>
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">{vehicle.color || "N/A"}</td>
+                        <td className="w-[10%] px-3 pt-2 pb-[10px] text-center">
                           {vehicle.assignment ? (
                             <span className="text-success">• Assigned</span>
                           ) : (
@@ -589,7 +617,7 @@ const DriverDetailsPage = () => {
                           )}
                         </td>
                         <td
-                          className="flex gap-3 justify-center px-3 py-2"
+                          className="w-[15%] flex gap-3 justify-center px-3 pt-2 pb-[10px]"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Phone className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
@@ -611,70 +639,97 @@ const DriverDetailsPage = () => {
               ) : inspections.length === 0 ? (
                 <p className="text-gray-500 robotoregular">No inspections found.</p>
               ) : (
-                <table className="min-w-full border border-gray-200">
-                  <thead className="bg-[#04367714] text-black text-sm robotomedium">
-                    <tr>
-                      <th className="px-3 py-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selected.length === inspections.length && inspections.length > 0}
-                          onChange={handleSelectAll}
-                        />
-                      </th>
-                      <th className="px-3 py-2 text-left">Created At</th>
-                      <th className="px-3 py-2 text-left">ID</th>
-                      <th className="px-3 py-2 text-left">Vehicle</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-800 robotoregular">
-                    {inspections.map((inspection) => (
-                      <tr
-                        key={inspection._id}
-                        className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition"
-                      >
-                        <td className="px-3 py-2 text-center">
+                <>
+                  <table className="min-w-full border border-gray-200">
+                    <thead className="bg-[#04367714] text-black text-sm robotomedium">
+                      <tr>
+                        <th className="w-[5%] px-3 py-2 text-center">
                           <input
                             type="checkbox"
-                            checked={selected.includes(inspection._id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleCheckboxChange(inspection._id);
-                            }}
+                            checked={selected.length === inspections.length && inspections.length > 0}
+                            onChange={handleSelectAll}
                           />
-                        </td>
-                        <td className="px-3 py-2 text-left">
-                          {new Date(inspection.inspectedOn).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="px-3 py-2 text-left text-[#043677] robotomedium">
-                          #{inspection._id.slice(0, 6)}
-                        </td>
-                        <td className="px-3 py-2 text-left text-[#043677] robotomedium">
-                          {inspection.vehicleId?.name || "N/A"}
-                        </td>
-                        <td className="px-3 py-2 text-left">
-                          <span className="text-success me-1">•</span> Pre-trip Inspection
-                        </td>
-                        <td className="px-3 py-2 text-left">
-                          <span
-                            className={`d-inline-block rounded-pill px-3 py-1 ${
-                              inspection.inspectionStatus === "passed" ? "bg-success" : "bg-danger"
-                            } text-black robotomedium`}
-                          >
-                            {inspection.inspectionStatus}
-                          </span>
-                        </td>
+                        </th>
+                        <th className="w-[20%] px-3 py-2 text-left">Created At</th>
+                        <th className="w-[15%] px-3 py-2 text-left">ID</th>
+                        <th className="w-[20%] px-3 py-2 text-left">Vehicle</th>
+                        <th className="w-[20%] px-3 py-2 text-left">Type</th>
+                        <th className="w-[20%] px-3 py-2 text-left">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="text-gray-800 robotoregular">
+                      {inspections.map((inspection) => (
+                        <tr
+                          key={inspection._id}
+                          className="border-b last:border-b-0 border-[#E6E6E6] hover:bg-gray-50 transition cursor-pointer h-[50px]"
+                          onClick={() => handleInspectionClick(inspection._id)}
+                        >
+                          <td className="w-[5%] px-3 pt-2 pb-[10px] text-center">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(inspection._id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleCheckboxChange(inspection._id);
+                              }}
+                            />
+                          </td>
+                          <td className="w-[20%] px-3 pt-2 pb-[10px] text-left">
+                            {new Date(inspection.createdAt).toLocaleString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="w-[15%] px-3 pt-2 pb-[10px] text-left text-[#043677] robotomedium">
+                            #{inspection._id.slice(0, 6)}
+                          </td>
+                          <td className="w-[20%] px-3 pt-2 pb-[10px] text-left text-[#043677] robotomedium">
+                            {inspection.vehicleId?.name || "N/A"}
+                          </td>
+                          <td className="w-[20%] px-3 pt-2 pb-[10px] text-left">
+                            <span className="text-success me-1">•</span> Pre-trip Inspection
+                          </td>
+                          <td className="w-[20%] px-3 pt-2 pb-[10px] text-left">
+                            <span
+                              className={`d-inline-block rounded-pill px-3 py-1 ${
+                                inspection.inspectionStatus === "passed" ? "bg-success" : "bg-danger"
+                              } text-black robotomedium`}
+                            >
+                              {inspection.inspectionStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="flex justify-between items-center mt-4">
+                    <p className="text-gray-600 robotoregular">
+                      Showing {inspections.length} of {totalInspections} inspections
+                    </p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-[#043677] text-white rounded disabled:bg-gray-300"
+                      >
+                        Previous
+                      </button>
+                      <span className="px-4 py-2">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 bg-[#043677] text-white rounded disabled:bg-gray-300"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}

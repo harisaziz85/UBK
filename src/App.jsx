@@ -44,8 +44,10 @@ import AssignedVehicles from "./admin/components/AssignedVehicles";
 import UnassignedVehicles from "./admin/components/UnassignedVehicles";
 import Vehicleprofile from "./admin/Vehicleprofile";
 import Storagepdf from "./driver/component/Postform/pdf/Storagepgf";
+import AdminCaadoc from "./admin/components/AdminCaadoc";
 import Towpdf from "./driver/component/Postform/pdf/Towpdf";
 import FormDetails from "./driver/component/Postform/FormDetails";
+import ForgotPasswordFlow from "./auth/ForgetPassword";
 
 
 function App() {
@@ -55,6 +57,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path='/forgot-password' element={<ForgotPasswordFlow/>}/>
         <Route path="/" element={<Login />} />
 
    {/* Driver Routes */}
@@ -84,6 +87,10 @@ function App() {
          <Route path="/profile" element={<Adminprofile/>} />
         </Route>
 
+
+
+
+
         {/* Admin Routes */}
         <Route element={<AdminLayout />}>
           {/* Profile Routes */}
@@ -105,22 +112,28 @@ function App() {
           {/* Inspeciton Routes */}
           <Route path='/admin/start-inspection' element={<VehicleInspectionSystem />} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory />} />
+        <Route path="/admin/inspection/:id" element={<InspectionDetails/>}/>
+          <Route path="/admin/tripinspection" element={<TripInspection />} />
+
           {/* Docuemnts Routes */}
           <Route path="/admin/doc" element={<AdminDoc />} />
           <Route path="/admin/document/details" element={<DocumentDetails />} />
           <Route path="/admin/ubktowing" element={<UBKTowing/>} />
+          <Route path="/admin/caadocuments" element={<AdminCaadoc />} />
+
 
           {/* Forms Route */}
           <Route path="/admin/forms" element={<AdminForms />} />
+           <Route path='admin/form-details/:id' element={<FormDetails/>}/>
 
 
 
 
 
-          <Route path="/admin/general-setting" element={<AdminGeneralsetting />} />
+
+          {/* <Route path="/admin/general-setting" element={<AdminGeneralsetting />} />
           <Route path="/admin/pretripsafety" element={<Pretripsafety />} />
           <Route path="/admin/detailpage" element={<Detailspage />} />
-          <Route path="/admin/ubktowing" element={<UBKTowing />} />
           <Route path="/admin/inspectiondetails" element={<InspectionDetails />} />
           <Route path="/admin/inspectionform" element={<Inspectionform />} />
           <Route path="/admin/inspectionschedules" element={<Inspectionschdues />} />
@@ -132,11 +145,12 @@ function App() {
             <Route path='/admin/start-inspection' element={<VehicleInspectionSystem/>}/>
 
           <Route path="/admin/detailpage" element={<Detailspage/>} />
+          <Route path="/admin/inspectiondeta" element={<InspectionDetails/>} />
           <Route path="/admin/inspectionhistory" element={<InspectionHistory/>} />
           <Route path="/admin/inspectiondetails" element={<InspectionDetails/>} />
           <Route path="/admin/inspectionform" element={<Inspectionform/>} />
           <Route path="/admin/inspectionschedules" element={<Inspectionschdues/>} />
-          <Route path="/admin/inspection-failure-items" element={<Inspectionfailureitems/>} />
+          <Route path="/admin/inspection-failure-items" element={<Inspectionfailureitems/>} /> */}
 
 
 
