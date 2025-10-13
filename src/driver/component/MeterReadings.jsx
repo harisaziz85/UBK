@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -29,6 +29,11 @@ const MeterReadings = () => {
   const [stats, setStats] = useState(null);
   const [recentConversations, setRecentConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalComments, setTotalComments] = useState(0);
+  const commentsRef = useRef(null);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -41,6 +46,63 @@ const MeterReadings = () => {
     if (days === 1) return "Yesterday";
     return `${days} days ago`;
   };
+
+  const fetchComments = useCallback(async (pageNum) => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${baseUrl}/common/comment/driver/received?page=${pageNum}&limit=10`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (!data.success) return;
+        const transformed = data.comments.map((comment, index) => ({
+          id: comment._id,
+          user: comment.senderId.name,
+          avatar: comment.senderId.profileImage || `https://i.pravatar.cc/150?img=${index + 1}`,
+          action: `Message from ${comment.senderId.name}`,
+          message: comment.text,
+          time: formatRelativeTime(comment.createdAt),
+        }));
+        setRecentConversations((prev) => {
+          if (pageNum === 1) {
+            return transformed;
+          } else {
+            return [...prev, ...transformed];
+          }
+        });
+        setTotalComments(data.total);
+        setHasMore((pageNum * 10) < data.total);
+        setPage((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [baseUrl, loadingMore]);
+
+  useEffect(() => {
+    const div = commentsRef.current;
+    if (!div) return;
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return;
+      const { scrollTop, scrollHeight, clientHeight } = div;
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        fetchComments(page);
+      }
+    };
+    div.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      div.removeEventListener("scroll", handleScroll);
+    };
+  }, [loadingMore, hasMore, page, fetchComments]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,27 +128,7 @@ const MeterReadings = () => {
           setStats(statsData.data.inspections);
         }
 
-        // Fetch recent conversations
-        const commentsResponse = await fetch(`${baseUrl}/common/comment/recent`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (commentsResponse.ok) {
-          const commentsData = await commentsResponse.json();
-          const transformed = commentsData.recentConversations.map((conv, index) => ({
-            id: conv.otherUser._id,
-            user: conv.otherUser.name,
-            avatar: conv.otherUser.profileImage || `https://i.pravatar.cc/150?img=${index + 1}` ,
-            action: `Message from ${conv.otherUser.name}`,
-            message: conv.lastMessage,
-            time: formatRelativeTime(conv.lastMessageAt),
-          }));
-          setRecentConversations(transformed);
-        }
+        await fetchComments(1);
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
@@ -95,7 +137,7 @@ const MeterReadings = () => {
     };
 
     fetchData();
-  }, [baseUrl]);
+  }, [baseUrl, fetchComments]);
 
   // Chart data
   const inspections = stats || {
@@ -403,50 +445,60 @@ const MeterReadings = () => {
 
 
         {/* Recent Comments Section */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h5 className="font-semibold">Recent Comments</h5>
-          </div>
+        {recentConversations.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="font-semibold">Recent Comments</h5>
+            </div>
 
-          <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition">
-            <div>
-              {recentConversations.map((comment, index) => (
-                <div
-                  key={comment.id}
-                  className={`flex items-start p-3 ${
-                    index !== recentConversations.length - 1
-                      ? "border-b border-gray-200"
-                      : ""
-                  }`}
-                >
-                  <img
-                    src={comment.avatar}
-                    alt={comment.user}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div className="flex-1 ml-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm mb-1">
-                          <span className="font-semibold">{comment.user}</span>{" "}
-                          <span className="text-gray-500">
-                            {comment.action}
-                          </span>
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                          {comment.message}
-                        </p>
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition">
+              <div ref={commentsRef} className="max-h-96 overflow-y-auto">
+                {recentConversations.map((comment, index) => (
+                  <div
+                    key={comment.id}
+                    className={`flex items-start p-3 ${
+                      index !== recentConversations.length - 1
+                        ? "border-b border-gray-200"
+                        : ""
+                    }`}
+                  >
+                    <img
+                      src={comment.avatar}
+                      alt={comment.user}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1 ml-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm mb-1">
+                            <span className="font-semibold">{comment.user}</span>{" "}
+                            <span className="text-gray-500">
+                              {comment.action}
+                            </span>
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            {comment.message}
+                          </p>
+                        </div>
+                        <span className="text-gray-400 text-xs whitespace-nowrap">
+                          {comment.time}
+                        </span>
                       </div>
-                      <span className="text-gray-400 text-xs whitespace-nowrap">
-                        {comment.time}
-                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                {loadingMore && (
+                  <div className="p-3 text-center">
+                    Loading more...
+                  </div>
+                )}
+                {!hasMore && recentConversations.length > 0 && (
+                  <div className="p-3 text-center text-gray-500 text-sm">No more comments</div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

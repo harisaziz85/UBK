@@ -2,32 +2,37 @@ import { Search, ChevronDown, Filter, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import vehicleImage from '../assets/image 104.png'
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const MainContent = () => {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState({ total: 0, page: 1, limit: 10, forms: [] });
+  const [allData, setAllData] = useState({ total: 0, forms: [] });
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const [searchBy, setSearchBy] = useState('All');
+  const [isSearchByOpen, setIsSearchByOpen] = useState(false);
    
   const BASE_URL = 'https://ubktowingbackend-production.up.railway.app/api';
   const navigate = useNavigate();
+  const PAGE_SIZE = 10;
 
   const types = ['All', 'Consent to Tow', 'Consent to Storage'];
+  const searchByOptions = ['All', 'Driver Name', 'Vehicle Plate'];
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      let url = `${BASE_URL}/driver/consentForm?page=${currentPage}&limit=10`;
+      let url = `${BASE_URL}/driver/consentForm?page=1&limit=1000`;
 
       const token = localStorage.getItem("authToken");
-            if (!token) {
-              toast.error("Authentication token not found. Please log in.");
-              return;
-            }
+      if (!token) {
+        toast.error("Authentication token not found. Please log in.");
+        setLoading(false);
+        return;
+      }
       
-      if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
       if (selectedType) url += `&type=${encodeURIComponent(selectedType)}`;
       try {
         const res = await fetch(url, {headers: {
@@ -35,7 +40,7 @@ const MainContent = () => {
           "Content-Type": "application/json",
         }});
         const json = await res.json();
-        setData(json);
+        setAllData({ total: json.total, forms: json.forms || [] });
       } catch (e) {
         console.error(e);
       } finally {
@@ -43,7 +48,34 @@ const MainContent = () => {
       }
     };
     fetchData();
-  }, [currentPage, searchTerm, selectedType]);
+  }, [selectedType]);
+
+  const filteredForms = allData.forms.filter(form => {
+    const matchesType = !selectedType || selectedType === 'All' || form.type === selectedType;
+    if (!matchesType) return false;
+
+    if (!searchTerm) return true;
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    let matchesSearch = false;
+
+    if (searchBy === 'All') {
+      matchesSearch = 
+        form._id.toLowerCase().includes(lowerSearchTerm) ||
+        form.type.toLowerCase().includes(lowerSearchTerm) ||
+        form.createdBy.name.toLowerCase().includes(lowerSearchTerm) ||
+        form.vehicle.plate.toLowerCase().includes(lowerSearchTerm);
+    } else if (searchBy === 'Driver Name') {
+      matchesSearch = form.createdBy.name.toLowerCase().includes(lowerSearchTerm);
+    } else if (searchBy === 'Vehicle Plate') {
+      matchesSearch = form.vehicle.plate.toLowerCase().includes(lowerSearchTerm);
+    }
+
+    return matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredForms.length / PAGE_SIZE);
+  const paginatedForms = filteredForms.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <main className="flex-1 bg-gray-50 p-4 lg:p-6 overflow-auto">
@@ -55,7 +87,7 @@ const MainContent = () => {
         </div>
 
         <div>
-          <button onClick={() => navigate('/consent-form')} className=" cursor-pointer w-full mt-[20px] sm:mt-[0px] cursor-pointer lg:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800">
+          <button onClick={() => navigate('/consent-form')} className="  w-full mt-[20px] sm:mt-[0px] cursor-pointer lg:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M20.5 10.19H17.61C15.24 10.19 13.31 8.26 13.31 5.89V3C13.31 2.45 12.86 2 12.31 2H8.07C4.99 2 2.5 4 2.5 7.57V16.43C2.5 20 4.99 22 8.07 22H15.93C19.01 22 21.5 20 21.5 16.43V11.19C21.5 10.64 21.05 10.19 20.5 10.19ZM11.53 13.53C11.38 13.68 11.19 13.75 11 13.75C10.81 13.75 10.62 13.68 10.47 13.53L9.75 12.81V17C9.75 17.41 9.41 17.75 9 17.75C8.59 17.75 8.25 17.41 8.25 17V12.81L7.53 13.53C7.24 13.82 6.76 13.82 6.47 13.53C6.18 13.24 6.18 12.76 6.47 12.47L8.47 10.47C8.54 10.41 8.61 10.36 8.69 10.32C8.71 10.31 8.74 10.3 8.76 10.29C8.82 10.27 8.88 10.26 8.95 10.25C8.98 10.25 9 10.25 9.03 10.25C9.11 10.25 9.19 10.27 9.27 10.3C9.28 10.3 9.28 10.3 9.29 10.3C9.37 10.33 9.45 10.39 9.51 10.45C9.52 10.46 9.53 10.46 9.53 10.47L11.53 12.47C11.82 12.76 11.82 13.24 11.53 13.53Z" fill="white"/>
             <path d="M17.4297 8.81048C18.3797 8.82048 19.6997 8.82048 20.8297 8.82048C21.3997 8.82048 21.6997 8.15048 21.2997 7.75048C19.8597 6.30048 17.2797 3.69048 15.7997 2.21048C15.3897 1.80048 14.6797 2.08048 14.6797 2.65048V6.14048C14.6797 7.60048 15.9197 8.81048 17.4297 8.81048Z" fill="white"/>
@@ -70,6 +102,33 @@ const MainContent = () => {
       <div className="rounded-lg mb-6 p-0 sm:p-4">
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-4">
           <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+            <div className="relative">
+              <button 
+                onClick={() => setIsSearchByOpen(!isSearchByOpen)}
+                className="flex roboto-medium content-center justify-center items-center gap-2 px-4 py-2 cursor-pointer bg-[#E6E6E633] rounded-[52px] text-[#333333B2] hover:bg-gray-50"
+              >
+                <span>{searchBy}</span>
+                <ChevronDown size={18} />
+              </button>
+              {isSearchByOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[120px]">
+                  {searchByOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setSearchBy(option);
+                        setIsSearchByOpen(false);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded text-sm"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -102,7 +161,7 @@ const MainContent = () => {
                         setIsTypeOpen(false);
                         setCurrentPage(1);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded text-sm"
+                      className="w-full whitespace-nowrap  text-left px-3 py-2 hover:bg-gray-100 rounded text-sm"
                     >
                       {type}
                     </button>
@@ -154,14 +213,14 @@ const MainContent = () => {
                     </td>
                   </tr>
                 ))
-              ) : data.forms.length === 0 ? (
+              ) : filteredForms.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-gray-500">
                     No forms found
                   </td>
                 </tr>
               ) : (
-                data.forms.map((form, index) => (
+                paginatedForms.map((form, index) => (
                   <tr key={form._id || index} className="border-b border-[#E6E6E6] hover:bg-[#04367714]">
                     <td className="py-4 px-4 flex items-center gap-2">
                       <input type="checkbox" className="rounded border-[#808080] w-[20px] h-[20px]" />
@@ -182,10 +241,10 @@ const MainContent = () => {
             </tbody>
           </table>
         </div>
-        {!loading && data.total > 0 && (
+        {!loading && filteredForms.length > 0 && (
           <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
             <p className="text-gray-600 text-sm">
-              Showing {(currentPage - 1) * data.limit + 1} to {Math.min(currentPage * data.limit, data.total)} of {data.total} results
+              Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredForms.length)} of {filteredForms.length} results
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -195,7 +254,7 @@ const MainContent = () => {
               >
                 Previous
               </button>
-              {Array.from({ length: Math.min(5, Math.ceil(data.total / data.limit)) }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
@@ -206,7 +265,7 @@ const MainContent = () => {
               ))}
               <button
                 onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage >= Math.ceil(data.total / data.limit)}
+                disabled={currentPage >= totalPages}
                 className="px-3 py-1 border-[#CCCCCC61] border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Next

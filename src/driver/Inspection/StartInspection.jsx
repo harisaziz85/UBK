@@ -621,7 +621,7 @@ const handleSelectVehicle = (e) => {
 
 
           {/* Items Checklist */}
-          <div className="p-0 sm:p-6 mb-6">
+          <div className="p-0 sm:px-6 mb-0">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Items Checklist</h2>
 
             {(() => {
@@ -707,7 +707,7 @@ const handleSelectVehicle = (e) => {
                   </div>
 
                   {/* ✅ Overall Status */}
-                  <div className="mt-6 flex justify-end">
+                  <div className="mt-2 flex justify-end">
                     {overallStatus === "Pass" ? (
                       <span className="text-green-600 font-semibold text-lg">Pass</span>
                     ) : (
@@ -734,7 +734,7 @@ const handleSelectVehicle = (e) => {
 
 
           {/* Inspection Remarks */}
-          <div className=" p-6 mb-6">
+          <div className=" px-6 mb-3">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Inspection Remarks</h2>
             </div>
@@ -755,11 +755,12 @@ const handleSelectVehicle = (e) => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Initial Inspection by</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Inspected On</label>
-                <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
-                  {inspectionData.date ? formatDate(inspectionData.date) : formatDate(new Date())}
-                </div>
+              <label className="block text-sm text-gray-600 mb-1">Inspected On</label>
+              <div className="bg-gray-50 px-4 py-2 rounded border border-gray-200 text-gray-700">
+                {formatDate(new Date())}
               </div>
+            </div>
+
 
               {/* <div>
                 <label className="block text-sm text-gray-600 mb-1">Inspected By</label>
@@ -770,7 +771,6 @@ const handleSelectVehicle = (e) => {
 
               {/* Driver's Sign Section */}
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Driver's Sign</label>
                 <div className="flex items-start">
                   <input 
                     type="checkbox" 
@@ -785,6 +785,8 @@ const handleSelectVehicle = (e) => {
               </div>
               <div>
                 <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Driver's Sign</label>
+
                   <div className="bg-gray-50 px-4 py-3 rounded border border-gray-200 min-h-[60px] text-gray-700">
                     <textarea
                       placeholder="Enter signature here..."

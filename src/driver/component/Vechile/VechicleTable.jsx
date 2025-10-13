@@ -9,6 +9,7 @@ const VehiclesTable = () => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchVehicles = async () => {
@@ -39,6 +40,16 @@ const VehiclesTable = () => {
         fetchVehicles();
     }, []);
 
+    const filteredVehicles = vehicles.filter(vehicle =>
+        vehicle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.year.toString().includes(searchTerm) ||
+        vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.vin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.currentMilage.toString().includes(searchTerm) ||
+        vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (error) {
         return <div className="p-4 text-red-500">Error: {error}</div>;
     }
@@ -53,6 +64,8 @@ const VehiclesTable = () => {
                         <input
                             type="text"
                             placeholder="Search"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-[52px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -101,7 +114,7 @@ const VehiclesTable = () => {
                                 </tr>
                             ))
                         ) : (
-                            vehicles.map((vehicle) => (
+                            filteredVehicles.map((vehicle) => (
                                 <tr key={vehicle._id}
                                     onClick={() => navigate(`/vehicles/${vehicle._id}`)} className="border-b border-[#E6E6E6] hover:bg-[#04367714]">
                                     <td className="py-3 px-4 flex items-center gap-2">
@@ -157,7 +170,7 @@ const VehiclesTable = () => {
                     </tbody>
                 </table>
             </div>
-            <div className="text-sm text-end text-gray-500 mt-2 lg:mt-0">1-{vehicles.length} of {vehicles.length}</div>
+            <div className="text-sm text-end text-gray-500 mt-2 lg:mt-0">1-{filteredVehicles.length} of {filteredVehicles.length}</div>
         </div>
     );
 };

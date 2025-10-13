@@ -6,6 +6,21 @@ import CustomTimePicker from './CustomTimePicker';
 import DatePickerComponent from './CustomDatePicker';
 import { toast, ToastContainer } from 'react-toastify'; // New import
 import 'react-toastify/dist/ReactToastify.css';
+import html2pdf from 'html2pdf.js';
+import StoragePdf from './pdf/Storagepgf';
+
+// Placeholder for TowPdf - Create a similar component for 'tow' type, adapting the design as needed
+const TowPdf = ({ data }) => {
+  // Implement similar static rendering for Tow PDF using the provided data
+  // For now, render a placeholder; replace with actual Tow PDF structure mirroring Storagepdf but for tow
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Consent to Tow PDF (Implement similar to StoragePdf)</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+      {/* TODO: Create full TowPdf component analogous to StoragePdf, mapping tow-specific fields like towedTo, serviceDescription, etc. */}
+    </div>
+  );
+};
 
 // Main Consent Form Component
 const ConsentForm = () => {
@@ -15,6 +30,9 @@ const ConsentForm = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [odometerValue, setOdometerValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPdf, setShowPdf] = useState(false);
+  const [pdfData, setPdfData] = useState({});
+  const pdfRef = useRef(null);
 
   // Shared data for both forms
   const [sharedData, setSharedData] = useState({
@@ -184,6 +202,72 @@ const ConsentForm = () => {
     return true;
   };
 
+const generateAndDownloadPDF = async (submitData, type) => {
+  try {
+    // ✅ Set the data and show the component
+    setPdfData(submitData);
+    setShowPdf(true);
+
+    // ✅ Wait for the component to actually render into the DOM
+    await new Promise((resolve) => {
+      const checkRendered = () => {
+        const element = pdfRef.current;
+        if (element && element.offsetHeight > 0) {
+          resolve();
+        } else {
+          setTimeout(checkRendered, 300);
+        }
+      };
+      checkRendered();
+    });
+
+    const element = pdfRef.current;
+    if (!element) {
+      toast.error("PDF container not found");
+      return;
+    }
+
+    // ✅ Force a reflow
+    element.style.display = "block";
+    element.offsetHeight;
+
+    const opt = {
+      margin: [0.5, 0.5, 0.5, 0.5],
+      filename: `${type === "tow" ? "Consent_to_Tow" : "Consent_to_Storage"}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+      },
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    };
+
+    // ✅ Ensure full render before PDF creation
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    await html2pdf().set(opt).from(element).save();
+
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    toast.error("Failed to generate PDF");
+  } finally {
+    // Hide preview
+    setShowPdf(false);
+  }
+};
+
+
+
+
+
+
+
   const handleSubmit = async (type) => {
     if (!validateForm(type)) {
       return;
@@ -204,6 +288,8 @@ const ConsentForm = () => {
 
       const consentDateTime = new Date(`${sharedData.consentDate}T${sharedData.consentTime}:00`).toISOString();
       const startDateTime = new Date(`${sharedData.startDate}T${sharedData.startTime}:00`).toISOString();
+      const formattedStartDateTime = `${sharedData.startDate} ${sharedData.startTime}`;
+      const formattedConsentDateTime = `${sharedData.consentDate} ${sharedData.consentTime}`;
 
       const officerName = sharedData.officerNameBadge.split(' & ')[0] || sharedData.officerNameBadge;
       const badgeNumber = sharedData.officerNameBadge.split(' & ')[1] || '';
@@ -299,6 +385,34 @@ const ConsentForm = () => {
 
       const result = await response.json();
       toast.success(`${type} form submitted successfully!`);
+
+      // Prepare PDF data (map form fields to PDF fields)
+      const pdfSubmitData = {
+        ...sharedData,
+        ...storageSpecific,
+        ...(isTow ? towSpecific : {}),
+        ...payload.vehicle,
+        year: payload.vehicle.year,
+        make: payload.vehicle.make,
+        model: payload.vehicle.model,
+        color: payload.vehicle.color,
+        plate: payload.vehicle.plate,
+        vin: payload.vehicle.vin,
+        currentMileage: payload.vehicle.currentMileage,
+        startDateTime: formattedStartDateTime,
+        consentDateTime: formattedConsentDateTime,
+        officerNameBadge: `${officerName} & ${badgeNumber}`,
+        policeDirected: payload.policeDirected.isDirected,
+        consentSignature: isTow ? towSpecific.secondSignature : '', // Adjust as needed
+        driverSignature: sharedData.driverName, // Or specific signature field
+        storageAddressConfirmed: storageSpecific.storageAddressConfirmed,
+        storageType: storageSpecific.storageType,
+        // Add any missing mappings, e.g., towDriverPhone: sharedData.consentPhone (if applicable)
+        towDriverPhone: sharedData.consentPhone,
+      };
+
+      // Generate and download PDF
+      await generateAndDownloadPDF(pdfSubmitData, type);
       
       // Reset form
       setSharedData({
@@ -1088,10 +1202,6 @@ const ConsentForm = () => {
                 </>
               )}
 
-              {/* Rate Schedule - Storage Only */}
-
-
-
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-end mt-6">
                 <button 
@@ -1115,6 +1225,13 @@ const ConsentForm = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Hidden PDF Generator */}
+        {showPdf && (
+          <div ref={pdfRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            {formType === 'storage' ? <StoragePdf data={pdfData} /> : <TowPdf data={pdfData} />}
           </div>
         )}
       </div>

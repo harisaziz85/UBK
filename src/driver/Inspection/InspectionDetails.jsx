@@ -103,15 +103,25 @@ const InspectionDetails = () => {
             hour12: true 
           });
 
-          const getFormattedDate = (dateStr) => {
-            const date = new Date(dateStr);
-            const datePart = dateFormatter.format(date);
-            const timePart = timeFormatter.format(date).toLowerCase();
-            return `${datePart} ${timePart}`;
-          };
+         const getFormattedDate = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  
+  // Use UTC getters instead of local
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  
+  // Optional: also show UTC time if needed
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
 
-          const started = getFormattedDate(insp.inspectedOn);
-          const submitted = getFormattedDate(insp.createdAt);
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+      const started = getFormattedDate(insp.inspectedOn);
+      const submitted = getFormattedDate(insp.createdAt);
+
 
           const diffMs = Math.abs(new Date(insp.createdAt) - new Date(insp.inspectedOn));
           const minutes = Math.floor(diffMs / 60000);
@@ -272,10 +282,10 @@ const InspectionDetails = () => {
               <span className="robotoregular text-[14px] text-[#333333E5]">{inspectionDetails.duration}</span>
             </div>
 
-            <div className="border-b flex justify-between border-[#33333333] pb-2">
+            {/* <div className="border-b flex justify-between border-[#33333333] pb-2">
               <p className="text-[#333333] robotoregular  text-[14px] mb-2">Submission Source</p>
               <span className="robotoregular text-[14px] text-[#333333E5]">{inspectionDetails.source}</span>
-            </div>
+            </div> */}
 
           <div className="border-b flex justify-between border-[#33333333] pb-2">
   <p className="text-[#333333] robotoregular text-[14px] mb-2">Submitted By</p>
