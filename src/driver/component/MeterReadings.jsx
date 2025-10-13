@@ -125,6 +125,8 @@ const MeterReadings = () => {
 
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
+
+          console.log(statsData);
           setStats(statsData.data.inspections);
         }
 

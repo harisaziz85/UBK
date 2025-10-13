@@ -6,7 +6,6 @@ import CustomTimePicker from './CustomTimePicker';
 import DatePickerComponent from './CustomDatePicker';
 import { toast, ToastContainer } from 'react-toastify'; // New import
 import 'react-toastify/dist/ReactToastify.css';
-import domtoimage from 'dom-to-image-more';
 import jsPDF from 'jspdf';
 import StoragePdf from './pdf/Storagepgf';
 import TowPdf from './pdf/Towpdf'
@@ -222,7 +221,12 @@ const generateAndDownloadPDF = async (submitData, type) => {
     element.style.display = "block";
     element.style.zIndex = "-1";
     element.style.backgroundColor = "#ffffff";
-    element.style.width = "1300px"; // Match your actual PDF layout width
+    // ✅ Dynamic width based on form type
+    if (type === "tow") {
+      element.style.width = "1000px";
+    } else {
+      element.style.width = "1310px";
+    }
 
 
     console.log("✅ Capturing PDF element...");
@@ -239,10 +243,16 @@ const generateAndDownloadPDF = async (submitData, type) => {
     });
 
     // Step 5: Generate and download PDF
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgProps = pdf.getImageProperties(dataUrl);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    let pdf = new jsPDF("p", "mm", "a4");
+    let imgProps = pdf.getImageProperties(dataUrl);
+    let pdfWidth = pdf.internal.pageSize.getWidth();
+    let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+
+      // ✅ Fix Tow height difference
+    if (type === "tow") {
+      pdfHeight *= 0.9; // Reduce height by 10% to remove blank space
+    }
 
     pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
     const fileName =
@@ -589,7 +599,7 @@ towTruckNumber:
         {formType && (
           <div className="space-y-8">
             <div>
-              <h2 className={`text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-2`}>
+              <h2 className={`text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-2`}>
                 {formType === 'tow' ? 'Consent to Tow' : 'Consent to Storage'}
               </h2>
               <p className="text-[#333333CC] roboto-medium mb-6">
@@ -597,7 +607,7 @@ towTruckNumber:
               </p>
 
               {/* Tow Operator Information - Common */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Tow Operator Information</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Tow Operator Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-16 mb-6">
                 <div>
                   <p className="text-[14px] roboto-regular text-[#333333E5]">
@@ -638,7 +648,7 @@ towTruckNumber:
               </div>
 
               {/* Tow Driver Information - Common */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Tow Driver Information</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Tow Driver Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
@@ -740,7 +750,7 @@ towTruckNumber:
 
               {/* Vehicle Selection */}
               <div className="mb-6">
-                <label className="block text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-2">Vehicle <span className="text-red-500">*</span></label>
+                <label className="block text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-2">Vehicle <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <select 
                     value={selectedVehicle} 
@@ -760,7 +770,7 @@ towTruckNumber:
               </div> 
 
               {/* Vehicle Details */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Vehicle Details</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Vehicle Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Year</label>
@@ -829,7 +839,7 @@ towTruckNumber:
               </div>
 
               {/* Tow Location Information */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Tow Location Information</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Tow Location Information</h3>
              <div className="space-y-4 mb-6">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
   <div>
@@ -951,7 +961,7 @@ towTruckNumber:
               {formType === 'tow'  && (
                 <>
                  
-                  <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Description of Services</h3>
+                  <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Description of Services</h3>
                   <div className="mb-6">
                     <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Service Description</label>
                     <input
@@ -968,7 +978,7 @@ towTruckNumber:
               {/* Storage Locations - Storage Only */}
 {formType === 'storage' && (
   <>
-    <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">
+    <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
       Storage Locations
     </h3>
 
@@ -1033,7 +1043,7 @@ towTruckNumber:
 
 
               {/* Person Giving Consent Information - Common */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Person Giving Consent Information</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Person Giving Consent Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
@@ -1150,7 +1160,7 @@ towTruckNumber:
              
 
               {/* Date and Time */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Date and Time</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Date and Time</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
@@ -1175,7 +1185,7 @@ towTruckNumber:
 
 
               {/* Consent Given - Radio Buttons */}
-<h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">
+<h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
   Consent Given
 </h3>
 <div className="flex flex-col sm:flex-row gap-6 mb-6">
@@ -1218,7 +1228,7 @@ towTruckNumber:
 
               {formType === 'storage' && (
   <div className="max-w-full mt-8 mb-6">
-    <h2 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">
+    <h2 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
       Storage Rate Schedule
     </h2>
     <p className="text-[14px] text-[#333333CC] roboto-medium text-justify mb-5 leading-relaxed">
@@ -1275,7 +1285,7 @@ towTruckNumber:
 
               {/* Disclosure Statement - Common */}
               <div className="mt-8 rounded-lg mb-6  p-0 sm:p-4 bg-gray-50">
-                <h3 className=" text-[18px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Disclosure Statement / Pursuant to Ontario Regulation 167/23 - Schedule 2</h3>
+                <h3 className=" text-[18px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Disclosure Statement / Pursuant to Ontario Regulation 167/23 - Schedule 2</h3>
                 <div className="space-y-4 roboto-medium text-[14px] text-[#333333CC]">
                   <p className="font-semibold">
                     1. Tow operators and tow truck drivers must follow the requirements of the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for the operation of a tow truck, conduct toward the public and at the scene of an accident, and the rates that can be charged for towing and vehicle storage services. The Act also sets out rights you have when requesting or receiving towing services.
@@ -1308,7 +1318,7 @@ towTruckNumber:
 
               {/* Disclosure of Interest - Common */}
               <div className="mb-6">
-                <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Disclosure of Interest</h3>
+                <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Disclosure of Interest</h3>
                 <div className="space-y-2 roboto-medium text-[14px] text-[#333333CC] mb-4">
                   <p>1. UBK Towing Service Ltd. operates vehicle storage facilities{formType === 'storage' ? ' listed above.' : '.'}.</p>
                   <p>2. UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
@@ -1328,7 +1338,7 @@ towTruckNumber:
               </div>
 
               {/* Consent Statement - Common */}
-              <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Consent Statement</h3>
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Consent Statement</h3>
               <p className="roboto-medium text-[14px] text-[#333333CC] mb-4">
                 You hereby consent to the terms and conditions outlined in this document and authorize UBK
                 Towing Service Ltd. to provide towing, recovery, labour and roadside services as requested
@@ -1365,7 +1375,7 @@ towTruckNumber:
               {/* Final Signature - Tow Only */}
               {formType === 'tow' && (
                 <>
-                  <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Signature</h3>
+                  <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Signature</h3>
                   <div className="mb-6">
                     <SignatureCanvas
                       penColor="black"
@@ -1384,7 +1394,7 @@ towTruckNumber:
               {/* Final Signature - Storage Only */}
               {formType === 'storage' && (
                 <>
-                  <h3 className="text-[25px] sm:text-[28px] roboto-bold text-[#333333] mb-4">Signature</h3>
+                  <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Signature</h3>
                   <div className="mb-6">
                     <SignatureCanvas
                       penColor="black"
@@ -1435,6 +1445,10 @@ towTruckNumber:
       left: "0px",
       top: 0,
       backgroundColor: "#ffffff",
+      height:
+     formType === "tow"
+          ? "fit-content" // auto-fit height for Tow
+          : "auto", // normal for Storage
     }}
   >
     {formType === "storage" ? (
