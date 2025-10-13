@@ -186,11 +186,25 @@
 
             {/* VIN + Odometer on same line */}
             <div className="flex items-center w-full col-span-2 justify-between">
-              {/* VIN */}
-              <div className="flex items-center">
-                <label className="font-bold whitespace-nowrap mr-1">VIN#:</label>
-                <span className="flex flex-nowrap gap-[2px] ml-1">{vin}</span>
+              {/* VIN Section */}
+              <div className="flex items-center mt-1">
+                <label className="font-bold text-[12px] sm:text-[13px] text-black whitespace-nowrap mr-2">
+                  VIN#:
+                </label>
+
+                {/* VIN boxes */}
+                <div className="flex flex-nowrap gap-[2px] ml-1">
+                  {(vin || "").padEnd(17, " ").split("").map((char, index) => (
+                    <div
+                      key={index}
+                      className="w-[18px] h-[20px] sm:w-[22px] sm:h-[24px] border border-black flex items-center justify-center text-[11px] sm:text-[13px] font-medium text-black leading-none"
+                    >
+                      {char.trim() || ""}
+                    </div>
+                  ))}
+                </div>
               </div>
+
 
               {/* Odometer */}
               <div className="flex items-center ml-6 flex-shrink-0">
@@ -220,33 +234,49 @@
           </div>
         </div>
 
-        {/* Storage Locations */}
-        <div className="p-3 sm:p-4">
-          <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
-            STORAGE LOCATIONS
-          </div>
+       {/* Storage Locations */}
+<div className="p-3 sm:p-4">
+  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+    STORAGE LOCATIONS
+  </div>
 
-          {/* Checkboxes Row */}
-          <div className="flex flex-wrap items-center gap-6 text-xs">
-            {/* Main Location */}
-            <label className="flex items-center gap-2">
-              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 ${storageAddressConfirmed ? 'bg-black' : ''}`}></span>
-              <span>7 Belvia Road Etobicoke Ontario M8W9R2</span>
-            </label>
+  {/* Checkboxes Row */}
+  <div className="flex flex-wrap items-center gap-6 text-xs">
+    {/* Main Location */}
+    <label className="flex items-center gap-2">
+      <span
+        className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
+          storageType?.toLowerCase().includes("belvia") ||
+          storageType?.toLowerCase().includes("etobicoke")
+            ? "bg-black"
+            : ""
+        }`}
+      ></span>
+      <span>7 Belvia Road Etobicoke Ontario M8W9R2</span>
+    </label>
 
-            {/* Indoor */}
-            <label className="flex items-center gap-2">
-              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 ${storageType === 'indoor' ? 'bg-black' : ''}`}></span>
-              <span>INDOOR</span>
-            </label>
+    {/* Indoor */}
+    <label className="flex items-center gap-2">
+      <span
+        className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
+          storageType?.toLowerCase().includes("indoor") ? "bg-black" : ""
+        }`}
+      ></span>
+      <span>INDOOR</span>
+    </label>
 
-            {/* Outdoor */}
-            <label className="flex items-center gap-2">
-              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 ${storageType === 'outdoor' ? 'bg-black' : ''}`}></span>
-              <span>OUTDOOR</span>
-            </label>
-          </div>
-        </div>
+    {/* Outdoor */}
+    <label className="flex items-center gap-2">
+      <span
+        className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
+          storageType?.toLowerCase().includes("outdoor") ? "bg-black" : ""
+        }`}
+      ></span>
+      <span>OUTDOOR</span>
+    </label>
+  </div>
+</div>
+
 
         {/* Disclosure of Interest */}
         <div className="p-3 sm:p-4 ">

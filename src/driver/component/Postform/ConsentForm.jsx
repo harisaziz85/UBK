@@ -66,6 +66,8 @@ const ConsentForm = () => {
     secondSignature: '',
     towTruckPlate: '',
     towTruckVin: '',
+   invoicePO: '', // ✅ Add this line
+
   });
 
   // Storage specific data
@@ -220,7 +222,8 @@ const generateAndDownloadPDF = async (submitData, type) => {
     element.style.display = "block";
     element.style.zIndex = "-1";
     element.style.backgroundColor = "#ffffff";
-    element.style.width = "1400px"; // Match your actual PDF layout width
+    element.style.width = "1300px"; // Match your actual PDF layout width
+
 
     console.log("✅ Capturing PDF element...");
 
@@ -396,30 +399,102 @@ useEffect(() => {
       const result = await response.json();
       toast.success(`${type} form submitted successfully!`);
 
+
+      // ✅ Extract missing date/time fields before PDF generation
+const startDate = sharedData.startDate || "";
+const startTime = sharedData.startTime || "";
+const endDate = isTow ? towSpecific.endDate || "" : "";
+const endTime = isTow ? towSpecific.endTime || "" : "";
+
       // Prepare PDF data (map form fields to PDF fields)
-      const pdfSubmitData = {
-        ...sharedData,
-        ...storageSpecific,
-        ...(isTow ? towSpecific : {}),
-        ...payload.vehicle,
-        year: payload.vehicle.year,
-        make: payload.vehicle.make,
-        model: payload.vehicle.model,
-        color: payload.vehicle.color,
-        plate: payload.vehicle.plate,
-        vin: payload.vehicle.vin,
-        currentMileage: payload.vehicle.currentMileage,
-        startDateTime: formattedStartDateTime,
-        consentDateTime: formattedConsentDateTime,
-        officerNameBadge: `${officerName} & ${badgeNumber}`,
-        policeDirected: payload.policeDirected.isDirected,
-        consentSignature: isTow ? towSpecific.secondSignature : storageSpecific.storageSignature, // Adjust as needed
-        driverSignature: sharedData.driverName, // Or specific signature field
-        storageOption: storageSpecific.storageOption,
-        storageType: storageSpecific.storageOption === 'indoor' ? 'indoor' : storageSpecific.storageOption === 'outdoor' ? 'outdoor' : '',
-        // Add any missing mappings, e.g., towDriverPhone: sharedData.consentPhone (if applicable)
-        towDriverPhone: sharedData.consentPhone,
-      };
+const pdfSubmitData = {
+  // 🔹 Core Form Data
+  ...payload,
+  ...sharedData,
+  ...storageSpecific,
+  ...(isTow ? towSpecific : {}),
+  ...payload.vehicle,
+
+  // 🔹 Vehicle Details
+  year: payload.vehicle?.year || "",
+  make: payload.vehicle?.make || "",
+  model: payload.vehicle?.model || "",
+  color: payload.vehicle?.color || "",
+  plate: payload.vehicle?.plate || "",
+  vin: payload.vehicle?.vin || "",
+  currentMileage: payload.vehicle?.currentMileage || "",
+
+  // 🔹 Time / Date
+  startDateTime: formattedStartDateTime || "",
+  consentDateTime: formattedConsentDateTime || "",
+  startDate: startDate || "",
+  startTime: startTime || "",
+  endDate: endDate || "",
+  endTime: endTime || "",
+
+  // 🔹 Officer Details
+  officerNameBadge:
+    (officerName ? officerName : "") +
+    (badgeNumber ? ` & ${badgeNumber}` : ""),
+
+  // 🔹 Police Directed Info
+  policeDirected: payload.policeDirected?.isDirected || "",
+  policeCallNumber: payload.policeDirected?.callNumber || "", // ✅ ensures “Call/Occurrence #” shows
+  providingServiceAtPoliceDirection:
+    payload.policeDirected?.isDirected === true
+      ? "Providing Services at the direction of Police Officer"
+      : "",
+
+  // 🔹 Signatures
+  consentSignature: isTow
+    ? towSpecific?.secondSignature || ""
+    : storageSpecific?.storageSignature || "",
+
+  driverSignature: sharedData?.driverName || "",
+
+  // 🔹 Storage Type / Location
+  storageOption: storageSpecific?.storageOption || "",
+  storageType:
+    storageSpecific?.storageOption === "indoor"
+      ? "INDOOR"
+      : storageSpecific?.storageOption === "outdoor"
+      ? "OUTDOOR"
+      : "7 Belvia Road Etobicoke Ontario M8W9R2",
+
+  // 🔹 Tow Details
+towTruckNumber:
+  payload?.towDriver?.truckNumber ||
+  sharedData?.truckNumber ||
+  "",
+  towDriverPhone: sharedData?.consentPhone || "",
+  driverCertificate: sharedData?.driverCertificate || "", // ✅ Fixed visibility
+
+  // 🔹 Service Info
+  serviceDescription: isTow
+    ? towSpecific?.serviceDescription || ""
+    : "",
+
+  // 🔹 Consent By Info (for “Consent Given By” section)
+  consentPersonName: payload.consentBy?.name || "",
+  consentAddress: payload.consentBy?.address || "",
+  consentPhone: payload.consentBy?.phone || "",
+  consentEmail: payload.consentBy?.email || "",
+
+   // 🔹 Police-related fields
+  providingServiceAtPoliceDirection:
+    payload?.policeDirected?.isDirected === true ? "Yes" : "",
+  policeCallNumber:
+    payload?.policeDirected?.callNumber ||
+    payload?.callNumber ||
+    "",
+  detachmentDivision: payload?.policeDirected?.detachmentDivision || "",
+  officerNameBadge: `${payload?.policeDirected?.officerName || ""} & ${payload?.policeDirected?.badgeNumber || ""}`,
+
+  // 🔹 Admin / Misc
+  notes: payload?.notes || "",
+  createdAt: new Date().toISOString(),
+};
+
 
       // Generate and download PDF
       await generateAndDownloadPDF(pdfSubmitData, type);
@@ -641,6 +716,22 @@ useEffect(() => {
                         onChange={(e) => handleTowSpecificInputChange('towTruckVin', e.target.value)} 
                         placeholder="e.g., VIN Number" 
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                      />
+                    </div>
+
+
+                      <div>
+                      <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                        Invoice/PO #
+                      </label>
+                      <input
+                        type="text"
+                        value={towSpecific.invoicePO}
+                        onChange={(e) =>
+                          handleTowSpecificInputChange('invoicePO', e.target.value)
+                        }
+                        placeholder="e.g., TO-189-380-467"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
                       />
                     </div>
                   </>
@@ -1344,9 +1435,6 @@ useEffect(() => {
       left: "0px",
       top: 0,
       backgroundColor: "#ffffff",
-      width: "14000px", // match your PDF layout width
-      height:"2000",
-      padding: "20px",
     }}
   >
     {formType === "storage" ? (

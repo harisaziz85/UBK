@@ -10,43 +10,51 @@ const TowPdf = ({ data }) => {
     });
   }
 
-  const {
-    po = '',
-    towTruckNumber = '',
-    towDriverCertificate = '',
-    callNumber = '',
-    vehicleYear = '',
-    vehicleMake = '',
-    vehicleModel = '',
-    vehicleColour = '',
-    vehicleUnit = '',
-    vehiclePlate = '',
-    vehicleVIN = '',
-    vehicleOdometer = '',
-    towedFrom = '',
-    dateStartTime = '',
-    towedTo = '',
-    dateEndTime = '',
-    servicesDescription = '',
+ const {
+   invoicePO ='', // ✅ Add this line
+  towTruckNumber = "",
+  driverCertificate = "",
+   callNumber = "",
+  year = "",
+  make = "",
+  model = "",
+  color = "",
+  plate = "",
+  vin = "",
+  currentMileage = "",
+    towedFrom = "",
+    dateStartTime = "",
+    towedTo = "",
+    dateEndTime = "",
+    serviceDescription = "",
     acknowledgementCheckbox = false,
-    revisedDestinationSignature = '',
-    consentName = '',
-    consentAddress = '',
-    consentPhone = '',
-    consentEmail = '',
+    revisedDestinationSignature = "",
+    consentPersonName = "",
+    consentAddress = "",
+    consentPhone = "",
+    consentEmail = "",
     providingServices = false,
-    callOccurrenceNumber = '',
-    officerNameBadge = '',
-    detachmentDivision = '',
+   providingServiceAtPoliceDirection = "",
+    callOccurrenceNumber = "",
+    officerNameBadge = "",
+    detachmentDivision = "",
     rateSheetShown = false,
     rightsInformed = false,
-    consentSignature = '',
-    consentDateTime = '',
-    driverSignature = '',
+    consentSignature = "",
+    consentDateTime = "",
+    driverSignature = "",
     consentOverPhone = false,
     consentOverEmail = false,
+     startDate = "",
+    startTime = "",
+    endDate = "",
+    endTime = "",
+
+
+
   } = data;
 
+  
   const formattedEndDateTime = dateEndTime || ''; // Assuming dateEndTime is formatted as "YYYY-MM-DD HH:MM"
 
   return (
@@ -68,7 +76,7 @@ const TowPdf = ({ data }) => {
           <div className="flex items-center gap-2 text-sm sm:text-base">
             <span className="font-bold italic">CONSENT TO TOW</span>
             <span className="text-xs sm:text-sm">PO#</span>
-            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{po}</span>
+            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{invoicePO}</span>
           </div>
         </div>
 
@@ -98,11 +106,12 @@ const TowPdf = ({ data }) => {
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Truck Number:</label>
-                <span className="flex-1 border-b border-black px-1">{towTruckNumber}</span>
+                 <span className="flex-1 border-b border-black px-1"> {data.towTruckNumber }</span>
+
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Driver Certificate:</label>
-                <span className="flex-1 border-b border-black px-1">TD {towDriverCertificate}</span>
+                <span className="flex-1 border-b border-black px-1">TD {driverCertificate}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Call #:</label>
@@ -132,81 +141,110 @@ const TowPdf = ({ data }) => {
         </div>
 
         {/* Towed Vehicle Information */}
-        <div className="p-3 sm:p-4 mx-4">
-          <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
-            TOWED VEHICLE INFORMATION
-          </div>
+       <div className="p-3 sm:p-4 mx-4">
+  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+    TOWED VEHICLE INFORMATION
+  </div>
 
-          {/* Line 1 - Year / Make / Model / Colour / Unit */}
-          <div className="grid grid-cols-5 gap-4 text-xs mb-2">
-            {[
-              { label: "Year", value: vehicleYear },
-              { label: "Make", value: vehicleMake },
-              { label: "Model", value: vehicleModel },
-              { label: "Colour", value: vehicleColour },
-              { label: "Unit", value: vehicleUnit },
-            ].map((field, index) => (
-              <div key={index} className="flex items-center w-full">
-                <label className="font-bold whitespace-nowrap mr-1">{field.label}:</label>
-                <span className="w-full border-b border-black">{field.value}</span>
+  {/* Line 1 - Year / Make / Model / Colour / Unit */}
+  <div className="grid grid-cols-5 gap-4 text-xs mb-2">
+    {[
+    { label: "Year", value: data?.year || "—" },
+{ label: "Make", value: data?.make || "—" },
+{ label: "Model", value: data?.model || "—" },
+{ label: "Colour", value: data?.color || "—" },
+
+    ].map((field, index) => (
+      <div key={index} className="flex items-center w-full">
+        <label className="font-bold whitespace-nowrap mr-1">{field.label}:</label>
+        <span className="w-full border-b border-black px-1">{field.value}</span>
+      </div>
+    ))}
+  </div>
+
+  {/* Line 2 - Plate / VIN + Odometer horizontally */}
+  <div className="grid grid-cols-3 gap-4 text-xs">
+    {/* Plate */}
+    <div className="flex items-center w-full">
+      <label className="font-bold whitespace-nowrap mr-1">Plate:</label>
+      <span className="w-full border-b border-black px-1">{data?.plate || "—"}</span>
+    </div>
+
+    {/* VIN + Odometer on same line */}
+    <div className="flex items-center w-full col-span-2 justify-between">
+      {/* VIN */}
+     <div className="flex items-center mb-2">
+  <label className="font-bold text-[12px] sm:text-[13px] text-black whitespace-nowrap mr-2">
+    VIN#:
+  </label>
+
+          {/* VIN Box Row */}
+          <div className="flex flex-nowrap gap-[2px]">
+            {(data?.vin || '').padEnd(17, ' ').split('').map((char, index) => (
+              <div
+                key={index}
+                className="w-[18px] h-[20px] sm:w-[20px] sm:h-[22px] border border-black flex items-center justify-center text-[11px] sm:text-[12px] font-medium text-black"
+              >
+                {char.trim() || ''}
               </div>
             ))}
           </div>
-
-          {/* Line 2 - Plate / VIN + Odometer horizontally */}
-          <div className="grid grid-cols-3 gap-4 text-xs">
-            {/* Plate */}
-            <div className="flex items-center w-full">
-              <label className="font-bold whitespace-nowrap mr-1">Plate:</label>
-              <span className="w-full border-b border-black">{vehiclePlate}</span>
-            </div>
-
-            {/* VIN + Odometer on same line */}
-            <div className="flex items-center w-full col-span-2 justify-between">
-              {/* VIN */}
-              <div className="flex items-center">
-                <label className="font-bold whitespace-nowrap mr-1">VIN#:</label>
-                <span className="flex flex-nowrap gap-[2px] ml-1">{vehicleVIN}</span>
-              </div>
-
-              {/* Odometer */}
-              <div className="flex items-center ml-6 flex-shrink-0">
-                <label className="font-bold whitespace-nowrap mr-1">Odometer:</label>
-                <span className="w-24 border-b border-black px-1">{vehicleOdometer}</span>
-              </div>
-            </div>
-          </div>
         </div>
+
+
+      {/* Odometer */}
+      <div className="flex items-center ml-6 flex-shrink-0">
+        <label className="font-bold whitespace-nowrap mr-1">Odometer:</label>
+        <span className="w-24 border-b border-black px-1">
+          {data?.currentMileage || "—"}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Towed Location Information */}
-        <div className="p-3 sm:p-4 mx-4">
-          <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
-            TOWED LOCATION INFORMATION
-          </div>
+{/* Towed Location Information */}
+<div className="p-3 sm:p-4 mx-4">
+  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+    TOWED LOCATION INFORMATION
+  </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="flex items-center">
-              <label className="font-bold whitespace-nowrap mr-1">Towed From:</label>
-              <span className="w-full border-b border-black">{towedFrom}</span>
-            </div>
+  <div className="grid grid-cols-2 gap-4 text-xs">
+    {/* Towed From */}
+    <div className="flex items-center">
+      <label className="font-bold whitespace-nowrap mr-1">Towed From:</label>
+      <span className="w-full border-b border-black">{towedFrom}</span>
+    </div>
 
-            <div className="flex items-center">
-              <label className="font-bold whitespace-nowrap mr-1">Date & Start Time:</label>
-              <span className="w-full border-b border-black">{dateStartTime}</span>
-              <span className="ml-2 text-xs italic">(must be after time consent given)</span>
-            </div>
+    {/* Start Date & Time */}
+    <div className="flex items-center">
+      <label className="font-bold whitespace-nowrap mr-1">Start Date & Time:</label>
+      <span className="w-full border-b border-black">
+        {startDate} {startTime}
+      </span>
+      <span className="ml-2 text-xs italic">(must be after time consent given)</span>
+    </div>
 
-            <div className="flex items-center">
-              <label className="font-bold whitespace-nowrap mr-1">Towed To:</label>
-              <span className="w-full border-b border-black">{towedTo}</span>
-            </div>
+    {/* Towed To */}
+    <div className="flex items-center">
+      <label className="font-bold whitespace-nowrap mr-1">Towed To:</label>
+      <span className="w-full border-b border-black">{towedTo}</span>
+    </div>
 
-            <div className="flex items-center">
-              <label className="font-bold whitespace-nowrap mr-1">Date & End Time:</label>
-              <span className="w-full border-b border-black">{formattedEndDateTime}</span>
-            </div>
-          </div>
-        </div>
+    {/* End Date & Time */}
+    <div className="flex items-center">
+      <label className="font-bold whitespace-nowrap mr-1">End Date & Time:</label>
+      <span className="w-full border-b border-black">
+        {endDate} {endTime}
+      </span>
+    </div>
+  </div>
+</div>
+
+
+
 
         {/* Description of Services */}
         <div className="p-3 sm:p-4 mx-4">
@@ -214,7 +252,7 @@ const TowPdf = ({ data }) => {
             DESCRIPTION OF SERVICES
           </div>
           <div className="text-xs space-y-2">
-            <div className="w-full border-b border-black px-1">{servicesDescription}</div>
+            <div className="w-full border-b border-black px-1">{serviceDescription}</div>
             <div className="flex items-center">
               <span className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${acknowledgementCheckbox ? 'bg-black' : ''}`}></span>
               <span>Acknowledgement of client&apos;s revised destination address - Signature:</span>
@@ -236,7 +274,7 @@ const TowPdf = ({ data }) => {
             <div className="space-y-2 text-xs">
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Name:</label>
-                <span className="flex-1 border-b border-black px-1">{consentName}</span>
+                <span className="flex-1 border-b border-black px-1">{consentPersonName}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Address:</label>
@@ -255,25 +293,43 @@ const TowPdf = ({ data }) => {
 
           {/* Right Column */}
           <div className="p-3 sm:p-4 border">
-            <div className="space-y-2 text-xs">
-              <label className="flex items-start gap-2">
-                <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${providingServices ? 'bg-black' : ''}`}></span>
-                <span>Providing Services at the direction of Police Officer</span>
-              </label>
-              <div className="flex items-center">
-                <label className="font-bold w-40 flex-shrink-0">Call/Occurrence #:</label>
-                <span className="flex-1 border-b border-black px-1">{callOccurrenceNumber}</span>
-              </div>
-              <div className="flex items-center">
-                <label className="font-bold w-40 flex-shrink-0">Officer Name & Badge #:</label>
-                <span className="flex-1 border-b border-black px-1">{officerNameBadge}</span>
-              </div>
-              <div className="flex items-center">
-                <label className="font-bold w-40 flex-shrink-0">Detachment/ Division:</label>
-                <span className="flex-1 border-b border-black px-1">{detachmentDivision}</span>
-              </div>
-            </div>
-          </div>
+  <div className="space-y-2 text-xs">
+    {/* ✅ Police Direction Checkbox */}
+    <label className="flex items-start gap-2">
+      <span
+        className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${
+          data?.providingServiceAtPoliceDirection ? "bg-black" : ""
+        }`}
+      ></span>
+      <span>Providing Services at the direction of Police Officer</span>
+    </label>
+
+    {/* ✅ Call / Occurrence Number */}
+    <div className="flex items-center">
+      <label className="font-bold w-40 flex-shrink-0">Call/Occurrence #:</label>
+      <span className="flex-1 border-b border-black px-1">
+         {data?.incidentNumber || "—"}
+      </span>
+    </div>
+
+    {/* ✅ Officer Name & Badge */}
+    <div className="flex items-center">
+      <label className="font-bold w-40 flex-shrink-0">Officer Name & Badge #:</label>
+      <span className="flex-1 border-b border-black px-1">
+        {data?.officerNameBadge || "—"}
+      </span>
+    </div>
+
+    {/* ✅ Detachment / Division */}
+    <div className="flex items-center">
+      <label className="font-bold w-40 flex-shrink-0">Detachment/ Division:</label>
+      <span className="flex-1 border-b border-black px-1">
+        {data?.detachmentDivision || "—"}
+      </span>
+    </div>
+  </div>
+</div>
+
         </div>
 
         {/* Terms and Conditions Paragraph */}
@@ -324,10 +380,15 @@ const TowPdf = ({ data }) => {
 
               <label className="block font-bold mt-1">Signature of the person giving consent</label>
 
-              <div className="flex justify-center items-center mt-2 gap-2">
-                <span className={`w-4 h-4 border-2 border-black ${consentOverPhone ? "bg-black" : ""}`}></span>
-                <span>Consent given over the phone</span>
-              </div>
+                <div className="flex justify-center items-center mt-2 gap-2">
+    <span
+      className={`w-4 h-4 border-2 border-black ${
+        data?.consentMethod?.toLowerCase() === "phone" ? "bg-black" : ""
+      }`}
+    ></span>
+    <span>Consent given over the phone</span>
+  </div>
+
             </div>
 
             {/* Date and Time of consent */}
@@ -336,9 +397,13 @@ const TowPdf = ({ data }) => {
               <label className="block font-bold mt-1">Date & Time of the consent given</label>
 
               <div className="flex justify-center items-center mt-2 gap-2">
-                <span className={`w-4 h-4 border-2 border-black ${consentOverEmail ? 'bg-black' : ''}`}></span>
-                <span>Consent given over the email</span>
-              </div>
+              <span
+                className={`w-4 h-4 border-2 border-black ${
+                  data?.consentMethod?.toLowerCase() === "email" ? "bg-black" : ""
+                }`}
+              ></span>
+              <span>Consent given over the email</span>
+            </div>
             </div>
 
             {/* Driver Signature */}
@@ -346,7 +411,7 @@ const TowPdf = ({ data }) => {
               <span className="w-full border-b-2 border-black px-1 py-1 block">
                 {driverSignature ? (
                   <img
-                    src={driverSignature}
+                    src={consentSignature}
                     alt="Driver Signature"
                     className=""
                   />
