@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { IoDocumentSharp } from "react-icons/io5";
 import Doctopbar from "./Doctopbar";
+import { FaFilePdf } from "react-icons/fa";
 
 const Shimmer = () => {
   return (
@@ -37,7 +38,6 @@ const Shimmer = () => {
 
 const UBKTowing = () => {
   const [documents, setDocuments] = useState([]);
-  const [fileSizes, setFileSizes] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -54,7 +54,9 @@ const UBKTowing = () => {
     expiryDate: "",
     category: "",
     file: null,
+    fileSize: "",
   });
+  const [isUploading, setIsUploading] = useState(false);
   const dateInputRef = useRef(null);
 
   // Fetch documents
@@ -82,46 +84,38 @@ const UBKTowing = () => {
     }
   };
 
-  // Fetch file sizes
-  const fetchFileSize = async (url, id) => {
-    try {
-      const response = await axios.head(url);
-      const size = response.headers["content-length"];
-      if (size) {
-        const sizeInKB = (size / 1024).toFixed(1) + " KB";
-        setFileSizes((prev) => ({ ...prev, [id]: sizeInKB }));
-      }
-    } catch (error) {
-      console.error("Error fetching file size:", error);
-      setFileSizes((prev) => ({ ...prev, [id]: "—" }));
-    }
+  // Format bytes to human readable size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 B";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   useEffect(() => {
     fetchDocuments();
   }, []);
 
-  useEffect(() => {
-    documents.forEach((doc) => {
-      if (doc.fileUrl) {
-        fetchFileSize(doc.fileUrl, doc._id);
-      } else {
-        setFileSizes((prev) => ({ ...prev, [doc._id]: "—" }));
-      }
-    });
-  }, [documents]);
-
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: files ? files[0] : value,
-    });
+    if (name === "file") {
+      const file = files ? files[0] : null;
+      if (file) {
+        const sizeStr = formatFileSize(file.size);
+        setFormData((prev) => ({ ...prev, file, fileSize: sizeStr }));
+      } else {
+        setFormData((prev) => ({ ...prev, file: null, fileSize: "" }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // Upload document
   const handleUpload = async (e) => {
     e.preventDefault();
+    if (!formData.file) return;
+    setIsUploading(true);
     try {
       const token = localStorage.getItem("authToken");
       const form = new FormData();
@@ -142,10 +136,12 @@ const UBKTowing = () => {
       );
 
       setShowUploadModal(false);
-      setFormData({ title: "", expiryDate: "", category: "", file: null });
+      setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
       fetchDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -174,6 +170,11 @@ const UBKTowing = () => {
     setShowVehicleModal(false);
   };
 
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+  };
+
   return (
     <div className="w-full p-5">
       {/* Header Section */}
@@ -186,7 +187,7 @@ const UBKTowing = () => {
             onClick={() => setShowUploadModal(true)}
             className="bg-[#043677] text-white text-[16px] flex gap-2 items-center justify-center robotomedium px-4 py-2 h-[46px] rounded-lg hover:bg-[#032b5c] transition"
           >
-            <IoDocumentSharp className="text-[20px]" /> Upload Document
+           <FaFilePdf className="text-[20px] text-[#DC2626]" /> Upload Document
           </button>
         </div>
       </div>
@@ -200,7 +201,6 @@ const UBKTowing = () => {
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Category</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
             </tr>
@@ -215,28 +215,21 @@ const UBKTowing = () => {
                   onClick={() => handleDocClick(doc)}
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
-                  <td className="px-5 py-4 flex items-center space-x-2">
-                    {doc.fileUrl ? (
-                      <img
-                        src={doc.fileUrl}
-                        alt="file"
-                        className="w-10 h-10 rounded object-cover"
-                      />
-                    ) : (
-                      <IoDocumentSharp className="w-10 h-10 text-gray-500" />
-                    )}
-                    <span className="robotomedium text-[14px] text-[#333333E5]">
-                      {doc.title}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{fileSizes[doc._id] || "Loading..."}</td>
+<td className="px-5 py-4 flex items-center space-x-2">
+  <FaFilePdf className="w-10 h-10 text-[#DC2626]" />
+  <span className="robotomedium text-[14px] text-[#333333E5]">
+    {doc.title}
+  </span>
+</td>
+
+
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.formattedFileSize || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.uploadedBy?.name || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {doc.expiryDate
                       ? new Date(doc.expiryDate).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.vehicleId ? "Linked" : "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.category || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
@@ -245,7 +238,7 @@ const UBKTowing = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="text-center py-6 text-gray-500">
+                <td colSpan="6" className="text-center py-6 text-gray-500">
                   No documents found.
                 </td>
               </tr>
@@ -256,65 +249,88 @@ const UBKTowing = () => {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-[#00000083] bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[400px]">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[400px] max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-robotomedium mb-4">Upload Document</h3>
             <form onSubmit={handleUpload} className="space-y-4">
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Enter Title"
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div
-                onClick={() => dateInputRef.current.showPicker()}
-                className="relative"
-              >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                 <input
-                  ref={dateInputRef}
-                  type="date"
-                  name="expiryDate"
-                  value={formData.expiryDate}
+                  type="text"
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
+                  placeholder="Enter Title"
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
                 />
               </div>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              >
-                <option value="">Select Category</option>
-                <option value="UBK Towing">UBK Towing</option>
-                <option value="CAA">CAA</option>
-              </select>
-              <input
-                type="file"
-                name="file"
-                accept="*/*"
-                onChange={handleInputChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div className="flex justify-end space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                <div
+                  onClick={() => !isUploading && dateInputRef.current?.showPicker()}
+                  className="relative"
+                >
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isUploading}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer disabled:opacity-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Select Category</option>
+                  <option value="UBK Towing">UBK Towing</option>
+                  <option value="CAA">CAA</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF *</label>
+                <input
+                  type="file"
+                  name="file"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                  required
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                />
+                {formData.file && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    Selected: {formData.file.name} ({formData.fileSize})
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg"
+                  onClick={closeUploadModal}
+                  className=" cursor-pointer px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+                  disabled={isUploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c]"
+                  disabled={isUploading || !formData.title || !formData.expiryDate || !formData.category || !formData.file}
+                  className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Upload
+                  {isUploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </form>
@@ -361,7 +377,7 @@ const UBKTowing = () => {
             </div>
             <div>
               <p className="text-gray-500 text-sm">File</p>
-              <p className="text-gray-800 font-medium">{fileSizes[selectedDoc._id] || "—"}</p>
+              <p className="text-gray-800 font-medium">{selectedDoc.formattedFileSize || "—"}</p>
             </div>
             <div>
               <p className="text-gray-500 text-sm">Last Modified</p>

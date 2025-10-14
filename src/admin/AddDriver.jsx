@@ -16,6 +16,7 @@ const AddDriver = () => {
     phone: "",
     homePhone: "",
     address: {
+      street: "",  // Added for completeAddress mapping
       city: "",
       state: "",
       zipcode: "",
@@ -24,6 +25,8 @@ const AddDriver = () => {
     dob: "",
     employeeNumber: "",
     startDate: "",
+    leaveDate: "",  // ✅ Added
+    jobTitle: "",   // ✅ Added
     licenseNo: "",
     weekdays: {
       Monday: "",
@@ -34,6 +37,10 @@ const AddDriver = () => {
       Saturday: "",
       Sunday: "",
     },
+  });
+  const [accessPermissions, setAccessPermissions] = useState({  // ✅ Added for accessType
+    view: false,
+    upload: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -61,6 +68,15 @@ const AddDriver = () => {
     }
   };
 
+  // ✅ Added handler for access permissions checkboxes
+  const handleAccessChange = (e) => {
+    const { name, checked } = e.target;
+    setAccessPermissions({
+      ...accessPermissions,
+      [name]: checked,
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -76,6 +92,16 @@ const AddDriver = () => {
       return;
     }
 
+    // ✅ Derive accessType from checkboxes
+    let accessType = "none";
+    if (accessPermissions.view && accessPermissions.upload) {
+      accessType = "both";
+    } else if (accessPermissions.view) {
+      accessType = "view";
+    } else if (accessPermissions.upload) {
+      accessType = "upload";
+    }
+
     const apiData = new FormData();
     if (file) {
       apiData.append("profileImage", file);
@@ -86,6 +112,8 @@ const AddDriver = () => {
     apiData.append("password", formData.password);
     apiData.append("phone", formData.phone);
     apiData.append("homePhone", formData.homePhone);
+    // ✅ Address: Map street to completeAddress, others as-is
+    apiData.append("address[completeAddress]", formData.address.street || "");
     apiData.append("address[city]", formData.address.city);
     apiData.append("address[state]", formData.address.state);
     apiData.append("address[zipcode]", formData.address.zipcode);
@@ -93,7 +121,10 @@ const AddDriver = () => {
     apiData.append("dob", formData.dob);
     apiData.append("employeeNumber", formData.employeeNumber);
     apiData.append("startDate", formData.startDate);
+    apiData.append("leaveDate", formData.leaveDate || "");  // ✅ Added
     apiData.append("licenseNo", formData.licenseNo);
+    apiData.append("jobTitle", formData.jobTitle || "");    // ✅ Added
+    apiData.append("accessType", accessType);               // ✅ Added
     Object.keys(formData.weekdays).forEach((day) => {
       if (formData.weekdays[day]) {
         apiData.append(`weekdays[${day}]`, formData.weekdays[day]);
@@ -142,6 +173,7 @@ const AddDriver = () => {
         phone: "",
         homePhone: "",
         address: {
+          street: "",  // ✅ Added
           city: "",
           state: "",
           zipcode: "",
@@ -150,6 +182,8 @@ const AddDriver = () => {
         dob: "",
         employeeNumber: "",
         startDate: "",
+        leaveDate: "",  // ✅ Added
+        jobTitle: "",   // ✅ Added
         licenseNo: "",
         weekdays: {
           Monday: "",
@@ -161,6 +195,7 @@ const AddDriver = () => {
           Sunday: "",
         },
       });
+      setAccessPermissions({ view: false, upload: false });  // ✅ Added
       setFile(null);
 
       // Redirect to AllDrivers page
@@ -301,7 +336,7 @@ const AddDriver = () => {
                 <label className="text-[14px] robotomedium">Address</label>
                 <input
                   type="text"
-                  name="address.street"
+                  name="address.street"  // Maps to completeAddress in append
                   value={formData.address.street}
                   onChange={handleInputChange}
                   className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
@@ -432,13 +467,25 @@ const AddDriver = () => {
             <h2 className="text-[22px] robotosemibold mb-4">Document Access Permissions</h2>
             <div className="flex flex-col md:flex-row gap-6">
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4" />
+                <input 
+                  type="checkbox" 
+                  name="view"  // ✅ Added
+                  checked={accessPermissions.view}  // ✅ Added
+                  onChange={handleAccessChange}  // ✅ Added
+                  className="w-4 h-4" 
+                />
                 <span className="text-[14px] robotomedium">
                   Allow driver to view vehicle documents
                 </span>
               </label>
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4" />
+                <input 
+                  type="checkbox" 
+                  name="upload"  // ✅ Added
+                  checked={accessPermissions.upload}  // ✅ Added
+                  onChange={handleAccessChange}  // ✅ Added
+                  className="w-4 h-4" 
+                />
                 <span className="text-[14px] robotomedium">
                   Allow driver to upload vehicle documents
                 </span>
@@ -467,7 +514,6 @@ const AddDriver = () => {
                     onChange={handleInputChange}
                     className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 bg-white focus:outline-none focus:ring-0 appearance-none cursor-pointer"
                   >
-                 
                     <option value="Off">Off</option>
                     <option value="Custom">Custom</option>
                   </select>

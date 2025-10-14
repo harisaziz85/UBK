@@ -34,7 +34,6 @@ const Shimmer = () => {
 
 const AdminDoc = () => {
   const [documents, setDocuments] = useState([]);
-  const [fileSizes, setFileSizes] = useState({});
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -54,19 +53,6 @@ const AdminDoc = () => {
   const dateInputRef = useRef(null);
   const updateDateInputRef = useRef(null);
 
-  // Load persisted file sizes from localStorage on mount
-  useEffect(() => {
-    const persistedFileSizes = localStorage.getItem("documentFileSizes");
-    if (persistedFileSizes) {
-      setFileSizes(JSON.parse(persistedFileSizes));
-    }
-  }, []);
-
-  // Persist file sizes to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("documentFileSizes", JSON.stringify(fileSizes));
-  }, [fileSizes]);
-
   // Fetch documents
   const fetchDocuments = async () => {
     try {
@@ -80,6 +66,7 @@ const AdminDoc = () => {
           },
         }
       );
+      console.log(response.data);
       setDocuments(response.data.documents || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
@@ -97,79 +84,9 @@ const AdminDoc = () => {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  // Fetch file size from URL (front-end only)
-  const fetchFileSize = async (url, id) => {
-    if (fileSizes[id]) {
-      return; // Already have it in state
-    }
-
-    if (!url) {
-      setFileSizes((prev) => ({ ...prev, [id]: "—" }));
-      return;
-    }
-
-    // Check persisted
-    const persisted = localStorage.getItem("documentFileSizes");
-    if (persisted) {
-      const parsed = JSON.parse(persisted);
-      if (parsed[id]) {
-        setFileSizes((prev) => ({ ...prev, [id]: parsed[id] }));
-        return;
-      }
-    }
-
-    // Set loading state
-    setFileSizes((prev) => ({ ...prev, [id]: "Loading..." }));
-
-    let bytes = 0;
-
-    // Try HEAD request
-    try {
-      const headResponse = await axios.head(url, { timeout: 10000 });
-      const sizeHeader = headResponse.headers["content-length"];
-      if (sizeHeader) {
-        bytes = parseInt(sizeHeader);
-      }
-    } catch (headError) {
-      console.warn("HEAD request failed, trying fallback:", headError.message);
-    }
-
-    // If HEAD failed or no size, fallback to partial GET
-    if (bytes === 0) {
-      try {
-        const getResponse = await axios.get(url, {
-          headers: { Range: "bytes=0-0" },
-          responseType: "arraybuffer",
-          timeout: 15000,
-          maxContentLength: 1024,
-        });
-
-        const contentRange = getResponse.headers["content-range"];
-        if (contentRange) {
-          const match = contentRange.match(/\/(\d+)$/);
-          if (match) {
-            bytes = parseInt(match[1]);
-          }
-        }
-        // Do not use content-length here as it would be 1 for range request
-      } catch (getError) {
-        console.error("Fallback GET failed:", getError.message);
-      }
-    }
-
-    const sizeStr = bytes > 0 ? formatFileSize(bytes) : "—";
-    setFileSizes((prev) => ({ ...prev, [id]: sizeStr }));
-  };
-
   useEffect(() => {
     fetchDocuments();
   }, [page]);
-
-  useEffect(() => {
-    documents.forEach((doc) => {
-      fetchFileSize(doc.fileUrl, doc._id);
-    });
-  }, [documents]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -210,12 +127,6 @@ const AdminDoc = () => {
         }
       );
 
-      // Set file size in state from uploaded file (front-end only)
-      const newDocId = uploadResponse.data.document?._id || uploadResponse.data._id;
-      if (newDocId && formData.fileSize) {
-        setFileSizes((prev) => ({ ...prev, [newDocId]: formData.fileSize }));
-      }
-
       setShowUploadModal(false);
       setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
       fetchDocuments();
@@ -248,11 +159,6 @@ const AdminDoc = () => {
           },
         }
       );
-
-      // If file was updated, set new file size (front-end only)
-      if (formData.file && formData.fileSize) {
-        setFileSizes((prev) => ({ ...prev, [selectedDoc._id]: formData.fileSize }));
-      }
 
       setShowUpdateModal(false);
       setSelectedDoc(null);
@@ -348,7 +254,7 @@ const openUpdateModal = (doc) => {
                     </span>
                   </td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
-                    {fileSizes[doc._id] || "—"}
+                    {doc.formattedFileSize || "—"}
                   </td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.uploadedBy?.name || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">

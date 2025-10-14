@@ -5,7 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { QrCode } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Userprofile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,6 +18,12 @@ const Userprofile = () => {
   const [error, setError] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrData, setQrData] = useState(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -136,7 +142,7 @@ const Userprofile = () => {
       }
 
       const response = await fetch(`${baseUrl}/common/profile/update`, {
-        method: "Put",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -148,6 +154,37 @@ const Userprofile = () => {
       }
 
       toast.success("Profile updated successfully");
+
+      const hasPasswordInput = currentPassword || newPassword || confirmPassword;
+      if (hasPasswordInput) {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          toast.warning("Please fill in all password fields to change password.");
+        } else if (newPassword !== confirmPassword) {
+          toast.warning("New passwords do not match. Please try again.");
+        } else {
+          const passwordResponse = await fetch(`${baseUrl}/common/password/update-password`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              oldPassword: currentPassword,
+              newPassword,
+            }),
+          });
+
+          if (passwordResponse.ok) {
+            toast.success("Password updated successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+          } else {
+            toast.error("Failed to update password");
+          }
+        }
+      }
+
       setIsEditing(false);
       // Optionally refetch to confirm
     } catch (err) {
@@ -208,7 +245,7 @@ const Userprofile = () => {
          {/* QR Generate Icon */}
         <div className=" mt-4">
           <QrCode 
-            className="w-10 h-10 cursor-pointer text-gray-600 hover:text-[#043677]" 
+            className="w-10 h-10 cursor-pointer text-gray-600 hover:text-blue-600" 
             onClick={handleGenerateQr} 
           />
         </div>
@@ -321,6 +358,76 @@ const Userprofile = () => {
             }`}
           />
         </div>
+
+        {isEditing && (
+          <>
+            <div className="mb-4">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                Current Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showCurrent ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showNew ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirm ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Edit/Save Button */}
         <div className="flex justify-end">

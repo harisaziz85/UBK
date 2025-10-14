@@ -4,6 +4,7 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Adminprofile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -14,6 +15,12 @@ const Adminprofile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -52,7 +59,7 @@ const Adminprofile = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [baseUrl]);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -98,19 +105,48 @@ const Adminprofile = () => {
         throw new Error("Failed to update profile");
       }
 
-      toast.success("Profile updated successfully");
-      setIsEditing(false);
-      // Refetch profile to confirm updates
-      const fetchProfile = async () => {
-        try {
-          const response = await axios.get(`${baseUrl}/common/profile/me`, {
+      const hasPasswordInput = currentPassword || newPassword || confirmPassword;
+      if (hasPasswordInput) {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          toast.warning("Please fill in all password fields to change password.");
+        } else if (newPassword !== confirmPassword) {
+          toast.warning("New passwords do not match. Please try again.");
+        } else {
+          const passwordResponse = await axios.post(`${baseUrl}/common/password/update-password`, {
+            oldPassword: currentPassword,
+            newPassword,
+          }, {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
           });
 
-          const user = response.data.user;
+          if (passwordResponse.data) {
+            toast.success("Password updated successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+          } else {
+            throw new Error("Failed to update password");
+          }
+        }
+      } else {
+        toast.success("Profile updated successfully");
+      }
+
+      setIsEditing(false);
+      // Refetch profile to confirm updates
+      const fetchProfile = async () => {
+        try {
+          const refetchResponse = await axios.get(`${baseUrl}/common/profile/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          const user = refetchResponse.data.user;
           setFirstName(user.name.split(" ")[0] || "");
           setLastName(user.name.split(" ").slice(1).join(" ") || "");
           setEmail(user.email || "");
@@ -171,7 +207,7 @@ const Adminprofile = () => {
       <ToastContainer />
       <div className="bg-white px-6 py-8 rounded-2xl shadow-sm">
         {/* Title */}
-        <p className="font-semibold text-[24px] mb-6">User Profile</p>
+        <p className="font-semibold text-[24px] mb-6">Admin Profile</p>
 
         {/* Photo Section */}
         <p className="font-medium text-[16px] text-[#333333CC] mb-2">Photo</p>
@@ -185,7 +221,6 @@ const Adminprofile = () => {
               />
             ) : (
               <div
-
                 className="w-[80px] h-[80px] rounded-full border border-[#CCCCCC] flex items-center justify-center bg-gray-100"
               >
                 <svg
@@ -280,6 +315,76 @@ const Adminprofile = () => {
             }`}
           />
         </div>
+
+        {isEditing && (
+          <>
+            <div className="mb-4">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                Current Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent(!showCurrent)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showCurrent ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showNew ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-[14px] text-[#333333CC] robotoregular mb-1">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full border border-[#CCCCCC] rounded-[4px] px-[16px] py-[12px] pr-10 text-sm focus:outline-none focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirm ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Edit/Save Button */}
         <div className="flex justify-end">

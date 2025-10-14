@@ -233,15 +233,7 @@ const AdminLayout = () => {
                     User Profile
                     <LuUserRound className="text-[20px]" />
                   </NavLink>
-                  <hr className="text-[#33333333]" />
-                  <NavLink
-                    to="/admin/update-password"
-                    className="flex items-center justify-between robotoregular text-[16px] gap-2 px-4 py-2 text-sm hover:bg-gray-100"
-                    onClick={() => setIsProfileModalOpen(false)}
-                  >
-                    Password
-                    <LuKeyRound className="text-[20px]" />
-                  </NavLink>
+                 
                 </div>
               )}
             </div>

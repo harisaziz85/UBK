@@ -24,9 +24,6 @@ const Shimmer = () => {
             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
           </td>
           <td className="px-5 py-4">
-            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-          </td>
-          <td className="px-5 py-4">
             <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
           </td>
         </tr>
@@ -37,18 +34,20 @@ const Shimmer = () => {
 
 const AdminCaadoc = () => {
   const [documents, setDocuments] = useState([]);
-  const [fileSizes, setFileSizes] = useState({});
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     expiryDate: "",
     category: "",
     file: null,
+    fileSize: "",
   });
   const limit = 10;
   const dateInputRef = useRef(null);
@@ -80,46 +79,38 @@ const AdminCaadoc = () => {
     }
   };
 
-  // Fetch file size
-  const fetchFileSize = async (url, id) => {
-    try {
-      const response = await axios.head(url);
-      const size = response.headers["content-length"];
-      if (size) {
-        const sizeInKB = (size / 1024).toFixed(1) + " KB";
-        setFileSizes((prev) => ({ ...prev, [id]: sizeInKB }));
-      }
-    } catch (error) {
-      console.error("Error fetching file size:", error);
-      setFileSizes((prev) => ({ ...prev, [id]: "—" }));
-    }
+  // Format bytes to human readable size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 B";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   useEffect(() => {
     fetchDocuments();
   }, [page]);
 
-  useEffect(() => {
-    documents.forEach((doc) => {
-      if (doc.fileUrl) {
-        fetchFileSize(doc.fileUrl, doc._id);
-      } else {
-        setFileSizes((prev) => ({ ...prev, [doc._id]: "—" }));
-      }
-    });
-  }, [documents]);
-
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: files ? files[0] : value,
-    });
+    if (name === "file") {
+      const file = files ? files[0] : null;
+      if (file) {
+        const sizeStr = formatFileSize(file.size);
+        setFormData((prev) => ({ ...prev, file, fileSize: sizeStr }));
+      } else {
+        setFormData((prev) => ({ ...prev, file: null, fileSize: "" }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // Upload document
   const handleUpload = async (e) => {
     e.preventDefault();
+    if (!formData.file) return;
+    setIsUploading(true);
     try {
       const token = localStorage.getItem("authToken");
       const form = new FormData();
@@ -128,7 +119,7 @@ const AdminCaadoc = () => {
       form.append("category", formData.category);
       form.append("file", formData.file);
 
-      await axios.post(
+      const uploadResponse = await axios.post(
         "https://ubktowingbackend-production.up.railway.app/api/common/document/create",
         form,
         {
@@ -140,16 +131,19 @@ const AdminCaadoc = () => {
       );
 
       setShowUploadModal(false);
-      setFormData({ title: "", expiryDate: "", category: "", file: null });
+      setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
       fetchDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
   // Update document
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsUpdating(true);
     try {
       const token = localStorage.getItem("authToken");
       const form = new FormData();
@@ -158,7 +152,7 @@ const AdminCaadoc = () => {
       form.append("category", formData.category);
       if (formData.file) form.append("file", formData.file);
 
-      await axios.put(
+      const updateResponse = await axios.put(
         `https://ubktowingbackend-production.up.railway.app/api/common/document/update/${selectedDoc._id}`,
         form,
         {
@@ -171,22 +165,50 @@ const AdminCaadoc = () => {
 
       setShowUpdateModal(false);
       setSelectedDoc(null);
-      setFormData({ title: "", expiryDate: "", category: "", file: null });
+      setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
       fetchDocuments();
     } catch (error) {
       console.error("Update failed:", error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const openUpdateModal = (doc) => {
-    setSelectedDoc(doc);
-    setFormData({
-      title: doc.title,
-      expiryDate: doc.expiryDate ? doc.expiryDate.split("T")[0] : "",
-      category: doc.category || "",
-      file: null,
-    });
-    setShowUpdateModal(true);
+const openUpdateModal = (doc) => {
+  setSelectedDoc(doc);
+
+  let formattedExpiry = "";
+  if (doc.expiryDate) {
+    // ✅ Convert UTC date to correct local calendar date
+    const utcDate = new Date(doc.expiryDate);
+    const year = utcDate.getUTCFullYear();
+    const month = String(utcDate.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(utcDate.getUTCDate()).padStart(2, "0");
+    formattedExpiry = `${year}-${month}-${day}`;
+  }
+
+  setFormData({
+    title: doc.title,
+    expiryDate: formattedExpiry, // ✅ Exact calendar date
+    category: doc.category || "",
+    file: null,
+    fileSize: "",
+  });
+
+  setShowUpdateModal(true);
+};
+
+
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+  };
+
+  const closeUpdateModal = () => {
+    setShowUpdateModal(false);
+    setSelectedDoc(null);
+    setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
   };
 
   return (
@@ -215,7 +237,6 @@ const AdminCaadoc = () => {
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
             </tr>
           </thead>
@@ -235,14 +256,13 @@ const AdminCaadoc = () => {
                       {doc.title}
                     </span>
                   </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{fileSizes[doc._id] || "Loading..."}</td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.formattedFileSize || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.uploadedBy?.name || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {doc.expiryDate
                       ? new Date(doc.expiryDate).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.vehicleId ? "Linked" : "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
                   </td>
@@ -250,7 +270,7 @@ const AdminCaadoc = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center py-6 text-gray-500">
+                <td colSpan="5" className="text-center py-6 text-gray-500">
                   No documents found.
                 </td>
               </tr>
@@ -292,65 +312,88 @@ const AdminCaadoc = () => {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-[#00000083] bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[400px]">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[400px] max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-robotomedium mb-4">Upload Document</h3>
             <form onSubmit={handleUpload} className="space-y-4">
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Enter Title"
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div
-                onClick={() => dateInputRef.current.showPicker()}
-                className="relative"
-              >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                 <input
-                  ref={dateInputRef}
-                  type="date"
-                  name="expiryDate"
-                  value={formData.expiryDate}
+                  type="text"
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
+                  placeholder="Enter Title"
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
                 />
               </div>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              >
-                <option value="">Select Category</option>
-                <option value="UBK Towing">UBK Towing</option>
-                <option value="CAA">CAA</option>
-              </select>
-              <input
-                type="file"
-                name="file"
-                accept="application/pdf"
-                onChange={handleInputChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div className="flex justify-end space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                <div
+                  onClick={() => !isUploading && dateInputRef.current?.showPicker()}
+                  className="relative"
+                >
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isUploading}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer disabled:opacity-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Select Category</option>
+                  <option value="UBK Towing">UBK Towing</option>
+                  <option value="CAA">CAA</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF *</label>
+                <input
+                  type="file"
+                  name="file"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                  required
+                  disabled={isUploading}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                />
+                {formData.file && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    Selected: {formData.file.name} ({formData.fileSize})
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg"
+                  onClick={closeUploadModal}
+                  className=" cursor-pointer px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+                  disabled={isUploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c]"
+                  disabled={isUploading || !formData.title || !formData.expiryDate || !formData.category || !formData.file}
+                  className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Upload
+                  {isUploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </form>
@@ -360,64 +403,87 @@ const AdminCaadoc = () => {
 
       {/* Update Modal */}
       {showUpdateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[400px]">
+        <div className="fixed inset-0 bg-black/20   backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 w-[400px] max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-robotomedium mb-4">Update Document</h3>
             <form onSubmit={handleUpdate} className="space-y-4">
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Enter Title"
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div
-                onClick={() => updateDateInputRef.current.showPicker()}
-                className="relative"
-              >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
                 <input
-                  ref={updateDateInputRef}
-                  type="date"
-                  name="expiryDate"
-                  value={formData.expiryDate}
+                  type="text"
+                  name="title"
+                  value={formData.title}
                   onChange={handleInputChange}
+                  placeholder="Enter Title"
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer"
+                  disabled={isUpdating}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
                 />
               </div>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              >
-                <option value="">Select Category</option>
-                <option value="UBK Towing">UBK Towing</option>
-                <option value="CAA">CAA</option>
-              </select>
-              <input
-                type="file"
-                name="file"
-                accept="application/pdf"
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none"
-              />
-              <div className="flex justify-end space-x-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                <div
+                  onClick={() => !isUpdating && updateDateInputRef.current?.showPicker()}
+                  className="relative"
+                >
+                  <input
+                    ref={updateDateInputRef}
+                    type="date"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isUpdating}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none cursor-pointer disabled:opacity-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isUpdating}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Select Category</option>
+                  <option value="UBK Towing">UBK Towing</option>
+                  <option value="CAA">CAA</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Update PDF (Optional)</label>
+                <input
+                  type="file"
+                  name="file"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                  disabled={isUpdating}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                />
+                {formData.file && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    Selected: {formData.file.name} ({formData.fileSize})
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowUpdateModal(false)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg"
+                  onClick={closeUpdateModal}
+                  className=" cursor-pointer px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+                  disabled={isUpdating}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c]"
+                  disabled={isUpdating || !formData.title || !formData.expiryDate || !formData.category}
+                  className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Update
+                  {isUpdating ? "Updating..." : "Update"}
                 </button>
               </div>
             </form>

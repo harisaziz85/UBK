@@ -134,18 +134,7 @@ const ProfileDropdown = ({ user }) => {
                 <FaUser className="w-4 h-4 text-gray-500" />
                 <span>User Profile</span>
               </NavLink>
-              <NavLink
-                to="/updatepassword"
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 ${
-                    isActive ? 'bg-gray-100 text-black' : 'text-gray-700'
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-                <FaLock className="w-4 h-4 text-gray-500" />
-                <span>Login & Password</span>
-              </NavLink>
+              
             </div>
           </div>
         )}
@@ -322,7 +311,7 @@ const DriverLayout = () => {
           <VehicleDropdown setSidebarOpen={setIsOpen} />
           <div className="mt-auto">
             <NavLink
-              to="/updatepassword"
+              to="/profile"
               className={({ isActive }) =>
                 `flex items-center gap-2 text-[14px] robotomedium px-6 py-2 robotomedium ${isActive ? 'bg-white text-black rounded' : ''}`
               }
