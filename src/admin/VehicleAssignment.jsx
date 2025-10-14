@@ -422,25 +422,7 @@ const VehicleAssignment = () => {
         <div className="text-sm text-gray-600">
           Showing {vehicles.length} of {totalVehicles} vehicles
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || vehicleLoading}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || vehicleLoading}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+       
       </div>
 
       {/* Calendar Header */}
@@ -687,7 +669,7 @@ const VehicleAssignment = () => {
 
       {/* Add Assignment Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800">Add Assignment</h2>
@@ -736,7 +718,7 @@ const VehicleAssignment = () => {
                 <div className="w-1/2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="startDate"
                     value={assignmentData.startDate}
                     onChange={handleAssignmentChange}
@@ -746,7 +728,7 @@ const VehicleAssignment = () => {
                 <div className="w-1/2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="endDate"
                     value={assignmentData.endDate}
                     onChange={handleAssignmentChange}
@@ -757,14 +739,14 @@ const VehicleAssignment = () => {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  className=" cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
                   disabled={vehicleLoading}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={assignVehicle}
-                  className="px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50"
+                  className=" cursor-pointer px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50"
                   disabled={vehicleLoading}
                 >
                   Assign

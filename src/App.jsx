@@ -103,7 +103,7 @@ function App() {
           <Route path="/admin/add-drivers" element={<AddDriver />} />
           <Route path="/admin/driver/details/:id" element={<DriverDetailsPage />} />
           {/* Vehicle Routes */}
-          <Route path="/admin/vehicles" element={<Vahicles />} />
+          <Route path="/admin/vehicles" element={<Vahicles/>} />
           <Route path="/admin/unassigned-vehicles" element={<UnassignedVehicles />} />
           <Route path="/admin/assigned-vehicles" element={<AssignedVehicles />} />
           <Route path="/admin/createvehicles" element={<CreateVehicle />} />

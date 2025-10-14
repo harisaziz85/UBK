@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Mail, MessageSquare, Phone, Search } from "lucide-react"; // Icons
+import { Mail, MessageSquare, Phone, Search, QrCode } from "lucide-react"; // Icons
 import { IoMdAdd } from "react-icons/io";
 import { CgProfile } from "react-icons/cg"; // Profile icon
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { QRCodeCanvas } from "qrcode.react";
 
 const AllDrivers = () => {
   const [selected, setSelected] = useState([]);
@@ -12,6 +13,8 @@ const AllDrivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
   const navigate = useNavigate();
 
   // Fetch drivers from API
@@ -86,6 +89,45 @@ const AllDrivers = () => {
 
     fetchDrivers();
   }, [navigate]);
+
+  const handleGenerateQr = async (driverId) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Please log in to generate QR code.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://ubktowingbackend-production.up.railway.app/api/common/qr/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            driverId,
+            expiresInSeconds: 120,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate QR code");
+      }
+
+      const data = await response.json();
+      setQrData(data);
+      setShowQrModal(true);
+    } catch (err) {
+      console.error("QR generation error:", err);
+      toast.error(err.message || "Failed to generate QR code.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
 
   // Toggle single checkbox
   const handleCheckboxChange = (id) => {
@@ -310,9 +352,16 @@ const AllDrivers = () => {
                     className="flex gap-3 justify-center px-3 py-2"
                     onClick={(e) => e.stopPropagation()} // Prevent row click when clicking action icons
                   >
-                    <Phone className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
-                    <MessageSquare className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
-                    <Mail className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
+                    <div className="flex gap-3 justify-center">
+                      <MessageSquare className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
+                      <QrCode 
+                        className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateQr(driver.id);
+                        }} 
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -331,6 +380,34 @@ const AllDrivers = () => {
           </table>
         )}
       </div>
+
+      {showQrModal && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm bg-opacity-50 z-50" 
+          onClick={() => setShowQrModal(false)}
+        >
+          <div 
+            className="bg-white p-8 rounded-lg max-w-md w-full mx-4 relative" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl" 
+              onClick={() => setShowQrModal(false)}
+            >
+              ×
+            </button>
+            <h3 className="text-lg font-semibold mb-4 text-center">QR Code for Driver</h3>
+            {qrData && (
+              <div className="flex flex-col items-center">
+              <QRCodeCanvas value={JSON.stringify(qrData.qrPayload)} size={200} />
+                {/* <p className="mt-4 text-sm text-gray-600 text-center">Token: {qrData.token}</p> */}
+                <p className="text-sm text-gray-600 text-center">Expires: {new Date(qrData.expiresAt).toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   );

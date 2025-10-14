@@ -3,6 +3,9 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { QrCode } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+
 
 const Userprofile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -13,6 +16,8 @@ const Userprofile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -57,6 +62,44 @@ const Userprofile = () => {
 
     fetchProfile();
   }, [baseUrl]);
+
+  const handleGenerateQr = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      toast.error("Please log in to generate QR code.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${baseUrl}/common/qr/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            expiresInSeconds: 120,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate QR code");
+      }
+
+      const data = await response.json();
+      setQrData(data);
+      setShowQrModal(true);
+    } catch (err) {
+      console.error("QR generation error:", err);
+      toast.error(err.message || "Failed to generate QR code.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -157,8 +200,22 @@ const Userprofile = () => {
     <div className=" p-0 sm:p-6">
       <ToastContainer/>
       <div className="bg-white px-6 py-8 rounded-2xl shadow-sm">
+
+        <div className=" flex justify-between">
+
+         <p className="font-semibold text-[24px] mb-6">User Profile</p>
+
+         {/* QR Generate Icon */}
+        <div className=" mt-4">
+          <QrCode 
+            className="w-10 h-10 cursor-pointer text-gray-600 hover:text-[#043677]" 
+            onClick={handleGenerateQr} 
+          />
+        </div>
+
+        </div>
         {/* Title */}
-        <p className="font-semibold text-[24px] mb-6">User Profile</p>
+     
 
         {/* Photo Section */}
         <p className="font-medium text-[16px] text-[#333333CC] mb-2">Photo</p>
@@ -275,6 +332,35 @@ const Userprofile = () => {
             {isEditing ? "Save" : "Edit"}
           </button>
         </div>
+
+       
+
+        {showQrModal && (
+          <div 
+            className="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm bg-opacity-50 z-50" 
+            onClick={() => setShowQrModal(false)}
+          >
+            <div 
+              className="bg-white p-8 rounded-lg max-w-md w-full mx-4 relative" 
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                className=" cursor-pointer absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl" 
+                onClick={() => setShowQrModal(false)}
+              >
+                ×
+              </button>
+              <h3 className="text-lg font-semibold mb-4 text-center">QR Code</h3>
+              {qrData && (
+                <div className="flex flex-col items-center">
+                <QRCodeCanvas value={JSON.stringify(qrData.qrPayload)} size={200} />
+                  {/* <p className="mt-4 text-sm text-gray-600 text-center">Token: {qrData.token}</p> */}
+                  <p className="text-sm text-gray-600 text-center">Expires: {new Date(qrData.expiresAt).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

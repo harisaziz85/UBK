@@ -121,6 +121,7 @@ const DriverDetailsPage = () => {
         }
 
         const data = await response.json();
+        console.log(data);
         if (!data.driver) {
           throw new Error("No driver data returned from API");
         }

@@ -112,7 +112,22 @@ const AddDriver = () => {
         }
       );
 
-      toast.success("Driver added successfully! Redirecting...", {
+      // Generate QR for the new driver
+      const qrData = {
+        driverId: response.data._id,
+        expiresInSeconds: 120
+      };
+      await axios.post(
+        "https://ubktowingbackend-production.up.railway.app/api/common/qr/generate",
+        qrData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success("Driver added and QR generated successfully! Redirecting...", {
         position: "top-right",
         autoClose: 2000,
       });
@@ -452,9 +467,7 @@ const AddDriver = () => {
                     onChange={handleInputChange}
                     className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 bg-white focus:outline-none focus:ring-0 appearance-none cursor-pointer"
                   >
-                    <option value="">No option selected</option>
-                    <option value="09:00 AM – 05:00 PM">09:00 AM – 05:00 PM</option>
-                    <option value="10:00 AM – 06:00 PM">10:00 AM – 06:00 PM</option>
+                 
                     <option value="Off">Off</option>
                     <option value="Custom">Custom</option>
                   </select>

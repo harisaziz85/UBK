@@ -6,6 +6,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("email");
@@ -61,6 +62,67 @@ const Login = () => {
       console.error("Login error:", err);
       toast.error(
         err.response?.data?.message || "An error occurred during login.",
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleScan = (data) => {
+    if (data && data.length > 0) {
+      const decodedData = data[0].decodedText;
+      try {
+        const payload = JSON.parse(decodedData);
+        const token = payload.token;
+        handleQrLogin(token);
+      } catch (e) {
+        console.error('Invalid QR data:', e);
+        toast.error("Invalid QR code format.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    }
+  };
+
+  const handleError = (err) => {
+    console.error("QR Scan Error:", err);
+  };
+
+  const handleQrLogin = async (token) => {
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${baseurl}/common/qr/login`,
+        { token }
+      );
+
+      const { token: authToken, user } = response.data;
+      localStorage.setItem("authToken", authToken);
+
+      toast.success("Login successful! Redirecting...", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+
+      setTimeout(() => {
+        if (user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (user.role === "driver") {
+          navigate("/driverdashboard");
+        } else {
+          toast.error("Unknown role. Please contact admin.");
+        }
+      }, 2000);
+    } catch (err) {
+      console.error("QR Login error:", err);
+      toast.error(
+        err.response?.data?.message || "An error occurred during QR login.",
         {
           position: "top-right",
           autoClose: 3000,
@@ -198,10 +260,20 @@ const Login = () => {
           {/* QR Code Tab */}
           {activeTab === "qr" && (
             <div className="flex flex-col items-center">
-              <img
-                src="/qr.png"
-                alt="QR Code"
-                className="w-40 h-40 my-6"
+              <Scanner
+                onScan={handleScan}
+                onError={handleError}
+                constraints={{
+                  facingMode: "environment"
+                }}
+                styles={{
+                  container: {
+                    width: "100%"
+                  },
+                  scanner: {
+                    width: "100%"
+                  }
+                }}
               />
               <p className="text-[#333333CC] robotoregular text-[16px]">
                 Scan the QR Code to login to the app
