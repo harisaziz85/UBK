@@ -60,7 +60,7 @@ const CreateVehicle = () => {
       );
 
       if (res.data.success) {
-        toast.success("✅ Vehicle created successfully!");
+        toast.success("Vehicle created successfully!");
         setFormData({
           name: "",
           vin: "",

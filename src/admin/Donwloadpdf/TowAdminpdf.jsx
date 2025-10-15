@@ -1,29 +1,62 @@
 // Tow PDF Component (dynamic, similar to StoragePdf)
-const TowPdf = ({ data }) => {
-  console.log("✅ Raw data received:", data);
+import { useState, useEffect } from 'react';
 
-  if (!data || typeof data !== "object") {
-    console.error("❌ Invalid or missing 'data' prop:", data);
+const TowAdminPdf = ({ id }) => {
+  const [formData, setFormData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        console.error('❌ Missing ID prop');
+        return;
+      }
+      try {
+        const token = localStorage.getItem('authToken');
+        const BASE_URL = 'https://ubktowingbackend-production.up.railway.app/api';
+        const response = await fetch(`${BASE_URL}/driver/consentForm/${id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        setFormData(responseData.form);
+      } catch (error) {
+        console.error('❌ Error fetching consent form data:', error);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  console.log("✅ Raw data received:", formData);
+
+  if (!formData || typeof formData !== "object") {
+    console.error("❌ Invalid or missing formData:", formData);
   } else {
-    Object.entries(data).forEach(([key, value]) => {
+    Object.entries(formData).forEach(([key, value]) => {
       console.log(`➡️ ${key}:`, value);
     });
   }
 
- const {
-   invoicePO ='', // ✅ Add this line
-  towTruckNumber = "",
-    towDriverName = "", // ✅ add this line
-  driverCertificate = "",
-  name,
-   callNumber = "",
-  year = "",
-  make = "",
-  model = "",
-  color = "",
-  plate = "",
-  vin = "",
-  currentMileage = "",
+  const {
+    invoicePO = '', // ✅ Add this line
+    towTruckNumber = "",
+    driverCertificate = "",
+    callNumber = "",
+    year = "",
+    make = "",
+    model = "",
+    color = "",
+    plate = "",
+    vin = "",
+    currentMileage = "",
     towedFrom = "",
     dateStartTime = "",
     towedTo = "",
@@ -36,7 +69,7 @@ const TowPdf = ({ data }) => {
     consentPhone = "",
     consentEmail = "",
     providingServices = false,
-   providingServiceAtPoliceDirection = "",
+    providingServiceAtPoliceDirection = "",
     callOccurrenceNumber = "",
     officerNameBadge = "",
     detachmentDivision = "",
@@ -47,16 +80,61 @@ const TowPdf = ({ data }) => {
     driverSignature = "",
     consentOverPhone = false,
     consentOverEmail = false,
-     startDate = "",
+    startDate = "",
     startTime = "",
     endDate = "",
     endTime = "",
+  } = formData || {};
 
+  const towDateTime = formData?.towDetails?.towDateTime ? new Date(formData.towDetails.towDateTime) : null;
+  const consentDt = formData?.consentDateTime ? new Date(formData.consentDateTime) : null;
 
+  if (towDateTime) {
+    startDate = towDateTime.toISOString().split('T')[0];
+    startTime = towDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    endDate = startDate;
+    endTime = startTime;
+  }
 
-  } = data;
+  if (consentDt) {
+    consentDateTime = consentDt.toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+  }
 
-  
+  const mappedInvoicePO = formData?.towDriver?.invoiceOrPO || '';
+  const mappedTowTruckNumber = formData?.towDriver?.truckNumber || '';
+  const mappedDriverCertificate = formData?.towDriver?.driverCertificate || '';
+  const mappedYear = formData?.vehicle?.year || '';
+  const mappedMake = formData?.vehicle?.make || '';
+  const mappedModel = formData?.vehicle?.model || '';
+  const mappedColor = formData?.vehicle?.color || '';
+  const mappedPlate = formData?.vehicle?.plate || '';
+  const mappedVin = formData?.vehicle?.vin || '';
+  const mappedCurrentMileage = formData?.vehicle?.currentMileage || '';
+  const mappedTowedFrom = formData?.towDetails?.fromLocation || '';
+  const mappedTowedTo = formData?.towDetails?.toLocation || '';
+  const mappedServiceDescription = formData?.towDetails?.descriptionOfServices || '';
+  const mappedAcknowledgementCheckbox = formData?.towDetails?.acknowledgementRevisedDestination || false;
+  const mappedConsentPersonName = formData?.consentBy?.name || '';
+  const mappedConsentAddress = formData?.consentBy?.address || '';
+  const mappedConsentPhone = formData?.consentBy?.phone || '';
+  const mappedConsentEmail = formData?.consentBy?.email || '';
+  const mappedProvidingServiceAtPoliceDirection = formData?.policeDirected?.isDirected || false;
+  const mappedIncidentNumber = formData?.policeDirected?.incidentNumber || '';
+  const mappedOfficerNameBadge = `${formData?.policeDirected?.officerName || ''} ${formData?.policeDirected?.badgeNumber || ''}`.trim() || '';
+  const mappedDetachmentDivision = formData?.policeDirected?.detachmentDivision || '';
+  const mappedRateSheetShown = formData?.rateSheetShown || false;
+  const mappedRightsInformed = formData?.informedOfRights || false;
+  const mappedConsentSignature = formData?.towDetails?.digitalSignature || '';
+  const mappedDriverSignature = formData?.towDetails?.digitalSignature || '';
+  const mappedConsentMethod = formData?.consentMethod || '';
+
   const formattedEndDateTime = dateEndTime || ''; // Assuming dateEndTime is formatted as "YYYY-MM-DD HH:MM"
 
   return (
@@ -78,7 +156,7 @@ const TowPdf = ({ data }) => {
           <div className="flex items-center gap-2 text-sm sm:text-base">
             <span className="font-bold italic">CONSENT TO TOW</span>
             <span className="text-xs sm:text-sm">PO#</span>
-            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{invoicePO}</span>
+            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{mappedInvoicePO}</span>
           </div>
         </div>
 
@@ -107,18 +185,13 @@ const TowPdf = ({ data }) => {
             </div>
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center">
-                <label className="font-bold w-32 sm:w-40 flex-shrink-0">Name:</label>
-                 <span className="flex-1 border-b border-black px-1"> {towDriverName}</span>
-
-              </div>
-              <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Truck Number:</label>
-                 <span className="flex-1 border-b border-black px-1"> {data.towTruckNumber }</span>
+                 <span className="flex-1 border-b border-black px-1"> {mappedTowTruckNumber }</span>
 
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Driver Certificate:</label>
-                <span className="flex-1 border-b border-black px-1">TD {driverCertificate}</span>
+                <span className="flex-1 border-b border-black px-1">TD {mappedDriverCertificate}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Call #:</label>
@@ -156,10 +229,10 @@ const TowPdf = ({ data }) => {
   {/* Line 1 - Year / Make / Model / Colour / Unit */}
   <div className="grid grid-cols-5 gap-4 text-xs mb-2">
     {[
-    { label: "Year", value: data?.year || "—" },
-{ label: "Make", value: data?.make || "—" },
-{ label: "Model", value: data?.model || "—" },
-{ label: "Colour", value: data?.color || "—" },
+    { label: "Year", value: mappedYear || "—" },
+{ label: "Make", value: mappedMake || "—" },
+{ label: "Model", value: mappedModel || "—" },
+{ label: "Colour", value: mappedColor || "—" },
 
     ].map((field, index) => (
       <div key={index} className="flex items-center w-full">
@@ -174,7 +247,7 @@ const TowPdf = ({ data }) => {
     {/* Plate */}
     <div className="flex items-center w-full">
       <label className="font-bold whitespace-nowrap mr-1">Plate:</label>
-      <span className="w-full border-b border-black px-1">{data?.plate || "—"}</span>
+      <span className="w-full border-b border-black px-1">{mappedPlate || "—"}</span>
     </div>
 
     {/* VIN + Odometer on same line */}
@@ -187,7 +260,7 @@ const TowPdf = ({ data }) => {
 
           {/* VIN Box Row */}
           <div className="flex flex-nowrap gap-[2px]">
-            {(data?.vin || '').padEnd(17, ' ').split('').map((char, index) => (
+            {(mappedVin || '').padEnd(17, ' ').split('').map((char, index) => (
               <div
                 key={index}
                 className="w-[18px] h-[20px] sm:w-[20px] sm:h-[22px] border border-black flex items-center justify-center text-[11px] sm:text-[12px] font-medium text-black"
@@ -203,7 +276,7 @@ const TowPdf = ({ data }) => {
       <div className="flex items-center ml-6 flex-shrink-0">
         <label className="font-bold whitespace-nowrap mr-1">Odometer:</label>
         <span className="w-24 border-b border-black px-1">
-          {data?.currentMileage || "—"}
+          {mappedCurrentMileage || "—"}
         </span>
       </div>
     </div>
@@ -222,7 +295,7 @@ const TowPdf = ({ data }) => {
     {/* Towed From */}
     <div className="flex items-center">
       <label className="font-bold whitespace-nowrap mr-1">Towed From:</label>
-      <span className="w-full border-b border-black">{towedFrom}</span>
+      <span className="w-full border-b border-black">{mappedTowedFrom}</span>
     </div>
 
     {/* Start Date & Time */}
@@ -237,7 +310,7 @@ const TowPdf = ({ data }) => {
     {/* Towed To */}
     <div className="flex items-center">
       <label className="font-bold whitespace-nowrap mr-1">Towed To:</label>
-      <span className="w-full border-b border-black">{towedTo}</span>
+      <span className="w-full border-b border-black">{mappedTowedTo}</span>
     </div>
 
     {/* End Date & Time */}
@@ -259,9 +332,9 @@ const TowPdf = ({ data }) => {
             DESCRIPTION OF SERVICES
           </div>
           <div className="text-xs space-y-2">
-            <div className="w-full border-b border-black px-1">{serviceDescription}</div>
+            <div className="w-full border-b border-black px-1">{mappedServiceDescription}</div>
             <div className="flex items-center">
-              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${acknowledgementCheckbox ? 'bg-black' : ''}`}></span>
+              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${mappedAcknowledgementCheckbox ? 'bg-black' : ''}`}></span>
               <span>Acknowledgement of client&apos;s revised destination address - Signature:</span>
               <span className="flex-1 border-b border-black px-1 ml-2">{revisedDestinationSignature}</span>
             </div>
@@ -281,19 +354,19 @@ const TowPdf = ({ data }) => {
             <div className="space-y-2 text-xs">
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Name:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPersonName}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentPersonName}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Address:</label>
-                <span className="flex-1 border-b border-black px-1">{consentAddress}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentAddress}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Phone #:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPhone}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentPhone}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Email Address:</label>
-                <span className="flex-1 border-b border-black px-1">{consentEmail}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentEmail}</span>
               </div>
             </div>
           </div>
@@ -305,7 +378,7 @@ const TowPdf = ({ data }) => {
     <label className="flex items-start gap-2">
       <span
         className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${
-          data?.providingServiceAtPoliceDirection ? "bg-black" : ""
+          mappedProvidingServiceAtPoliceDirection ? "bg-black" : ""
         }`}
       ></span>
       <span>Providing Services at the direction of Police Officer</span>
@@ -315,7 +388,7 @@ const TowPdf = ({ data }) => {
     <div className="flex items-center">
       <label className="font-bold w-40 flex-shrink-0">Call/Occurrence #:</label>
       <span className="flex-1 border-b border-black px-1">
-         {data?.incidentNumber || "—"}
+         {mappedIncidentNumber || "—"}
       </span>
     </div>
 
@@ -323,7 +396,7 @@ const TowPdf = ({ data }) => {
     <div className="flex items-center">
       <label className="font-bold w-40 flex-shrink-0">Officer Name & Badge #:</label>
       <span className="flex-1 border-b border-black px-1">
-        {data?.officerNameBadge || "—"}
+        {mappedOfficerNameBadge || "—"}
       </span>
     </div>
 
@@ -331,7 +404,7 @@ const TowPdf = ({ data }) => {
     <div className="flex items-center">
       <label className="font-bold w-40 flex-shrink-0">Detachment/ Division:</label>
       <span className="flex-1 border-b border-black px-1">
-        {data?.detachmentDivision || "—"}
+        {mappedDetachmentDivision || "—"}
       </span>
     </div>
   </div>
@@ -348,12 +421,12 @@ const TowPdf = ({ data }) => {
         <div className="p-3 sm:p-4 mx-4 text-xs space-y-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${rightsInformed ? 'bg-black' : ''}`}></span>
+              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${mappedRightsInformed ? 'bg-black' : ''}`}></span>
               <span className='font-bold'>You must be informed of your rights before you sign this Consent to Tow form.</span>
             </label>
 
             <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${rateSheetShown ? 'bg-black' : ''}`}></span>
+              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${mappedRateSheetShown ? 'bg-black' : ''}`}></span>
               <span className="font-bold">Rate sheet shown client</span>
             </label>
           </div>
@@ -366,9 +439,9 @@ const TowPdf = ({ data }) => {
             {/* Signature of the person giving consent */}
             <div className="text-center">
            <span className="w-full border-b-2 border-black px-1 py-1 block text-center">
-  {consentSignature ? (
+  {mappedConsentSignature ? (
     <img
-      src={consentSignature}
+      src={mappedConsentSignature}
       alt="Consent Signature"
       className="mx-auto max-h-24 object-contain"
       onError={(e) => {
@@ -390,7 +463,7 @@ const TowPdf = ({ data }) => {
                 <div className="flex justify-center items-center mt-2 gap-2">
     <span
       className={`w-4 h-4 border-2 border-black ${
-        data?.consentMethod?.toLowerCase() === "phone" ? "bg-black" : ""
+        mappedConsentMethod?.toLowerCase() === "phone" ? "bg-black" : ""
       }`}
     ></span>
     <span>Consent given over the phone</span>
@@ -406,7 +479,7 @@ const TowPdf = ({ data }) => {
               <div className="flex justify-center items-center mt-2 gap-2">
               <span
                 className={`w-4 h-4 border-2 border-black ${
-                  data?.consentMethod?.toLowerCase() === "email" ? "bg-black" : ""
+                  mappedConsentMethod?.toLowerCase() === "email" ? "bg-black" : ""
                 }`}
               ></span>
               <span>Consent given over the email</span>
@@ -416,9 +489,9 @@ const TowPdf = ({ data }) => {
             {/* Driver Signature */}
             <div className="text-center">
               <span className="w-full border-b-2 border-black px-1 py-1 block">
-                {driverSignature ? (
+                {mappedDriverSignature ? (
                   <img
-                    src={consentSignature}
+                    src={mappedConsentSignature}
                     alt="Driver Signature"
                     className=""
                   />
@@ -443,4 +516,4 @@ const TowPdf = ({ data }) => {
   );
 };
 
-export default TowPdf;
+export default TowAdminPdf;

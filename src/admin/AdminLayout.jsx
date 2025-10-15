@@ -54,6 +54,7 @@ const AdminLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userProfile, setUserProfile] = useState({ profileImage: null, name: "Super Admin" });
   const navigate = useNavigate();
 
@@ -77,6 +78,15 @@ const AdminLayout = () => {
     };
 
     fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Handle logout
@@ -196,21 +206,27 @@ const AdminLayout = () => {
           <h1 className="text-lg font-semibold text-[#043677]"></h1>
 
           <div className="flex items-center gap-4">
-            <VscBell className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[24px]" />
-            <div className="relative">
-              {userProfile.profileImage ? (
-                <img
-                  src={userProfile.profileImage}
-                  alt="User Profile"
-                  className="w-10 h-10 rounded-full cursor-pointer object-cover"
-                  onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
-                />
-              ) : (
-                <LiaUserCircleSolid
-                  className="text-gray-500 text-xl cursor-pointer hover:text-[#043677] text-[34px]"
-                  onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
-                />
-              )}
+            <div 
+              className="relative"
+              onMouseEnter={!isMobile ? () => setIsProfileModalOpen(true) : undefined}
+              onMouseLeave={!isMobile ? () => setIsProfileModalOpen(false) : undefined}
+            >
+              <div
+                className={`${isMobile ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                onClick={isMobile ? () => setIsProfileModalOpen(!isProfileModalOpen) : undefined}
+              >
+                {userProfile.profileImage ? (
+                  <img
+                    src={userProfile.profileImage}
+                    alt="User Profile"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <LiaUserCircleSolid
+                    className="text-gray-500 text-xl hover:text-[#043677] text-[34px]"
+                  />
+                )}
+              </div>
               {isProfileModalOpen && (
                 <div className="absolute top-full right-0 mt-2 w-[259px] bg-white border border-gray-300 rounded-md shadow-lg z-10 p-2">
                   <div className="flex items-center gap-3 p-2">

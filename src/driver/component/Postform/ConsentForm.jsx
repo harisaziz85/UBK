@@ -326,11 +326,14 @@ useEffect(() => {
           storageCertificate: "VS-189-380-467"
         },
         towDriver: {
-          name: sharedData.driverName,
-          truckNumber: sharedData.truckNumber,
-          driverCertificate: sharedData.driverCertificate,
-          invoiceOrPO: isTow ? towSpecific.callNumber : storageSpecific.invoicePO
-        },
+        name: sharedData.driverName,
+        truckNumber: sharedData.truckNumber,
+        driverCertificate: sharedData.driverCertificate,
+        invoiceOrPO: storageSpecific.invoicePO || towSpecific.invoicePO || "", // ✅ always send invoice
+        call: isTow ? (towSpecific.callNumber?.trim() || "") : "",
+
+          },
+
         vehicle: selectedVehicle ? {
           vehicleId: selectedVehicle,
           make: vehicle.make || '',
@@ -369,10 +372,16 @@ useEffect(() => {
       };
 
       if (isTow) {
+
+          const endDateTime = towSpecific.endDate && towSpecific.endTime
+    ? new Date(`${towSpecific.endDate}T${towSpecific.endTime}:00`).toISOString()
+    : null;
+
         payload.towDetails = {
           fromLocation: sharedData.towedFrom,
           toLocation: towSpecific.towedTo,
           towDateTime: startDateTime,
+           towEndDateTime: endDateTime,  
           acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
           digitalSignature: towSpecific.secondSignature,
           descriptionOfServices: towSpecific.serviceDescription
@@ -445,7 +454,7 @@ const pdfSubmitData = {
   // 🔹 Officer Details
   officerNameBadge:
     (officerName ? officerName : "") +
-    (badgeNumber ? ` & ${badgeNumber}` : ""),
+    (badgeNumber ? `${badgeNumber}` : ""),
 
   // 🔹 Police Directed Info
   policeDirected: payload.policeDirected?.isDirected || "",
@@ -476,6 +485,11 @@ towTruckNumber:
   payload?.towDriver?.truckNumber ||
   sharedData?.truckNumber ||
   "",
+  towDriverName:
+  payload?.towDriver?.name ||
+  sharedData?.driverName ||
+  "",
+
   towDriverPhone: sharedData?.consentPhone || "",
   driverCertificate: sharedData?.driverCertificate || "", // ✅ Fixed visibility
 
@@ -500,9 +514,9 @@ towTruckNumber:
   detachmentDivision: payload?.policeDirected?.detachmentDivision || "",
   officerNameBadge: `${payload?.policeDirected?.officerName || ""} & ${payload?.policeDirected?.badgeNumber || ""}`,
 
-  // 🔹 Admin / Misc
-  notes: payload?.notes || "",
-  createdAt: new Date().toISOString(),
+rightsInformed: payload?.informedOfRights === true,
+rateSheetShown: payload?.rateSheetShown === true,
+
 };
 
 

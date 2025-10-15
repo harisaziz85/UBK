@@ -1,19 +1,50 @@
-
-
 // Storage PDF Component (updated to accept props and render static values)
- const StoragePdf = ({ data }) => {
+import { useState, useEffect } from 'react';
 
-     console.log("✅ Raw data received:", data);
+const StorageAdminPdf = ({ id }) => {
+  const [formData, setFormData] = useState(null);
 
-      if (!data || typeof data !== "object") {
-    console.error("❌ Invalid or missing 'data' prop:", data);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        console.error('❌ Missing ID prop');
+        return;
+      }
+      try {
+        const token = localStorage.getItem('authToken');
+        const BASE_URL = 'https://ubktowingbackend-production.up.railway.app/api';
+        const response = await fetch(`${BASE_URL}/driver/consentForm/${id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        setFormData(responseData.form);
+      } catch (error) {
+        console.error('❌ Error fetching consent form data:', error);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  console.log("✅ Raw data received:", formData);
+
+  if (!formData || typeof formData !== "object") {
+    console.error("❌ Invalid or missing formData:", formData);
   } else {
-    Object.entries(data).forEach(([key, value]) => {
+    Object.entries(formData).forEach(([key, value]) => {
       console.log(`➡️ ${key}:`, value);
     });
   }
-  console.groupEnd();
-  
+
   const {
     invoicePO = '',
     driverName = '',
@@ -47,13 +78,56 @@
     // Signatures: assuming secondSignature or similar for consentSignature and driverSignature
     consentSignature = '',
     driverSignature = '',
-     callNumber
-  } = data;
+  } = formData || {};
 
+  const startDt = formData?.storageDetails?.startDateTime ? new Date(formData.storageDetails.startDateTime).toLocaleString('en-US', { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    hour12: true 
+  }) : '';
 
-  const storageLocationText = storageAddressConfirmed ? `7 Belvia Road Etobicoke Ontario M8W9R2 - ${storageType?.toUpperCase()}` : '7 Belvia Road Etobicoke Ontario M8W9R2';
-  const officerName = officerNameBadge ? officerNameBadge.split(' & ')[0] : '';
-  const badgeNumber = officerNameBadge ? officerNameBadge.split(' & ')[1] : '';
+  const consentDt = formData?.consentDateTime ? new Date(formData.consentDateTime).toLocaleString('en-US', { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    hour12: true 
+  }) : '';
+
+  const mappedInvoicePO = formData?.towDriver?.invoiceOrPO || '';
+  const mappedDriverName = formData?.towDriver?.name || '';
+  const mappedDriverCertificate = formData?.towDriver?.driverCertificate || '';
+  const mappedTruckNumber = formData?.towDriver?.truckNumber || '';
+  const mappedMake = formData?.vehicle?.make || '';
+  const mappedModel = formData?.vehicle?.model || '';
+  const mappedYear = formData?.vehicle?.year || '';
+  const mappedColor = formData?.vehicle?.color || '';
+  const mappedPlate = formData?.vehicle?.plate || '';
+  const mappedVin = formData?.vehicle?.vin || '';
+  const mappedCurrentMileage = formData?.vehicle?.currentMileage || '';
+  const mappedTowedFrom = formData?.storageDetails?.pickupLocation || '';
+  const mappedStorageType = formData?.storageDetails?.storageLocation || '';
+  const mappedConsentPersonName = formData?.consentBy?.name || '';
+  const mappedConsentAddress = formData?.consentBy?.address || '';
+  const mappedConsentPhone = formData?.consentBy?.phone || '';
+  const mappedPoliceDirected = formData?.policeDirected?.isDirected || false;
+  const mappedIncidentNumber = formData?.policeDirected?.incidentNumber || '';
+  const mappedOfficerName = formData?.policeDirected?.officerName || '';
+  const mappedBadgeNumber = formData?.policeDirected?.badgeNumber || '';
+  const mappedOfficerNameBadge = `${mappedOfficerName} & ${mappedBadgeNumber}`.trim() || '';
+  const mappedInformedOfRights = formData?.informedOfRights || false;
+  const mappedRateSheetShown = formData?.rateSheetShown || false;
+  const mappedConsentSignature = formData?.storageDetails?.digitalSignature || '';
+  const mappedConsentMethod = formData?.consentMethod || '';
+  const mappedConsentDateTime = consentDt;
+
+  const storageLocationText = storageAddressConfirmed ? `7 Belvia Road Etobicoke Ontario M8W9R2 - ${mappedStorageType?.toUpperCase()}` : '7 Belvia Road Etobicoke Ontario M8W9R2';
+  const officerName = mappedOfficerNameBadge ? mappedOfficerNameBadge.split(' & ')[0] : '';
+  const badgeNumber = mappedOfficerNameBadge ? mappedOfficerNameBadge.split(' & ')[1] : '';
 
   return (
     <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-0">
@@ -74,7 +148,7 @@
           <div className="flex items-center gap-2 text-sm sm:text-base">
             <span className="font-bold italic">CONSENT TO STORAGE</span>
             <span className="text-xs sm:text-sm">PO#</span>
-            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{invoicePO}</span>
+            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{mappedInvoicePO}</span>
           </div>
         </div>
 
@@ -104,15 +178,15 @@
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Name:</label>
-                <span className="flex-1 border-b border-black px-1">{driverName}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedDriverName}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Driver License Number:</label>
-                <span className="flex-1 border-b border-black px-1">{driverCertificate}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedDriverCertificate}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">UBK Towing Truck Number:</label>
-                <span className="flex-1 border-b border-black px-1">{truckNumber}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedTruckNumber}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Driver Phone Number:</label>
@@ -120,7 +194,7 @@
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Invoice Number:</label>
-                <span className="flex-1 border-b border-black px-1">{invoicePO}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedInvoicePO}</span>
               </div>
             </div>
           </div>
@@ -164,10 +238,10 @@
           {/* Line 1 - Year / Make / Model / Colour / Unit */}
           <div className="grid grid-cols-5 gap-4 text-xs mb-2">
             {[
-              { label: "Year", value: year },
-              { label: "Make", value: make },
-              { label: "Model", value: model },
-              { label: "Colour", value: color },
+              { label: "Year", value: mappedYear },
+              { label: "Make", value: mappedMake },
+              { label: "Model", value: mappedModel },
+              { label: "Colour", value: mappedColor },
               // { label: "Unit", value: '' }, 
             ].map((field, index) => (
               <div key={index} className="flex items-center w-full">
@@ -182,7 +256,7 @@
             {/* Plate */}
             <div className="flex items-center w-full">
               <label className="font-bold whitespace-nowrap mr-1">Plate:</label>
-              <span className="w-full border-b border-black">{plate}</span>
+              <span className="w-full border-b border-black">{mappedPlate}</span>
             </div>
 
             {/* VIN + Odometer on same line */}
@@ -195,7 +269,7 @@
 
                 {/* VIN boxes */}
                 <div className="flex flex-nowrap gap-[2px] ml-1">
-                  {(vin || "").padEnd(17, " ").split("").map((char, index) => (
+                  {(mappedVin || "").padEnd(17, " ").split("").map((char, index) => (
                     <div
                       key={index}
                       className="w-[18px] h-[20px] sm:w-[22px] sm:h-[24px] border border-black flex items-center justify-center text-[11px] sm:text-[13px] font-medium text-black leading-none"
@@ -210,7 +284,7 @@
               {/* Odometer */}
               <div className="flex items-center ml-6 flex-shrink-0">
                 <label className="font-bold whitespace-nowrap mr-1">Odometer:</label>
-                <span className="w-24 border-b border-black px-1">{currentMileage}</span>
+                <span className="w-24 border-b border-black px-1">{mappedCurrentMileage}</span>
               </div>
             </div>
           </div>
@@ -225,12 +299,12 @@
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div className="flex items-center">
               <label className="font-bold whitespace-nowrap mr-1">Towed From:</label>
-              <span className="w-full border-b border-black">{towedFrom}</span>
+              <span className="w-full border-b border-black">{mappedTowedFrom}</span>
             </div>
 
             <div className="flex items-center">
               <label className="font-bold whitespace-nowrap mr-1">Date & Start Time:</label>
-              <span className="w-full border-b border-black">{startDateTime}</span>
+              <span className="w-full border-b border-black">{startDt}</span>
             </div>
           </div>
         </div>
@@ -246,12 +320,7 @@
     {/* Main Location */}
     <label className="flex items-center gap-2">
       <span
-        className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
-          storageType?.toLowerCase().includes("belvia") ||
-          storageType?.toLowerCase().includes("etobicoke")
-            ? "bg-black"
-            : ""
-        }`}
+        className={`w-4 h-4 border-2 border-black flex-shrink-0 bg-black`}
       ></span>
       <span>7 Belvia Road Etobicoke Ontario M8W9R2</span>
     </label>
@@ -260,7 +329,7 @@
     <label className="flex items-center gap-2">
       <span
         className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
-          storageType?.toLowerCase().includes("indoor") ? "bg-black" : ""
+          mappedStorageType?.toLowerCase() === "indoor" ? "bg-black" : ""
         }`}
       ></span>
       <span>INDOOR</span>
@@ -270,7 +339,7 @@
     <label className="flex items-center gap-2">
       <span
         className={`w-4 h-4 border-2 border-black flex-shrink-0 ${
-          storageType?.toLowerCase().includes("outdoor") ? "bg-black" : ""
+          mappedStorageType?.toLowerCase() === "outdoor" ? "bg-black" : ""
         }`}
       ></span>
       <span>OUTDOOR</span>
@@ -300,15 +369,15 @@
             <div className="space-y-2 text-xs">
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Name:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPersonName}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentPersonName}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Address:</label>
-                <span className="flex-1 border-b border-black px-1">{consentAddress}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentAddress}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-20 flex-shrink-0">Phone #:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPhone}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedConsentPhone}</span>
               </div>
             </div>
           </div>
@@ -317,20 +386,20 @@
           <div className="p-3 sm:p-4 border ">
             <div className="space-y-2 text-xs">
               <label className="flex items-start gap-2">
-                <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${policeDirected ? 'bg-black' : ''}`}></span>
+                <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${mappedPoliceDirected ? 'bg-black' : ''}`}></span>
                 <span>Providing Services at the direction of Police Officer</span>
               </label>
               <div className="flex items-center">
                 <label className="font-bold w-40 flex-shrink-0">Call/Occurrence Number:</label>
-                <span className="flex-1 border-b border-black px-1">{incidentNumber}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedIncidentNumber}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-40 flex-shrink-0">Officer Name & Badge #:</label>
-                <span className="flex-1 border-b border-black px-1">{officerNameBadge}</span>
+                <span className="flex-1 border-b border-black px-1">{mappedOfficerNameBadge}</span>
               </div>
               <div className="flex items-center">
                 <label className="font-bold w-40 flex-shrink-0">Phone #:</label>
-                <span className="flex-1 border-b border-black px-1">{towDriverPhone || consentPhone}</span>
+                <span className="flex-1 border-b border-black px-1">{towDriverPhone || mappedConsentPhone}</span>
               </div>
             </div>
           </div>
@@ -398,12 +467,12 @@
           {/* Checkboxes Row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${informedOfRights ? 'bg-black' : ''}`}></span>
+              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${mappedInformedOfRights ? 'bg-black' : ''}`}></span>
               <span className='font-bold'>You must be informed of your rights before you sign this Consent to Tow form.</span>
               </label>
 
               <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${rateSheetShown ? 'bg-black' : ''}`}></span>
+              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${mappedRateSheetShown ? 'bg-black' : ''}`}></span>
               <span className="font-bold">Rate sheet shown client</span>
               </label>
           </div>
@@ -421,11 +490,19 @@
             <div className="text-center">
   {/* Signature display */}
   <span className="w-full border-b-2 border-black px-1 py-1 block">
-    {consentSignature ? (
+    {mappedConsentSignature ? (
       <img
-        src={consentSignature}
+        src={mappedConsentSignature}
         alt="Digital Signature"
         className="mx-auto max-h-24"
+        onError={(e) => {
+          console.error("❌ Invalid signature image");
+          e.target.style.display = "none";
+          e.target.insertAdjacentHTML(
+            "afterend",
+            '<span style="color:#333;font-size:14px;">Signature not available</span>'
+          );
+        }}
       />
     ) : (
       "No signature provided"
@@ -440,7 +517,7 @@
   <div className="flex justify-center items-center mt-2 gap-2">
     <span
       className={`w-4 h-4 border-2 border-black ${
-        consentMethod === "Phone" ? "bg-black" : ""
+        mappedConsentMethod?.toLowerCase() === "phone" ? "bg-black" : ""
       }`}
     ></span>
     <span>Consent given over the phone</span>
@@ -450,12 +527,12 @@
 
             {/* Date and Time of consent */}
             <div className="text-center">
-              <span className="w-full border-b-2 border-black px-1 py-1 block">{consentDateTime}</span>
+              <span className="w-full border-b-2 border-black px-1 py-1 block">{mappedConsentDateTime}</span>
               <label className="block font-bold mt-1">Date and Time of the consent is given</label>
 
               {/* Checkbox 2 */}
               <div className="flex justify-center items-center mt-2 gap-2">
-                <span className={`w-4 h-4 border-2 border-black ${consentMethod === 'Email' ? 'bg-black' : ''}`}></span>
+                <span className={`w-4 h-4 border-2 border-black ${mappedConsentMethod?.toLowerCase() === 'email' ? 'bg-black' : ''}`}></span>
                 <span>Consent given over the email</span>
               </div>
             </div>
@@ -481,4 +558,4 @@
 };
 
 
-export default StoragePdf;
+export default StorageAdminPdf;

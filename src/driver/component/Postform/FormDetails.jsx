@@ -293,7 +293,7 @@ const FormDetails = () => {
               />
               <Field
                 label="End Date/Time"
-                value={formatDateTime(data.towDetails?.towDateTime)}
+                value={formatDateTime(data.towDetails?.towEndDateTime)}
                 loading={loading}
               />
               <div className="lg:col-span-2">
