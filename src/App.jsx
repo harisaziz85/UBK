@@ -92,7 +92,7 @@ function App() {
 
 
         {/* Admin Routes */}
-        <Route element={<AdminLayout />}>
+        <Route element={<AdminLayout/>}>
           {/* Profile Routes */}
           <Route path="/admin/profile" element={<Adminprofile />} />
           <Route path="/admin/update-password" element={<PassUpdate />} />
@@ -102,6 +102,8 @@ function App() {
           <Route path="/admin/drivers" element={<AllDrivers />} />
           <Route path="/admin/add-drivers" element={<AddDriver />} />
           <Route path="/admin/driver/details/:id" element={<DriverDetailsPage />} />
+          <Route path="/admin/add-driver/:id" element={<AddDriver />} />
+
           {/* Vehicle Routes */}
           <Route path="/admin/vehicles" element={<Vahicles/>} />
           <Route path="/admin/unassigned-vehicles" element={<UnassignedVehicles />} />

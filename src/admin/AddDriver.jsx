@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Upload } from "lucide-react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 const AddDriver = () => {
+  const location = useLocation();
+  const params = useParams();
+  const id = params.id;
+  const isEdit = !!id;
   const [file, setFile] = useState(null);
+  const [driverData, setDriverData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -44,6 +50,111 @@ const AddDriver = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch driver data if editing
+  useEffect(() => {
+    const fetchDriver = async () => {
+      if (isEdit && id) {
+        setLoading(true);
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          toast.error("You are not logged in. Please log in.", {
+            position: "top-right",
+            autoClose: 3000,
+          });
+          setTimeout(() => navigate("/login"), 3000);
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `https://ubktowingbackend-production.up.railway.app/api/admin/driver/get-by/${id}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch driver: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!data.driver) {
+            throw new Error("No driver data returned");
+          }
+
+          setDriverData(data.driver);
+
+          const nameParts = data.driver.name ? data.driver.name.split(' ') : ['', ''];
+          const weekdaysState = {
+            Monday: data.driver.weekdays?.Monday || "",
+            Tuesday: data.driver.weekdays?.Tuesday || "",
+            Wednesday: data.driver.weekdays?.Wednesday || "",
+            Thursday: data.driver.weekdays?.Thursday || "",
+            Friday: data.driver.weekdays?.Friday || "",
+            Saturday: data.driver.weekdays?.Saturday || "",
+            Sunday: data.driver.weekdays?.Sunday || "",
+          };
+          setFormData({
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(' ') || "",
+            email: data.driver.email || "",
+            username: data.driver.username || "",
+            password: "", // Don't prefill password
+            phone: data.driver.phone || "",
+            homePhone: data.driver.homePhone || "",
+            address: {
+              street: data.driver.address?.completeAddress || "",
+              city: data.driver.address?.city || "",
+              state: data.driver.address?.state || "",
+              zipcode: data.driver.address?.zipcode || "",
+              country: data.driver.address?.country || "",
+            },
+            dob: data.driver.dob ? new Date(data.driver.dob).toISOString().split('T')[0] : "",
+            employeeNumber: data.driver.employeeNumber || "",
+            startDate: data.driver.startDate ? new Date(data.driver.startDate).toISOString().split('T')[0] : "",
+            leaveDate: data.driver.leaveDate ? new Date(data.driver.leaveDate).toISOString().split('T')[0] : "",
+            jobTitle: data.driver.jobTitle || "",
+            licenseNo: data.driver.licenseNo || "",
+            weekdays: weekdaysState,
+          });
+
+          // Set access permissions
+          let view = false;
+          let upload = false;
+          switch (data.driver.accessType) {
+            case "both":
+              view = true;
+              upload = true;
+              break;
+            case "view":
+              view = true;
+              break;
+            case "upload":
+              upload = true;
+              break;
+            default:
+              break;
+          }
+          setAccessPermissions({ view, upload });
+        } catch (err) {
+          console.error("Error fetching driver:", err);
+          toast.error(err.message, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDriver();
+  }, [isEdit, id, navigate]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -109,7 +220,6 @@ const AddDriver = () => {
     apiData.append("name", `${formData.firstName} ${formData.lastName}`.trim());
     apiData.append("username", formData.username);
     apiData.append("email", formData.email);
-    apiData.append("password", formData.password);
     apiData.append("phone", formData.phone);
     apiData.append("homePhone", formData.homePhone);
     // ✅ Address: Map street to completeAddress, others as-is
@@ -125,84 +235,108 @@ const AddDriver = () => {
     apiData.append("licenseNo", formData.licenseNo);
     apiData.append("jobTitle", formData.jobTitle || "");    // ✅ Added
     apiData.append("accessType", accessType);               // ✅ Added
+
+    // Handle password
+    if (formData.password) {
+      apiData.append("password", formData.password);
+    }
+
+    // Weekdays
     Object.keys(formData.weekdays).forEach((day) => {
-      if (formData.weekdays[day]) {
+      if (formData.weekdays[day].trim()) {
         apiData.append(`weekdays[${day}]`, formData.weekdays[day]);
       }
     });
 
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    };
+
     try {
-      const response = await axios.post(
-        "https://ubktowingbackend-production.up.railway.app/api/admin/driver/create",
-        apiData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      let response;
+      if (isEdit) {
+        if (!id) {
+          throw new Error("Driver ID not provided for update");
         }
-      );
-
-      // Generate QR for the new driver
-      const qrData = {
-        driverId: response.data._id,
-        expiresInSeconds: 120
-      };
-      await axios.post(
-        "https://ubktowingbackend-production.up.railway.app/api/common/qr/generate",
-        qrData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const url = `https://ubktowingbackend-production.up.railway.app/api/admin/driver/update/${id}`;
+        response = await axios.put(url, apiData, config);
+        toast.success("Driver updated successfully! Redirecting...", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        setTimeout(() => navigate(`/admin/dashboard`), 2000); // or to driver list/details
+      } else {
+        // Validate password for new driver
+        if (!formData.password) {
+          throw new Error("Password is required for new drivers");
         }
-      );
+        const url = "https://ubktowingbackend-production.up.railway.app/api/admin/driver/create";
+        response = await axios.post(url, apiData, config);
 
-      toast.success("Driver added and QR generated successfully! Redirecting...", {
-        position: "top-right",
-        autoClose: 2000,
-      });
+        // Generate QR for the new driver
+        const qrData = {
+          driverId: response.data._id,
+          expiresInSeconds: 120
+        };
+        await axios.post(
+          "https://ubktowingbackend-production.up.railway.app/api/common/qr/generate",
+          qrData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        username: "",
-        password: "",
-        phone: "",
-        homePhone: "",
-        address: {
-          street: "",  // ✅ Added
-          city: "",
-          state: "",
-          zipcode: "",
-          country: "",
-        },
-        dob: "",
-        employeeNumber: "",
-        startDate: "",
-        leaveDate: "",  // ✅ Added
-        jobTitle: "",   // ✅ Added
-        licenseNo: "",
-        weekdays: {
-          Monday: "",
-          Tuesday: "",
-          Wednesday: "",
-          Thursday: "",
-          Friday: "",
-          Saturday: "",
-          Sunday: "",
-        },
-      });
-      setAccessPermissions({ view: false, upload: false });  // ✅ Added
-      setFile(null);
+        toast.success("Driver added and QR generated successfully! Redirecting...", {
+          position: "top-right",
+          autoClose: 2000,
+        });
 
-      // Redirect to AllDrivers page
-      setTimeout(() => navigate("/admin/dashboard"), 2000);
+        // Reset form
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          username: "",
+          password: "",
+          phone: "",
+          homePhone: "",
+          address: {
+            street: "",  // ✅ Added
+            city: "",
+            state: "",
+            zipcode: "",
+            country: "",
+          },
+          dob: "",
+          employeeNumber: "",
+          startDate: "",
+          leaveDate: "",  // ✅ Added
+          jobTitle: "",   // ✅ Added
+          licenseNo: "",
+          weekdays: {
+            Monday: "",
+            Tuesday: "",
+            Wednesday: "",
+            Thursday: "",
+            Friday: "",
+            Saturday: "",
+            Sunday: "",
+          },
+        });
+        setAccessPermissions({ view: false, upload: false });  // ✅ Added
+        setFile(null);
+
+        // Redirect to AllDrivers page
+        setTimeout(() => navigate("/admin/dashboard"), 2000);
+      }
     } catch (err) {
-      console.error("Add driver error:", err);
-      toast.error(err.response?.data?.message || "Failed to add driver.", {
+      console.error("Driver operation error:", err);
+      toast.error(err.response?.data?.message || (isEdit ? "Failed to update driver." : "Failed to add driver."), {
         position: "top-right",
         autoClose: 3000,
       });
@@ -214,9 +348,14 @@ const AddDriver = () => {
     }
   };
 
+  if (loading) {
+    return <div className="p-6 min-h-screen flex items-center justify-center">Loading driver data...</div>;
+  }
+
   return (
     <div className="p-6 min-h-screen">
       <div className="rounded-lg p-6 space-y-8">
+        <h1 className="text-2xl font-bold mb-6">{isEdit ? 'Edit Driver' : 'Add Driver'}</h1>
         <form onSubmit={handleSubmit}>
           {/* Basic Details */}
           <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
@@ -255,27 +394,46 @@ const AddDriver = () => {
                   required
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="text-[14px] robotomedium">Profile Photo</label>
-                <div className="flex flex-col items-center justify-center border border-dashed border-[#CCCCCC] rounded-md p-4 h-[120px] text-center cursor-pointer">
-                  <Upload className="w-6 h-6 text-gray-500 mb-2" />
-                  <label className="flex flex-col items-center cursor-pointer">
-                    <span className="bg-gray-100 px-3 py-1 rounded-md text-sm mb-1">
-                      Pick file
-                    </span>
-                    <span className="text-gray-500 text-sm">Drag file here</span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileChange}
-                      accept="image/*"
-                    />
-                  </label>
-                </div>
-                {file && (
-                  <p className="text-sm text-gray-600 mt-1">{file.name}</p>
-                )}
-              </div>
+             <div className="md:col-span-2">
+  <label className="text-[14px] robotomedium">Profile Photo</label>
+
+  <div
+    className="flex flex-col items-center justify-center border border-dashed border-[#CCCCCC] rounded-md p-4 h-[150px] text-center cursor-pointer relative overflow-hidden"
+    onClick={() => document.getElementById("profileUpload").click()}
+  >
+    {/* Show uploaded or existing image inside the box */}
+    {file || (isEdit && driverData?.profileImage) ? (
+      <img
+        src={file ? URL.createObjectURL(file) : driverData.profileImage}
+        alt="Profile Preview"
+        className="w-24 h-24 rounded-full object-cover border border-gray-300"
+      />
+    ) : (
+      <>
+        <Upload className="w-6 h-6 text-gray-500 mb-2" />
+        <span className="bg-gray-100 px-3 py-1 rounded-md text-sm mb-1">
+          Pick file
+        </span>
+        <span className="text-gray-500 text-sm">Drag file here</span>
+      </>
+    )}
+
+    {/* Hidden input */}
+    <input
+      id="profileUpload"
+      type="file"
+      className="hidden"
+      onChange={handleFileChange}
+      accept="image/*"
+    />
+  </div>
+
+  {/* Show filename */}
+  {file && (
+    <p className="text-sm text-gray-600 mt-1">{file.name}</p>
+  )}
+</div>
+
             </div>
           </div>
 
@@ -291,7 +449,7 @@ const AddDriver = () => {
                   value={formData.username}
                   onChange={handleInputChange}
                   className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
-                  required
+                  required={!isEdit}
                 />
               </div>
               <div>
@@ -301,8 +459,9 @@ const AddDriver = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  placeholder={isEdit ? "Leave blank to keep current password" : "Enter password"}
                   className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
-                  required
+                  required={!isEdit}
                 />
               </div>
             </div>
@@ -408,7 +567,7 @@ const AddDriver = () => {
                     value={formData.dob}
                     onChange={handleInputChange}
                     className="w-full h-full px-3 bg-transparent focus:outline-none focus:ring-0 appearance-none cursor-pointer"
-                    required
+                    required={!isEdit}
                   />
                 </label>
               </div>
@@ -420,7 +579,7 @@ const AddDriver = () => {
                   value={formData.employeeNumber}
                   onChange={handleInputChange}
                   className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
-                  required
+                  required={!isEdit}
                 />
               </div>
               <div>
@@ -432,7 +591,7 @@ const AddDriver = () => {
                     value={formData.startDate}
                     onChange={handleInputChange}
                     className="w-full h-full px-3 bg-transparent focus:outline-none focus:ring-0 appearance-none cursor-pointer"
-                    required
+                    required={!isEdit}
                   />
                 </label>
               </div>
@@ -456,7 +615,7 @@ const AddDriver = () => {
                   value={formData.licenseNo}
                   onChange={handleInputChange}
                   className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 focus:outline-none focus:ring-0"
-                  required
+                  required={!isEdit}
                 />
               </div>
             </div>
@@ -515,7 +674,7 @@ const AddDriver = () => {
                     className="w-full border border-[#CCCCCC] rounded-md h-[42px] px-3 bg-white focus:outline-none focus:ring-0 appearance-none cursor-pointer"
                   >
                     <option value="Off">Off</option>
-                    <option value="Custom">Custom</option>
+                    <option value="Custom">On</option>
                   </select>
                 </div>
               ))}
@@ -526,10 +685,10 @@ const AddDriver = () => {
           <div className="flex justify-end mt-8">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
               className="bg-[#043677] text-white px-6 py-2 rounded-md text-sm robotomedium hover:bg-[#032c5a] transition disabled:opacity-50"
             >
-              {isSubmitting ? "Adding Driver..." : "Add Driver"}
+              {isSubmitting ? (isEdit ? "Updating Driver..." : "Adding Driver...") : (isEdit ? "Update Driver" : "Add Driver")}
             </button>
           </div>
         </form>

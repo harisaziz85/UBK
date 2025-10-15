@@ -388,6 +388,12 @@ const DriverDetailsPage = () => {
     navigate(`/admin/inspection/${inspectionId}`);
   };
 
+  const handleEditDriver = () => {
+  // Navigate to Add Driver page and pass driver ID
+  navigate(`/admin/add-driver/${id}`);
+};
+
+
   if (loading) {
     return <Shimmer type="driver" />;
   }
@@ -414,9 +420,13 @@ const DriverDetailsPage = () => {
                 Group: {driver.group} | Classifications: {driver.classifications}
               </p>
             </div>
-            <button className="w-full sm:w-auto bg-[#043677] text-white px-4 py-2 rounded text-sm sm:text-base">
-              Edit Driver
-            </button>
+                  <button
+            onClick={() => handleEditDriver()}
+            className=" cursor-pointer w-full sm:w-auto bg-[#043677] text-white px-4 py-2 rounded text-sm sm:text-base"
+          >
+            Edit Driver
+          </button>
+
           </div>
         </div>
 

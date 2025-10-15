@@ -44,9 +44,11 @@ const InspectionHistory = () => {
       }
 
       const data = await response.json();
+      console.log(data);
       if (data.success) {
         const mappedInspections = data.inspections.map((insp) => ({
           id: insp._id,
+           index: insp.index,
           submittedAt: new Date(insp.createdAt).toLocaleString(),
           vehicleImg: insp.vehicleId.photo || logo,
           vehicle: `${insp.vehicleId.name} (${insp.vehicleId.licensePlate})`,
@@ -235,7 +237,7 @@ const InspectionHistory = () => {
                     className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600"
                     style={{ borderColor: "#33333333" }}
                   >
-                    {insp.id.slice(0, 7)}
+                    {insp.index}
                   </td>
                   <td
                     className="p-3 whitespace-nowrap border-b flex items-center roboto-regular gap-2 text-blue-600"
