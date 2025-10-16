@@ -13,6 +13,8 @@ import {
 import { TrendingUp } from "lucide-react";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { useNavigate } from "react-router-dom";
+
 
 ChartJS.register(
   CategoryScale,
@@ -34,6 +36,8 @@ const MeterReadings = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalComments, setTotalComments] = useState(0);
   const commentsRef = useRef(null);
+  const navigate = useNavigate();
+
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -64,6 +68,7 @@ const MeterReadings = () => {
         if (!data.success) return;
         const transformed = data.comments.map((comment, index) => ({
           id: comment._id,
+          senderId: comment.senderId._id,
           user: comment.senderId.name,
           avatar: comment.senderId.profileImage || `https://i.pravatar.cc/150?img=${index + 1}`,
           action: `Message from ${comment.senderId.name}`,
@@ -458,7 +463,9 @@ const MeterReadings = () => {
                 {recentConversations.map((comment, index) => (
                   <div
                     key={comment.id}
-                    className={`flex items-start p-3 ${
+                  onClick={() => navigate(`/myprofile/${comment.senderId}`)} // ✅ Pass senderId to route
+
+                    className={` cursor-pointer flex items-start p-3 ${
                       index !== recentConversations.length - 1
                         ? "border-b border-gray-200"
                         : ""
@@ -490,8 +497,8 @@ const MeterReadings = () => {
                   </div>
                 ))}
                 {loadingMore && (
-                  <div className="p-3 text-center">
-                    Loading more...
+                  <div className=" text-center">
+                    
                   </div>
                 )}
                 {!hasMore && recentConversations.length > 0 && (

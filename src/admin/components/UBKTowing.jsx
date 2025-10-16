@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { IoDocumentSharp } from "react-icons/io5";
+import { FaFilePdf } from "react-icons/fa6";
 import Doctopbar from "./Doctopbar";
-import { FaFilePdf } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import VehicleAttachmentPopup from "../VechileAttechmentPopup";
 
 const Shimmer = () => {
   return (
@@ -25,7 +26,7 @@ const Shimmer = () => {
             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
           </td>
           <td className="px-5 py-4">
-            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
           </td>
           <td className="px-5 py-4">
             <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
@@ -39,25 +40,33 @@ const Shimmer = () => {
 const UBKTowing = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showVehicleModal, setShowVehicleModal] = useState(false);
-  const [vehicles, setVehicles] = useState([
-    { id: 1, plate: "EX7872", attached: false },
-    { id: 2, plate: "EX7872", attached: false },
-    { id: 3, plate: "EX7872", attached: false },
-    { id: 4, plate: "EX7872", attached: false },
-    { id: 5, plate: "EX7872", attached: false },
-  ]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     expiryDate: "",
-    category: "",
+    category: "UBK Towing",
     file: null,
     fileSize: "",
   });
   const [isUploading, setIsUploading] = useState(false);
+  const navigate = useNavigate();
   const dateInputRef = useRef(null);
+  const limit = 10;
+
+  const handleOpenPopup = (docId) => {
+    setSelectedDocumentId(docId);
+    setShowPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedDocumentId(null);
+    fetchDocuments();
+  };
 
   // Fetch documents
   const fetchDocuments = async () => {
@@ -65,7 +74,7 @@ const UBKTowing = () => {
       setLoading(true);
       const token = localStorage.getItem("authToken");
       const response = await axios.get(
-        `https://ubktowingbackend-production.up.railway.app/api/common/document/all?limit=1000`,
+        `https://ubktowingbackend-production.up.railway.app/api/common/document/all?page=${page}&limit=${limit}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,6 +86,7 @@ const UBKTowing = () => {
         (doc) => doc.category === "UBK Towing"
       );
       setDocuments(filteredDocuments);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching documents:", error);
     } finally {
@@ -94,7 +104,7 @@ const UBKTowing = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [page]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -136,7 +146,7 @@ const UBKTowing = () => {
       );
 
       setShowUploadModal(false);
-      setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+      setFormData({ title: "", expiryDate: "", category: "UBK Towing", file: null, fileSize: "" });
       fetchDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
@@ -145,34 +155,13 @@ const UBKTowing = () => {
     }
   };
 
-  const handleDocClick = (doc) => {
-    setSelectedDoc(doc);
-  };
-
-  const handleSelectVehicles = () => {
-    setShowVehicleModal(true);
-  };
-
-  const handleAttachVehicle = (vehicleId) => {
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId ? { ...v, attached: !v.attached } : v
-      )
-    );
-  };
-
-  const handleVehicleModalClose = () => {
-    setShowVehicleModal(false);
-  };
-
-  const handleAttach = () => {
-    alert("Vehicles attached successfully!");
-    setShowVehicleModal(false);
-  };
-
   const closeUploadModal = () => {
     setShowUploadModal(false);
-    setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+    setFormData({ title: "", expiryDate: "", category: "UBK Towing", file: null, fileSize: "" });
+  };
+
+  const handleSelectVehicle = (docId) => {
+    handleOpenPopup(docId);
   };
 
   return (
@@ -201,8 +190,8 @@ const UBKTowing = () => {
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Category</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
             </tr>
           </thead>
           <tbody>
@@ -212,7 +201,7 @@ const UBKTowing = () => {
               documents.map((doc) => (
                 <tr
                   key={doc._id}
-                  onClick={() => handleDocClick(doc)}
+                  onClick={() => navigate(`/admin/document/${doc._id}`)}
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
 <td className="px-5 py-4 flex items-center space-x-2">
@@ -230,9 +219,23 @@ const UBKTowing = () => {
                       ? new Date(doc.expiryDate).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">{doc.category || "—"}</td>
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
+                    {doc.vehicleId ? (
+                      doc.vehicleId.model || doc.vehicleId.name || "Attached Vehicle"
+                    ) : (
+                      <span
+                        className="text-blue-600 cursor-pointer hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectVehicle(doc._id);
+                        }}
+                      >
+                        Select Vehicle
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -246,6 +249,44 @@ const UBKTowing = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex justify-end items-center mt-6 space-x-3 text-sm text-gray-600">
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex space-x-2">
+            <button
+              className={`px-3 py-1 rounded border ${
+                page === 1 ? "bg-gray-200 cursor-not-allowed" : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => page > 1 && setPage(page - 1)}
+              disabled={page === 1}
+            >
+              Prev
+            </button>
+            <button
+              className={`px-3 py-1 rounded border ${
+                page === totalPages
+                  ? "bg-gray-200 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+              onClick={() => page < totalPages && setPage(page + 1)}
+              disabled={page === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Attachment Popup */}
+      <VehicleAttachmentPopup
+        isOpen={showPopup}
+        onClose={handleClosePopup}
+        documentId={selectedDocumentId}
+      />
 
       {/* Upload Modal */}
       {showUploadModal && (
@@ -294,7 +335,6 @@ const UBKTowing = () => {
                   disabled={isUploading}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none disabled:opacity-50"
                 >
-                  <option value="">Select Category</option>
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
                 </select>
@@ -327,138 +367,13 @@ const UBKTowing = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isUploading || !formData.title || !formData.expiryDate || !formData.category || !formData.file}
+                  disabled={isUploading || !formData.title || !formData.expiryDate || !formData.file}
                   className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg hover:bg-[#032b5c] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar (Details Panel) */}
-      {selectedDoc && (
-        <div className="fixed top-0 right-0 h-screen w-1/2 bg-white text-gray-800 p-6 transition-all duration-300">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-red-600">{selectedDoc.title}</h2>
-            <div>
-              <button className="text-gray-500 mr-2">...</button>
-              <button className="text-gray-500">Download</button>
-            </div>
-          </div>
-          <div className="border-2 border-dashed border-gray-300 h-48 flex items-center justify-center mb-4">
-            <p className="text-gray-500">Drag and drop files to upload</p>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <p className="text-gray-500 text-sm">Location</p>
-              <p className="text-gray-800 font-medium">UBK Towing</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Attached to</p>
-              <button
-                onClick={handleSelectVehicles}
-                className="text-blue-600 font-medium hover:underline"
-              >
-                Select Vehicles
-              </button>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Labels</p>
-              <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm hover:bg-gray-300">
-                Truck Document
-              </button>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Type</p>
-              <p className="text-gray-800 font-medium">{selectedDoc.fileUrl ? selectedDoc.fileUrl.split('.').pop().toUpperCase() : "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">File</p>
-              <p className="text-gray-800 font-medium">{selectedDoc.formattedFileSize || "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Last Modified</p>
-              <p className="text-gray-800 font-medium">{selectedDoc.updatedAt ? new Date(selectedDoc.updatedAt).toLocaleDateString() + " by " + (selectedDoc.uploadedBy?.name || "Unknown") : "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Uploaded</p>
-              <p className="text-gray-800 font-medium">{selectedDoc.createdAt ? new Date(selectedDoc.createdAt).toLocaleDateString() + " by " + (selectedDoc.uploadedBy?.name || "Unknown") : "—"}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Category</p>
-              <p className="text-gray-800 font-medium">{selectedDoc.category || "—"}</p>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center space-x-2">
-            <img
-              src="https://via.placeholder.com/30"
-              alt="User"
-              className="w-8 h-8 rounded-full"
-            />
-            <div>
-              <p className="text-gray-500 text-sm">Add a comment</p>
-              <button className="text-blue-600 text-sm hover:underline">📝</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal for Vehicle Selection */}
-      {showVehicleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-1/2">
-            <h2 className="text-lg font-semibold mb-4">Attach documents to Vehicles</h2>
-            <p className="text-gray-500 mb-4">Drag and drop files to upload</p>
-            <input
-              type="text"
-              placeholder="Find Vehicles, types, group"
-              className="w-full p-2 mb-4 rounded-full border border-gray-300"
-            />
-            <div className="flex space-x-4 mb-4">
-              <button className="bg-blue-100 text-blue-600 px-4 py-2 rounded-full">
-                Attached Devices <span className="bg-blue-600 text-white rounded-full px-2">0</span>
-              </button>
-              <button className="bg-blue-100 text-blue-600 px-4 py-2 rounded-full">
-                All Vehicles <span className="bg-blue-600 text-white rounded-full px-2">0</span>
-              </button>
-            </div>
-            <div className="space-y-2 mb-4">
-              {vehicles.map((vehicle) => (
-                <div key={vehicle.id} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <img
-                      src="https://via.placeholder.com/50"
-                      alt="Vehicle"
-                      className="w-12 h-12 mr-2"
-                    />
-                    <span>{vehicle.plate}</span>
-                  </div>
-                  <button
-                    onClick={() => handleAttachVehicle(vehicle.id)}
-                    className={`px-4 py-2 rounded ${vehicle.attached ? "bg-green-500" : "bg-blue-600"} text-white`}
-                  >
-                    {vehicle.attached ? "Attached" : "Attach"}
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={handleVehicleModalClose}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAttach}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-              >
-                Attach
-              </button>
-            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { FaFilePdf } from "react-icons/fa6";
 import Doctopbar from "./components/Doctopbar";
+import { useNavigate } from "react-router-dom";
+import VehicleAttachmentPopup from "./VechileAttechmentPopup";
 
 const Shimmer = () => {
   return (
@@ -26,6 +28,9 @@ const Shimmer = () => {
           <td className="px-5 py-4">
             <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
           </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+          </td>
         </tr>
       ))}
     </>
@@ -42,6 +47,27 @@ const AdminDoc = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState(null);
+  const [attachedVehicles, setAttachedVehicles] = useState([]);
+
+  const handleOpenPopup = (docId) => {
+    setSelectedDocumentId(docId);
+    setShowPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedDocumentId(null);
+  };
+
+  const handleAttachVehicles = (selectedIds) => {
+    // Handle attachment logic here, e.g., update state or API call
+    setAttachedVehicles(prev => [...prev, ...selectedIds]);
+    console.log('Attached vehicles:', selectedIds);
+  };
+
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     expiryDate: "",
@@ -171,31 +197,29 @@ const AdminDoc = () => {
     }
   };
 
-const openUpdateModal = (doc) => {
-  setSelectedDoc(doc);
+  const openUpdateModal = (doc) => {
+    setSelectedDoc(doc);
 
-  let formattedExpiry = "";
-  if (doc.expiryDate) {
-    // ✅ Convert UTC date to correct local calendar date
-    const utcDate = new Date(doc.expiryDate);
-    const year = utcDate.getUTCFullYear();
-    const month = String(utcDate.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(utcDate.getUTCDate()).padStart(2, "0");
-    formattedExpiry = `${year}-${month}-${day}`;
-  }
+    let formattedExpiry = "";
+    if (doc.expiryDate) {
+      // ✅ Convert UTC date to correct local calendar date
+      const utcDate = new Date(doc.expiryDate);
+      const year = utcDate.getUTCFullYear();
+      const month = String(utcDate.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(utcDate.getUTCDate()).padStart(2, "0");
+      formattedExpiry = `${year}-${month}-${day}`;
+    }
 
-  setFormData({
-    title: doc.title,
-    expiryDate: formattedExpiry, // ✅ Exact calendar date
-    category: doc.category || "",
-    file: null,
-    fileSize: "",
-  });
+    setFormData({
+      title: doc.title,
+      expiryDate: formattedExpiry, // ✅ Exact calendar date
+      category: doc.category || "",
+      file: null,
+      fileSize: "",
+    });
 
-  setShowUpdateModal(true);
-};
-
-
+    setShowUpdateModal(true);
+  };
 
   const closeUploadModal = () => {
     setShowUploadModal(false);
@@ -206,6 +230,11 @@ const openUpdateModal = (doc) => {
     setShowUpdateModal(false);
     setSelectedDoc(null);
     setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+  };
+
+  const handleSelectVehicle = (docId) => {
+    console.log('Open select vehicle popup for document:', docId);
+    handleOpenPopup(docId);
   };
 
   return (
@@ -235,6 +264,7 @@ const openUpdateModal = (doc) => {
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
             </tr>
           </thead>
           <tbody>
@@ -244,7 +274,7 @@ const openUpdateModal = (doc) => {
               documents.map((doc) => (
                 <tr
                   key={doc._id}
-                  onClick={() => openUpdateModal(doc)}
+                  onClick={() => navigate(`/admin/document/${doc._id}`)}
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
                   <td className="px-5 py-4 flex items-center space-x-2">
@@ -265,11 +295,29 @@ const openUpdateModal = (doc) => {
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
                   </td>
+                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
+                  {doc.vehicleId ? (
+                    doc.vehicleId.model // ✅ show vehicle model if vehicleId has data
+                  ) : doc.category === "UBK Towing" ? (
+                    <span
+                      className="text-blue-600 cursor-pointer hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectVehicle(doc._id);
+                      }}
+                    >
+                      Select Vehicle
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center py-6 text-gray-500">
+                <td colSpan="6" className="text-center py-6 text-gray-500">
                   No documents found.
                 </td>
               </tr>
@@ -308,6 +356,13 @@ const openUpdateModal = (doc) => {
           </div>
         </div>
       )}
+
+      {/* Vehicle Attachment Popup - Rendered once outside the loop */}
+      <VehicleAttachmentPopup
+        isOpen={showPopup}
+        onClose={handleClosePopup}
+        documentId={selectedDocumentId}
+      />
 
       {/* Upload Modal */}
       {showUploadModal && (

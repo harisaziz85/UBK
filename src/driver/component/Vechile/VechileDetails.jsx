@@ -8,12 +8,68 @@ const VehicleDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [vehicle, setVehicle] = useState(null);
   const [inspections, setInspections] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
+
+  const timeAgo = (dateString) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return `${Math.floor(diffInHours / 24)} days ago`;
+  };
+
+  const fetchComments = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${baseUrl}/common/comment/get-with/${id}?page=1&limit=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setComments((data.comments || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!commentText.trim()) return;
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${baseUrl}/common/comment/create`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          receiverId: id,
+          text: commentText,
+        }),
+      });
+      if (response.ok) {
+        setCommentText('');
+        fetchComments();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const fetchVehicle = async () => {
@@ -37,8 +93,10 @@ const VehicleDetailsPage = () => {
         }
 
         const data = await response.json();
+        console.log("Vehicle Data:", data);
         setVehicle(data.vehicle);
         setInspections((data.inspections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        setDocuments((data.documents || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -47,6 +105,7 @@ const VehicleDetailsPage = () => {
     };
 
     fetchVehicle();
+    fetchComments();
   }, [id, baseUrl]);
 
   if (loading) {
@@ -133,13 +192,6 @@ const VehicleDetailsPage = () => {
   if (error || !vehicle) {
     return <p className="p-6">Vehicle not found or error loading.</p>;
   }
-
-  const documents = [
-    { name: "Inspection1.pdf", type: "pdf" },
-    { name: "Inspection2.pdf", type: "pdf" },
-    { name: "Inspection3.pdf", type: "pdf" },
-    { name: "Inspection4.pdf", type: "pdf" },
-  ];
 
   const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A" , profileImage: "/placeholder-avatar.png" };
 
@@ -256,7 +308,7 @@ const VehicleDetailsPage = () => {
               </div>
             </div>
 
-            {/* Right Column - Documents */}
+            {/* Right Column - Documents and Comments */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 {/* Header with Action Icons */}
@@ -266,25 +318,25 @@ const VehicleDetailsPage = () => {
                   </h2>
                   {/* Action icons */}
                   <div className="flex flex-row gap-2">
-                     <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8.5 19.5H8C4 19.5 2 18.5 2 13.5V8.5C2 4.5 4 2.5 8 2.5H16C20 2.5 22 4.5 22 8.5V13.5C22 17.5 20 19.5 16 19.5H15.5C15.19 19.5 14.89 19.65 14.7 19.9L13.2 21.9C12.54 22.78 11.46 22.78 10.8 21.9L9.3 19.9C9.14 19.68 8.77 19.5 8.5 19.5Z" stroke="#333333" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M7 8.5H17" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M7 13.5H13" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-
+                    <button onClick={() => setShowComments(!showComments)} className="p-1 hover:bg-gray-100 rounded-full">
+                      <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8.5 19.5H8C4 19.5 2 18.5 2 13.5V8.5C2 4.5 4 2.5 8 2.5H16C20 2.5 22 4.5 22 8.5V13.5C22 17.5 20 19.5 16 19.5H15.5C15.19 19.5 14.89 19.65 14.7 19.9L13.2 21.9C12.54 22.78 11.46 22.78 10.8 21.9L9.3 19.9C9.14 19.68 8.77 19.5 8.5 19.5Z" stroke="#333333" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 8.5H17" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 13.5H13" stroke="#333333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
 
                     <svg width="62" height="24" viewBox="0 0 62 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M28 22H34C39 22 41 20 41 15V9C41 4 39 2 34 2H28C23 2 21 4 21 9V15C21 20 23 22 28 22Z" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M28 10C29.1046 10 30 9.10457 30 8C30 6.89543 29.1046 6 28 6C26.8954 6 26 6.89543 26 8C26 9.10457 26.8954 10 28 10Z" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M21.6719 18.9505L26.6019 15.6405C27.3919 15.1105 28.5319 15.1705 29.2419 15.7805L29.5719 16.0705C30.3519 16.7405 31.6119 16.7405 32.3919 16.0705L36.5519 12.5005C37.3319 11.8305 38.5919 11.8305 39.3719 12.5005L41.0019 13.9005" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M28 22H34C39 22 41 20 41 15V9C41 4 39 2 34 2H28C23 2 21 4 21 9V15C21 20 23 22 28 22Z" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M28 10C29.1046 10 30 9.10457 30 8C30 6.89543 29.1046 6 28 6C26.8954 6 26 6.89543 26 8C26 9.10457 26.8954 10 28 10Z" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M21.6719 18.9505L26.6019 15.6405C27.3919 15.1105 28.5319 15.1705 29.2419 15.7805L29.5719 16.0705C30.3519 16.7405 31.6119 16.7405 32.3919 16.0705L36.5519 12.5005C37.3319 11.8305 38.5919 11.8305 39.3719 12.5005L41.0019 13.9005" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
 
-
-                   <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22 10.5V15.5C22 20.5 20 22.5 15 22.5H9C4 22.5 2 20.5 2 15.5V9.5C2 4.5 4 2.5 9 2.5H14" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M22 10.5H18C15 10.5 14 9.5 14 6.5V2.5L22 10.5Z" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M7 13.5H13" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M7 17.5H11" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22 10.5V15.5C22 20.5 20 22.5 15 22.5H9C4 22.5 2 20.5 2 15.5V9.5C2 4.5 4 2.5 9 2.5H14" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M22 10.5H18C15 10.5 14 9.5 14 6.5V2.5L22 10.5Z" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M7 13.5H13" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M7 17.5H11" stroke="#043677" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
                 </div>
@@ -305,29 +357,94 @@ const VehicleDetailsPage = () => {
 
                   {/* Documents Grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    {documents.map((doc, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex flex-col items-center">
-                          <div className="w-12 h-12 bg-red-500 rounded flex items-center justify-center mb-2">
-                            <FileText className="text-white" size={24} />
+                    {documents.length === 0 ? (
+                      <div className="col-span-2 flex flex-col items-center justify-center py-8 text-gray-400">
+                        <FileText size={48} className="mb-2 opacity-50" />
+                        <p className="text-sm text-center">No documents assigned</p>
+                      </div>
+                    ) : (
+                      documents.map((doc, index) => (
+                        <div
+                          key={index}
+                          className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer"
+                          onClick={() => window.open(doc.fileUrl, '_blank')}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div className="w-12 h-12 bg-red-500 rounded flex items-center justify-center mb-2">
+                              <FileText className="text-white" size={24} />
+                            </div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <span className="text-xs font-medium text-gray-700 truncate max-w-[80px]">
+                                {doc.title}
+                              </span>
+                              <button className="text-gray-400 hover:text-gray-600">
+                                <MoreVertical size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 mb-1">
-                            <span className="text-xs font-medium text-gray-700 truncate max-w-[80px]">
-                              {doc.name}
-                            </span>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <MoreVertical size={14} />
-                            </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {showComments && (
+                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-lg roboto-semi-bold text-gray-900">Comments</h2>
+                  </div>
+                  <div className="px-4 lg:px-6 py-4 max-h-96 overflow-y-auto">
+                    {comments.map((comment) => (
+                      <div key={comment._id} className="mb-4 pb-4 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-start gap-3">
+                          <img 
+                            src={comment.senderId?.profileImage || '/placeholder-avatar.png'} 
+                            alt={comment.senderId?.name} 
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            onError={(e) => { e.target.src = '/placeholder-avatar.png'; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900 truncate">{comment.senderId?.name || 'Unknown'}</span>
+                              <span className="text-xs text-gray-500">{timeAgo(comment.createdAt)}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 break-words">{comment.text}</p>
                           </div>
                         </div>
                       </div>
                     ))}
+                    {comments.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                        <FileText size={48} className="mb-2 opacity-50" />
+                        <p className="text-sm text-center">No comments yet</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-4 lg:px-6 py-4 border-t border-gray-200">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Add a comment..."
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#043677]"
+                        onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                      />
+                      <button
+                        onClick={handlePostComment}
+                        disabled={!commentText.trim()}
+                        className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16.1401 2.96004L7.11012 5.96004C1.04012 7.99004 1.04012 11.3 7.11012 13.32L9.79012 14.21L10.6801 16.89C12.7001 22.96 16.0201 22.96 18.0401 16.89L21.0501 7.87004C22.3901 3.82004 20.1901 1.61004 16.1401 2.96004ZM16.4601 8.34004L12.6601 12.16C12.5101 12.31 12.3201 12.38 12.1301 12.38C11.9401 12.38 11.7501 12.31 11.6001 12.16C11.3101 11.87 11.3101 11.39 11.6001 11.1L15.4001 7.28004C15.6901 6.99004 16.1701 6.99004 16.4601 7.28004C16.7501 7.57004 16.7501 8.05004 16.4601 8.34004Z" fill="white"/>
+                        </svg>
+
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}

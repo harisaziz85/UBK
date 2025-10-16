@@ -48,6 +48,7 @@ import AdminCaadoc from "./admin/components/AdminCaadoc";
 import Towpdf from "./driver/component/Postform/pdf/Towpdf";
 import FormDetails from "./driver/component/Postform/FormDetails";
 import ForgotPasswordFlow from "./auth/ForgetPassword";
+import MyProfilePage from "./driver/MyprofilePage";
 
 
 function App() {
@@ -74,6 +75,7 @@ function App() {
           <Route path='/form-details/:id' element={<FormDetails/>}/>
           {/* <Route path="/vehicleassignment" element={<VehicleAssignment />} /> */}
           <Route path="/profile" element={<Userprofile />} />
+          <Route path="/myprofile/:userId" element={<MyProfilePage />} />
           <Route path="/updatepassword" element={<PassUpdate />} />
           <Route path="/testing" element={<Testing />} />
         {/* inspections module route */}
@@ -119,7 +121,7 @@ function App() {
 
           {/* Docuemnts Routes */}
           <Route path="/admin/doc" element={<AdminDoc />} />
-          <Route path="/admin/document/details" element={<DocumentDetails />} />
+          <Route path="/admin/document/:id" element={<DocumentDetails />} />
           <Route path="/admin/ubktowing" element={<UBKTowing/>} />
           <Route path="/admin/caadocuments" element={<AdminCaadoc />} />
 
