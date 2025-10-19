@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Calendar, Clock, ChevronDown } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import CustomTimePicker from './CustomTimePicker';
 import DatePickerComponent from './CustomDatePicker';
-import { toast, ToastContainer } from 'react-toastify'; // New import
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import jsPDF from 'jspdf';
 import StoragePdf from './pdf/Storagepgf';
@@ -13,21 +14,23 @@ import SignatureCanvas from 'react-signature-canvas';
 import { toPng } from "html-to-image";
 import * as htmlToImage from 'html-to-image';
 
-
-
 // Main Consent Form Component
 const ConsentForm = () => {
+  const { id } = useParams();
   const [formType, setFormType] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [odometerValue, setOdometerValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
+  const [originalToLocation, setOriginalToLocation] = useState('');
   const [showPdf, setShowPdf] = useState(false);
   const [pdfData, setPdfData] = useState({});
   const pdfRef = useRef(null);
   const towSignatureRef = useRef();
   const storageSignatureRef = useRef();
+  const preSignatureRef = useRef();
 
   // Shared data for both forms
   const [sharedData, setSharedData] = useState({
@@ -65,8 +68,7 @@ const ConsentForm = () => {
     secondSignature: '',
     towTruckPlate: '',
     towTruckVin: '',
-   invoicePO: '', // ✅ Add this line
-
+    invoicePO: '', // ✅ Add this line
   });
 
   // Storage specific data
@@ -77,6 +79,95 @@ const ConsentForm = () => {
   });
 
   const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
+
+  const parseDateTime = (dateTimeStr) => {
+    const date = new Date(dateTimeStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return {
+      date: `${year}-${month}-${day}`,
+      time: `${hours}:${minutes}`
+    };
+  };
+
+  useEffect(() => {
+    const fetchForm = async () => {
+      if (!id) return;
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+        const res = await fetch(`${Baseurl}/driver/consentForm/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch form');
+        const { form } = await res.json();
+        if (form.type !== 'Consent to Tow') {
+          toast.error('This is not a Consent to Tow form');
+          return;
+        }
+        setFormType('tow');
+        setIsUpdate(true);
+
+        const { date: startDateParsed, time: startTimeParsed } = parseDateTime(form.towDetails.towDateTime);
+        const { date: consentDateParsed, time: consentTimeParsed } = parseDateTime(form.consentDateTime);
+
+        const endDateTimeParsed = form.towDetails.towEndDateTime ? parseDateTime(form.towDetails.towEndDateTime) : { date: '', time: '' };
+
+        setSharedData({
+          driverName: form.towDriver.name || '',
+          truckNumber: form.towDriver.truckNumber || '',
+          driverCertificate: form.towDriver.driverCertificate || '',
+          towedFrom: form.towDetails.fromLocation || '',
+          startDate: startDateParsed,
+          startTime: startTimeParsed,
+          consentPersonName: form.consentBy.name || '',
+          consentAddress: form.consentBy.address || '',
+          consentPhone: form.consentBy.phone || '',
+          consentEmail: form.consentBy.email || '',
+          policeDirected: form.policeDirected.isDirected || false,
+          officerNameBadge: `${form.policeDirected.officerName || ''} & ${form.policeDirected.badgeNumber || ''}`,
+          detachmentDivision: form.policeDirected.detachmentDivision || '',
+          incidentNumber: form.policeDirected.incidentNumber || '',
+          consentDate: consentDateParsed,
+          consentTime: consentTimeParsed,
+          consentMethod: form.consentMethod || '',
+          informedOfRights: form.informedOfRights || false,
+          rateSheetShown: form.rateSheetShown || false,
+        });
+
+        setTowSpecific({
+          callNumber: form.towDriver.call || '',
+          towedTo: form.towDetails.toLocation || '',
+          endDate: endDateTimeParsed.date,
+          endTime: endDateTimeParsed.time,
+          acknowledgementRevised: form.towDetails.acknowledgementRevisedDestination || false,
+          firstSignature: '',
+          serviceDescription: form.towDetails.descriptionOfServices || '',
+          vehicleInspection: false,
+          secondSignature: form.towDetails.digitalSignature || '',
+          towTruckPlate: form.vehicle?.plate || '',   // ✅ Corrected path
+          towTruckVin: form.vehicle?.vin || '',
+          invoicePO: form.towDriver.invoiceOrPO || '',
+        });
+
+        setSelectedVehicle(form.vehicle.vehicleId?._id || '');
+        setOriginalToLocation(form.towDetails.toLocation || '');
+      } catch (error) {
+        console.error('Error fetching form:', error);
+        toast.error('Failed to load form');
+      }
+    };
+
+    if (id) {
+      fetchForm();
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -115,6 +206,8 @@ const ConsentForm = () => {
     }
   }, [selectedVehicle, vehicles]);
 
+  
+
   const getVehicleDetails = () => {
     return vehicles.find(v => v._id === selectedVehicle) || {};
   };
@@ -145,6 +238,19 @@ const ConsentForm = () => {
 
   const handleOdometerChange = (e) => {
     setOdometerValue(e.target.value);
+  };
+
+  const isFieldEditable = (field) => {
+    if (!isUpdate) return true;
+    const editableFields = ['towedTo', 'endDate', 'endTime'];
+    return editableFields.includes(field);
+  };
+
+  const inputClassName = (editable) => {
+    if (isUpdate && !editable) {
+      return "w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed";
+    }
+    return "w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]";
   };
 
   const validateForm = (type) => {
@@ -195,238 +301,244 @@ const ConsentForm = () => {
     return true;
   };
 
-const generateAndDownloadPDF = async (submitData, type) => {
-  try {
-    console.log("🚀 Starting PDF generation...");
-
-    // Step 1: Prepare PDF data and show hidden component
-    setPdfData(submitData);
-    setShowPdf(true);
-
-    // Step 2: Wait for React to render and fonts to load
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    const element = pdfRef.current;
-    if (!element) {
-      toast.error("PDF container not found");
-      return;
-    }
-
-    // Step 3: Move element off-screen but visible for rendering
-    element.style.position = "absolute";
-    element.style.left = "0px";
-    element.style.top = "0";
-    element.style.opacity = "1";
-    element.style.visibility = "visible";
-    element.style.display = "block";
-    element.style.zIndex = "-1";
-    element.style.backgroundColor = "#ffffff";
-    // ✅ Dynamic width based on form type
-    if (type === "tow") {
-      element.style.width = "1000px";
-    } else {
-      element.style.width = "1310px";
-    }
-
-
-    console.log("✅ Capturing PDF element...");
-
-    // Step 4: Capture the element to PNG
-    const dataUrl = await htmlToImage.toPng(element, {
-      cacheBust: true,
-      useCORS: true,
-      skipFonts: false,
-      pixelRatio: 2,
-      backgroundColor: "#ffffff",
-      filter: (node) =>
-        !(node.tagName === "LINK" || node.tagName === "STYLE"),
-    });
-
-    // Step 5: Generate and download PDF
-    let pdf = new jsPDF("p", "mm", "a4");
-    let imgProps = pdf.getImageProperties(dataUrl);
-    let pdfWidth = pdf.internal.pageSize.getWidth();
-    let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-
-      // ✅ Fix Tow height difference
-    if (type === "tow") {
-      pdfHeight *= 0.9; // Reduce height by 10% to remove blank space
-    }
-
-    pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-    const fileName =
-      type === "tow"
-        ? "Consent_to_Tow_Form.pdf"
-        : "Consent_to_Storage_Form.pdf";
-    pdf.save(fileName);
-
-    toast.success("✅ PDF downloaded successfully!");
-  } catch (error) {
-    console.error("❌ PDF generation failed:", error);
-    toast.error(`Failed to generate PDF: ${error.message}`);
-  } finally {
-    // Step 6: Hide again
-    setShowPdf(false);
-  }
-};
-
-
-
-
-
-
-useEffect(() => {
-  if (
-    sharedData.startDate &&
-    towSpecific.endDate &&
-    new Date(sharedData.startDate) > new Date(towSpecific.endDate)
-  ) {
-    handleTowSpecificInputChange('endDate', '');
-  }
-}, [sharedData.startDate]);
-
-
-
-
-  const handleSubmit = async (type) => {
-    if (!validateForm(type)) {
-      return;
-    }
-
-    setIsLoading(true);
+  const generateAndDownloadPDF = async (submitData, type) => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        toast.error("Authentication token not found. Please log in.");
+      console.log("🚀 Starting PDF generation...");
+
+      // Step 1: Prepare PDF data and show hidden component
+      setPdfData(submitData);
+      setShowPdf(true);
+
+      // Step 2: Wait for React to render and fonts to load
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      const element = pdfRef.current;
+      if (!element) {
+        toast.error("PDF container not found");
         return;
       }
 
-      const isTow = type === 'tow';
-
-      const vehicle = getVehicleDetails();
-      const currentMileage = parseInt(odometerValue) || 0;
-
-      const consentDateTime = new Date(`${sharedData.consentDate}T${sharedData.consentTime}:00`).toISOString();
-      const startDateTime = new Date(`${sharedData.startDate}T${sharedData.startTime}:00`).toISOString();
-      const formattedStartDateTime = `${sharedData.startDate} ${sharedData.startTime}`;
-      const formattedConsentDateTime = `${sharedData.consentDate} ${sharedData.consentTime}`;
-
-      const officerName = sharedData.officerNameBadge.split(' & ')[0] || sharedData.officerNameBadge;
-      const badgeNumber = sharedData.officerNameBadge.split(' & ')[1] || '';
-
-      const payload = {
-        type: isTow ? "Consent to Tow" : "Consent to Storage",
-        towOperator: {
-          legalName: "1878272 Ontario Inc O/A UBK Towing",
-          address: "3D–35 King St. Toronto, Ontario M9N 3R8",
-          email: "ubktowing@gmail.com",
-          phone: "(647) 716-3362",
-          operatorCertificate: "TO-189-380-467",
-          storageCertificate: "VS-189-380-467"
-        },
-        towDriver: {
-        name: sharedData.driverName,
-        truckNumber: sharedData.truckNumber,
-        driverCertificate: sharedData.driverCertificate,
-        invoiceOrPO: storageSpecific.invoicePO || towSpecific.invoicePO || "", // ✅ always send invoice
-        call: isTow ? (towSpecific.callNumber?.trim() || "") : "",
-
-          },
-
-        vehicle: selectedVehicle ? {
-          vehicleId: selectedVehicle,
-          make: vehicle.make || '',
-          model: vehicle.model || '',
-          year: vehicle.year || '',
-          color: vehicle.color || '',
-          plate: vehicle.licensePlate || '',
-          vin: vehicle.vin || '',
-          currentMileage
-        } : {
-          make: '',
-          model: '',
-          year: '',
-          color: '',
-          plate: '',
-          vin: '',
-          currentMileage
-        },
-        consentBy: {
-          name: sharedData.consentPersonName,
-          address: sharedData.consentAddress,
-          phone: sharedData.consentPhone,
-          email: sharedData.consentEmail
-        },
-        policeDirected: {
-          isDirected: sharedData.policeDirected,
-          officerName: officerName,
-          badgeNumber: badgeNumber,
-          detachmentDivision: sharedData.detachmentDivision,
-          incidentNumber: sharedData.incidentNumber
-        },
-        consentDateTime,
-        consentMethod: sharedData.consentMethod,
-        informedOfRights: sharedData.informedOfRights,
-        rateSheetShown: sharedData.rateSheetShown,
-      };
-
-      if (isTow) {
-
-          const endDateTime = towSpecific.endDate && towSpecific.endTime
-    ? new Date(`${towSpecific.endDate}T${towSpecific.endTime}:00`).toISOString()
-    : null;
-
-        payload.towDetails = {
-          fromLocation: sharedData.towedFrom,
-          toLocation: towSpecific.towedTo,
-          towDateTime: startDateTime,
-           towEndDateTime: endDateTime,  
-          acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
-          digitalSignature: towSpecific.secondSignature,
-          descriptionOfServices: towSpecific.serviceDescription
-        };
+      // Step 3: Move element off-screen but visible for rendering
+      element.style.position = "absolute";
+      element.style.left = "0px";
+      element.style.top = "0";
+      element.style.opacity = "1";
+      element.style.visibility = "visible";
+      element.style.display = "block";
+      element.style.zIndex = "-1";
+      element.style.backgroundColor = "#ffffff";
+      // ✅ Dynamic width based on form type
+      if (type === "tow") {
+        element.style.width = "1000px";
       } else {
-        const storageType = storageSpecific.storageOption === 'indoor' ? 'INDOOR' : storageSpecific.storageOption === 'outdoor' ? 'OUTDOOR' : '7 Belvia Road Etobicoke Ontario M8W9R2';
-        // const storageLocation = `7 Belvia Road Etobicoke Ontario M8W9R2${storageType ? ` - ${storageType}` : ''}`;
-        const storageLocation = storageType || null;
-        payload.storageDetails = {
-          pickupLocation: sharedData.towedFrom,
-          startDateTime,
-          storageLocation,
-          digitalSignature: storageSpecific.storageSignature
-        };
+        element.style.width = "1310px";
       }
 
-      console.log('Submitting payload:', payload); // For debugging
 
-      const response = await fetch(`${Baseurl}/driver/consentForm/create`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload)
+      console.log("✅ Capturing PDF element...");
+
+      // Step 4: Capture the element to PNG
+      const dataUrl = await htmlToImage.toPng(element, {
+        cacheBust: true,
+        useCORS: true,
+        skipFonts: false,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        filter: (node) =>
+          !(node.tagName === "LINK" || node.tagName === "STYLE"),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('API Error:', errorData);
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      // Step 5: Generate and download PDF
+      let pdf = new jsPDF("p", "mm", "a4");
+      let imgProps = pdf.getImageProperties(dataUrl);
+      let pdfWidth = pdf.internal.pageSize.getWidth();
+      let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+
+        // ✅ Fix Tow height difference
+      if (type === "tow") {
+        pdfHeight *= 0.9; // Reduce height by 10% to remove blank space
       }
 
-      const result = await response.json();
-      toast.success(`${type} form submitted successfully!`);
+      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const fileName =
+        type === "tow"
+          ? "Consent_to_Tow_Form.pdf"
+          : "Consent_to_Storage_Form.pdf";
+      pdf.save(fileName);
+
+      toast.success("✅ PDF downloaded successfully!");
+    } catch (error) {
+      console.error("❌ PDF generation failed:", error);
+      toast.error(`Failed to generate PDF: ${error.message}`);
+    } finally {
+      // Step 6: Hide again
+      setShowPdf(false);
+    }
+  };
 
 
-      // ✅ Extract missing date/time fields before PDF generation
-const startDate = sharedData.startDate || "";
-const startTime = sharedData.startTime || "";
-const endDate = isTow ? towSpecific.endDate || "" : "";
-const endTime = isTow ? towSpecific.endTime || "" : "";
 
-      // Prepare PDF data (map form fields to PDF fields)
-const pdfSubmitData = {
+
+
+
+  useEffect(() => {
+    if (
+      sharedData.startDate &&
+      towSpecific.endDate &&
+      new Date(sharedData.startDate) > new Date(towSpecific.endDate)
+    ) {
+      handleTowSpecificInputChange('endDate', '');
+    }
+  }, [sharedData.startDate]);
+
+
+
+
+    const handleSubmit = async (type) => {
+      if (!validateForm(type)) {
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          toast.error("Authentication token not found. Please log in.");
+          return;
+        }
+
+        const isTow = type === 'tow';
+
+        const vehicle = getVehicleDetails();
+        const currentMileage = parseInt(odometerValue) || 0;
+
+        const consentDateTime = new Date(`${sharedData.consentDate}T${sharedData.consentTime}:00`).toISOString();
+        const startDateTime = new Date(`${sharedData.startDate}T${sharedData.startTime}:00`).toISOString();
+        const formattedStartDateTime = `${sharedData.startDate} ${sharedData.startTime}`;
+        const formattedConsentDateTime = `${sharedData.consentDate} ${sharedData.consentTime}`;
+
+        const officerName = sharedData.officerNameBadge.split(' & ')[0] || sharedData.officerNameBadge;
+        const badgeNumber = sharedData.officerNameBadge.split(' & ')[1] || '';
+
+        const payload = {
+          type: isTow ? "Consent to Tow" : "Consent to Storage",
+          towOperator: {
+            legalName: "1878272 Ontario Inc O/A UBK Towing",
+            address: "3D–35 King St. Toronto, Ontario M9N 3R8",
+            email: "ubktowing@gmail.com",
+            phone: "(647) 716-3362",
+            operatorCertificate: "TO-189-380-467",
+            storageCertificate: "VS-189-380-467"
+          },
+          towDriver: {
+          name: sharedData.driverName,
+          truckNumber: sharedData.truckNumber,
+          driverCertificate: sharedData.driverCertificate,
+          invoiceOrPO: storageSpecific.invoicePO || towSpecific.invoicePO || "", // ✅ always send invoice
+          call: isTow ? (String(towSpecific.callNumber || "").trim()) : "",
+
+            },
+
+          vehicle: selectedVehicle ? {
+            vehicleId: selectedVehicle,
+            make: vehicle.make || '',
+            model: vehicle.model || '',
+            year: vehicle.year || '',
+            color: vehicle.color || '',
+            plate: vehicle.licensePlate || '',
+            vin: vehicle.vin || '',
+            currentMileage
+          } : {
+            make: '',
+            model: '',
+            year: '',
+            color: '',
+            plate: '',
+            vin: '',
+            currentMileage
+          },
+          consentBy: {
+            name: sharedData.consentPersonName,
+            address: sharedData.consentAddress,
+            phone: sharedData.consentPhone,
+            email: sharedData.consentEmail
+          },
+          policeDirected: {
+            isDirected: sharedData.policeDirected,
+            officerName: officerName,
+            badgeNumber: badgeNumber,
+            detachmentDivision: sharedData.detachmentDivision,
+            incidentNumber: sharedData.incidentNumber
+          },
+          consentDateTime,
+          consentMethod: sharedData.consentMethod,
+          informedOfRights: sharedData.informedOfRights,
+          rateSheetShown: sharedData.rateSheetShown,
+        };
+
+        if (isTow) {
+
+            const endDateTime = towSpecific.endDate && towSpecific.endTime
+      ? new Date(`${towSpecific.endDate}T${towSpecific.endTime}:00`).toISOString()
+      : null;
+
+          payload.towDetails = {
+            fromLocation: sharedData.towedFrom,
+            toLocation: towSpecific.towedTo,
+            towDateTime: startDateTime,
+             towEndDateTime: endDateTime,  
+            acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
+            digitalSignature: towSpecific.acknowledgementRevised ? towSpecific.firstSignature : towSpecific.secondSignature,
+            descriptionOfServices: towSpecific.serviceDescription
+          };
+        } else {
+          const storageType = storageSpecific.storageOption === 'indoor' ? 'INDOOR' : storageSpecific.storageOption === 'outdoor' ? 'OUTDOOR' : '7 Belvia Road Etobicoke Ontario M8W9R2';
+          // const storageLocation = `7 Belvia Road Etobicoke Ontario M8W9R2${storageType ? ` - ${storageType}` : ''}`;
+          const storageLocation = storageType || null;
+          payload.storageDetails = {
+            pickupLocation: sharedData.towedFrom,
+            startDateTime,
+            storageLocation,
+            digitalSignature: storageSpecific.storageSignature
+          };
+        }
+
+        console.log('Submitting payload:', payload); // For debugging
+
+        const url = isUpdate 
+          ? `${Baseurl}/driver/consentForm/update/${id}`
+          : `${Baseurl}/driver/consentForm/create`;
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('API Error:', errorData);
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const successMessage = isUpdate ? 'Tow form updated successfully!' : `${type} form submitted successfully!`;
+        toast.success(successMessage);
+
+
+        // ✅ Extract missing date/time fields before PDF generation
+  const startDate = sharedData.startDate || "";
+  const startTime = sharedData.startTime || "";
+  const endDate = isTow ? towSpecific.endDate || "" : "";
+  const endTime = isTow ? towSpecific.endTime || "" : "";
+
+        // Prepare PDF data (map form fields to PDF fields)
+ const pdfSubmitData = {
   // 🔹 Core Form Data
   ...payload,
   ...sharedData,
@@ -520,95 +632,100 @@ rateSheetShown: payload?.rateSheetShown === true,
 };
 
 
-      // Generate and download PDF
-      await generateAndDownloadPDF(pdfSubmitData, type);
-      
-      // Reset form
-      setSharedData({
-        driverName: '',
-        truckNumber: '',
-        driverCertificate: '',
-        towedFrom: '',
-        startDate: '',
-        startTime: '',
-        consentPersonName: '',
-        consentAddress: '',
-        consentPhone: '',
-        consentEmail: '',
-        policeDirected: false,
-        officerNameBadge: '',
-        detachmentDivision: '',
-        incidentNumber: '',
-        consentDate: '',
-        consentTime: '',
-        consentMethod: '',
-        informedOfRights: false,
-        rateSheetShown: false,
-      });
-      setTowSpecific({
-        callNumber: '',
-        towedTo: '',
-        endDate: '',
-        endTime: '',
-        acknowledgementRevised: false,
-        firstSignature: '',
-        serviceDescription: '',
-        vehicleInspection: false,
-        secondSignature: '',
-        towTruckPlate: '',
-        towTruckVin: '',
-      });
-      setStorageSpecific({
-        invoicePO: '',
-        storageOption: '',
-        storageSignature: '',
-      });
-      setSelectedVehicle('');
-      setOdometerValue('');
-      setFormType('');
-    } catch (error) {
-      console.error('Submission error:', error);
-      toast.error(`Error submitting form: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Generate and download PDF
+        await generateAndDownloadPDF(pdfSubmitData, type);
+        
+        if (!isUpdate) {
+          // Reset form only if not update
+          setSharedData({
+            driverName: '',
+            truckNumber: '',
+            driverCertificate: '',
+            towedFrom: '',
+            startDate: '',
+            startTime: '',
+            consentPersonName: '',
+            consentAddress: '',
+            consentPhone: '',
+            consentEmail: '',
+            policeDirected: false,
+            officerNameBadge: '',
+            detachmentDivision: '',
+            incidentNumber: '',
+            consentDate: '',
+            consentTime: '',
+            consentMethod: '',
+            informedOfRights: false,
+            rateSheetShown: false,
+          });
+          setTowSpecific({
+            callNumber: '',
+            towedTo: '',
+            endDate: '',
+            endTime: '',
+            acknowledgementRevised: false,
+            firstSignature: '',
+            serviceDescription: '',
+            vehicleInspection: false,
+            secondSignature: '',
+            towTruckPlate: '',
+            towTruckVin: '',
+            invoicePO: '',
+          });
+          setStorageSpecific({
+            invoicePO: '',
+            storageOption: '',
+            storageSignature: '',
+          });
+          setSelectedVehicle('');
+          setOdometerValue('');
+          setFormType('');
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        toast.error(`Error ${isUpdate ? 'updating' : 'submitting'} form: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
     <div className="min-h-screen bg-gray-50 p-0 md:p-0">
       <ToastContainer/>
-      <h1 className="text-2xl md:text-3xl roboto-semi-bold text-[#333333] mb-6 p-4 sm:p-6">New Consent Form</h1>
+      <h1 className="text-2xl md:text-3xl roboto-semi-bold text-[#333333] mb-6 p-4 sm:p-6">{isUpdate ? 'Update Consent Form' : 'New Consent Form'}</h1>
       <div className="max-w-full p-1 sm:p-6 md:p-8">
-        <div className="mb-8">
-          <label className="block text-sm roboto-medium text-[#333333E5]/90 mb-2">Form Type <span className="text-red-500">*</span></label>
-          <div className="relative">
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="cursor-pointer w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#043677] flex items-center justify-between"
-            >
-              <span className={formType ? 'text-gray-900' : 'text-blue-600'}>
-                {formType === 'storage' ? 'Consent to Storage' : formType === 'tow' ? 'Consent to Tow' : 'Select form type'}
-              </span>
-              <ChevronDown size={20} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            {showDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                <button 
-                  onClick={() => { setFormType('storage'); setShowDropdown(false); }} 
-                  className="w-full px-4 py-3 roboto-medium text-left text-[#000000B2] hover:bg-gray-50 rounded-t-lg"
-                >
-                  Consent to Storage
-                </button>
-                <button 
-                  onClick={() => { setFormType('tow'); setShowDropdown(false); }} 
-                  className="w-full px-4 py-3 roboto-medium text-left text-[#000000B2] hover:bg-gray-50 rounded-b-lg"
-                >
-                  Consent to Tow
-                </button>
-              </div>
-            )}
+        {!isUpdate && (
+          <div className="mb-8">
+            <label className="block text-sm roboto-medium text-[#333333E5]/90 mb-2">Form Type <span className="text-red-500">*</span></label>
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="cursor-pointer w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#043677] flex items-center justify-between"
+              >
+                <span className={formType ? 'text-gray-900' : 'text-blue-600'}>
+                  {formType === 'storage' ? 'Consent to Storage' : formType === 'tow' ? 'Consent to Tow' : 'Select form type'}
+                </span>
+                <ChevronDown size={20} className={`text-gray-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              {showDropdown && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <button 
+                    onClick={() => { setFormType('storage'); setShowDropdown(false); }} 
+                    className="w-full px-4 py-3 roboto-medium text-left text-[#000000B2] hover:bg-gray-50 rounded-t-lg"
+                  >
+                    Consent to Storage
+                  </button>
+                  <button 
+                    onClick={() => { setFormType('tow'); setShowDropdown(false); }} 
+                    className="w-full px-4 py-3 roboto-medium text-left text-[#000000B2] hover:bg-gray-50 rounded-b-lg"
+                  >
+                    Consent to Tow
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {formType && (
           <div className="space-y-8">
@@ -617,7 +734,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                 {formType === 'tow' ? 'Consent to Tow' : 'Consent to Storage'}
               </h2>
               <p className="text-[#333333CC] roboto-medium mb-6">
-                Fill the form to submit a {formType === 'tow' ? 'consent to tow' : 'consent to storage'}.
+                {isUpdate ? `Update the tow location for this consent to tow.` : `Fill the form to submit a ${formType === 'tow' ? 'consent to tow' : 'consent to storage'}.`}
               </p>
 
               {/* Tow Operator Information - Common */}
@@ -673,7 +790,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.driverName} 
                     onChange={(e) => handleSharedInputChange('driverName', e.target.value)} 
                     placeholder="e.g., ALI ABBASI" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                     required 
                   />
                 </div>
@@ -684,7 +802,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.truckNumber} 
                     onChange={(e) => handleSharedInputChange('truckNumber', e.target.value)} 
                     placeholder="e.g., BEO 4652" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                   />
                 </div>
                 <div>
@@ -694,7 +813,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.driverCertificate} 
                     onChange={(e) => handleSharedInputChange('driverCertificate', e.target.value)} 
                     placeholder="e.g., Certificate Number" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                   />
                 </div>
                 {formType === 'tow' ? (
@@ -705,7 +825,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                       value={towSpecific.callNumber} 
                       onChange={(e) => handleTowSpecificInputChange('callNumber', e.target.value)} 
                       placeholder="e.g., Call Number" 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                      className={inputClassName(false)}
+                      readOnly={isUpdate}
                     />
                   </div>
                 ) : (
@@ -716,7 +837,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                       value={storageSpecific.invoicePO} 
                       onChange={(e) => handleStorageSpecificInputChange('invoicePO', e.target.value)} 
                       placeholder="e.g., Invoice/PO Number" 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                      className={inputClassName(false)}
+                      readOnly={isUpdate}
                     />
                   </div>
                 )}
@@ -729,7 +851,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                         value={towSpecific.towTruckPlate} 
                         onChange={(e) => handleTowSpecificInputChange('towTruckPlate', e.target.value)} 
                         placeholder="e.g., Plate Number" 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                        className={inputClassName(false)}
+                        readOnly={isUpdate}
                       />
                     </div>
                     <div>
@@ -739,7 +862,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                         value={towSpecific.towTruckVin} 
                         onChange={(e) => handleTowSpecificInputChange('towTruckVin', e.target.value)} 
                         placeholder="e.g., VIN Number" 
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                        className={inputClassName(false)}
+                        readOnly={isUpdate}
                       />
                     </div>
 
@@ -755,7 +879,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                           handleTowSpecificInputChange('invoicePO', e.target.value)
                         }
                         placeholder="e.g., TO-189-380-467"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
+                        className={inputClassName(false)}
+                        readOnly={isUpdate}
                       />
                     </div>
                   </>
@@ -769,7 +894,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                   <select 
                     value={selectedVehicle} 
                     onChange={(e) => setSelectedVehicle(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] appearance-none"
+                    className={`${inputClassName(false)} appearance-none`}
+                    disabled={isUpdate}
                     required
                   >
                     <option value="">Select Vehicle</option>
@@ -792,7 +918,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().year || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div>
@@ -801,7 +927,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().make || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div>
@@ -810,7 +936,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().model || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div>
@@ -819,7 +945,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().color || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div>
@@ -828,7 +954,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().licensePlate || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div>
@@ -837,7 +963,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="text" 
                     value={getVehicleDetails().vin || ''} 
                     readOnly 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100" 
+                    className={inputClassName(false)} 
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -847,7 +973,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={odometerValue} 
                     onChange={handleOdometerChange} 
                     placeholder="Enter current mileage" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                   />
                 </div>
               </div>
@@ -865,7 +992,7 @@ rateSheetShown: payload?.rateSheetShown === true,
       value={sharedData.towedFrom}
       onChange={(e) => handleSharedInputChange('towedFrom', e.target.value)}
       placeholder="Enter location"
-      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
+      className={inputClassName(true)}
       required
     />
   </div>
@@ -877,6 +1004,7 @@ rateSheetShown: payload?.rateSheetShown === true,
     <DatePickerComponent
       value={sharedData.startDate}
       onChange={(value) => handleSharedInputChange('startDate', value)}
+      disabled={isUpdate}
     />
   </div>
 
@@ -887,6 +1015,7 @@ rateSheetShown: payload?.rateSheetShown === true,
     <CustomTimePicker
       value={sharedData.startTime}
       onChange={(value) => handleSharedInputChange('startTime', value)}
+      disabled={isUpdate}
     />
   </div>
 </div>
@@ -903,7 +1032,7 @@ rateSheetShown: payload?.rateSheetShown === true,
         value={towSpecific.towedTo}
         onChange={(e) => handleTowSpecificInputChange('towedTo', e.target.value)}
         placeholder="Enter location"
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
+        className={inputClassName(true)}
         required
       />
     </div>
@@ -923,6 +1052,7 @@ rateSheetShown: payload?.rateSheetShown === true,
         })()
       : new Date()
   }
+  disabled={!isFieldEditable('endDate')}
 />
 
 </div>
@@ -935,6 +1065,7 @@ rateSheetShown: payload?.rateSheetShown === true,
       <CustomTimePicker
         value={towSpecific.endTime}
         onChange={(value) => handleTowSpecificInputChange('endTime', value)}
+        disabled={!isFieldEditable('endTime')}
       />
     </div>
   </div>
@@ -942,35 +1073,39 @@ rateSheetShown: payload?.rateSheetShown === true,
 
 </div>
 
+{isUpdate && formType === 'tow' && towSpecific.towedTo.trim() && towSpecific.towedTo !== originalToLocation && (
+  <>
+    <div className="mb-4">
+      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+        <input
+          type="checkbox"
+          checked={towSpecific.acknowledgementRevised}
+          onChange={() => handleTowSpecificCheckboxChange('acknowledgementRevised')}
+          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+        />
+        <span>Acknowledgement of client's revised destination address</span>
+      </label>
+    </div>
 
-               {/* {formType === 'tow' && towSpecific.towedTo.trim() && (
-                <>
-
-                 <div className="mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-                    <input
-                      type="checkbox"
-                      checked={towSpecific.acknowledgementRevised}
-                      onChange={() => handleTowSpecificCheckboxChange('acknowledgementRevised')}
-                      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-                    />
-                    <span>Acknowledgement of client's revised destination address</span>
-                  </label>
-                </div>
-
-                  <h3 className="text-lg roboto-semi-bold text-[#333333] mb-4">Signature (Pre-Tow)</h3>
-                  <div className="mb-6">
-                    <input
-                      type="text"
-                      value={towSpecific.firstSignature}
-                      onChange={(e) => handleTowSpecificInputChange('firstSignature', e.target.value)}
-                      placeholder="Add a digital signature"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
-                    />
-                  </div> 
-                </>
-               
-              )}  */}
+      <h3 className="text-lg roboto-semi-bold text-[#333333] mb-4">Signature (Pre-Tow)</h3>
+      <div className="mb-6">
+        <SignatureCanvas
+          penColor="black"
+          canvasProps={{
+            width: 500,
+            height: 40,
+            className: "w-full border border-gray-300 rounded-lg"
+          }}
+          ref={preSignatureRef}
+          onEnd={() => {
+            if (preSignatureRef.current) {
+              setTowSpecific(prev => ({ ...prev, firstSignature: preSignatureRef.current.toDataURL('image/png') }));
+            }
+          }}
+        />
+      </div> 
+  </>
+)}
 
               {formType === 'tow'  && (
                 <>
@@ -983,76 +1118,80 @@ rateSheetShown: payload?.rateSheetShown === true,
                       value={towSpecific.serviceDescription}
                       onChange={(e) => handleTowSpecificInputChange('serviceDescription', e.target.value)}
                       placeholder="Enter service description"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
+                      className={inputClassName(false)}
+                      readOnly={isUpdate}
                     />
                   </div>
                 </>
               )}
 
               {/* Storage Locations - Storage Only */}
-{formType === 'storage' && (
-  <>
-    <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
-      Storage Locations
-    </h3>
+  {formType === 'storage' && (
+    <>
+      <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
+        Storage Locations
+      </h3>
 
-    <div className="mb-6 flex flex-wrap items-center gap-6">
-      {/* Default storage location */}
-      <label className="flex items-center gap-3 cursor-pointer max-w-full">
-        <input
-          type="checkbox"
-          checked={storageSpecific.storageOption === 'default'}
-          onChange={() => {
-            setStorageSpecific(prev => ({
-              ...prev,
-              storageOption: prev.storageOption === 'default' ? '' : 'default'
-            }));
-          }}
-          className="rounded w-4 h-4 border-gray-300"
-        />
-        <span className="text-[14px] text-[#333333CC] roboto-regular">
-          Storage address confirmed at 7 Belvia Road Etobicoke Ontario M8W9R2
-        </span>
-      </label>
+      <div className="mb-6 flex flex-wrap items-center gap-6">
+        {/* Default storage location */}
+        <label className="flex items-center gap-3 cursor-pointer max-w-full">
+          <input
+            type="checkbox"
+            checked={storageSpecific.storageOption === 'default'}
+            onChange={() => {
+              setStorageSpecific(prev => ({
+                ...prev,
+                storageOption: prev.storageOption === 'default' ? '' : 'default'
+              }));
+            }}
+            className="rounded w-4 h-4 border-gray-300"
+            disabled={isUpdate}
+          />
+          <span className="text-[14px] text-[#333333CC] roboto-regular">
+            Storage address confirmed at 7 Belvia Road Etobicoke Ontario M8W9R2
+          </span>
+        </label>
 
-      {/* Indoor option */}
-      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-        <input
-          type="checkbox"
-          checked={storageSpecific.storageOption === 'indoor'}
-          onChange={() => {
-            setStorageSpecific(prev => ({
-              ...prev,
-              storageOption: prev.storageOption === 'indoor' ? '' : 'indoor'
-            }));
-          }}
-          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-        />
-        <span>
-          Indoor <span className="text-red-500">*</span>
-        </span>
-      </label>
+        {/* Indoor option */}
+        <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+          <input
+            type="checkbox"
+            checked={storageSpecific.storageOption === 'indoor'}
+            onChange={() => {
+              setStorageSpecific(prev => ({
+                ...prev,
+                storageOption: prev.storageOption === 'indoor' ? '' : 'indoor'
+              }));
+            }}
+            className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+            disabled={isUpdate}
+          />
+          <span>
+            Indoor <span className="text-red-500">*</span>
+          </span>
+        </label>
 
-      {/* Outdoor option */}
-      <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-        <input
-          type="checkbox"
-          checked={storageSpecific.storageOption === 'outdoor'}
-          onChange={() => {
-            setStorageSpecific(prev => ({
-              ...prev,
-              storageOption: prev.storageOption === 'outdoor' ? '' : 'outdoor'
-            }));
-          }}
-          className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-        />
-        <span>
-          Outdoor <span className="text-red-500">*</span>
-        </span>
-      </label>
-    </div>
-  </>
-)}
+        {/* Outdoor option */}
+        <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+          <input
+            type="checkbox"
+            checked={storageSpecific.storageOption === 'outdoor'}
+            onChange={() => {
+              setStorageSpecific(prev => ({
+                ...prev,
+                storageOption: prev.storageOption === 'outdoor' ? '' : 'outdoor'
+              }));
+            }}
+            className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+            disabled={isUpdate}
+          />
+          <span>
+            Outdoor <span className="text-red-500">*</span>
+          </span>
+        </label>
+      </div>
+    </>
+  )}
 
 
 
@@ -1068,7 +1207,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.consentPersonName} 
                     onChange={(e) => handleSharedInputChange('consentPersonName', e.target.value)} 
                     placeholder="e.g., John Doe" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                     required 
                   />
                 </div>
@@ -1079,7 +1219,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.consentAddress} 
                     onChange={(e) => handleSharedInputChange('consentAddress', e.target.value)} 
                     placeholder="e.g., 123 Main St" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                   />
                 </div>
                 <div>
@@ -1089,7 +1230,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.consentPhone} 
                     onChange={(e) => handleSharedInputChange('consentPhone', e.target.value)} 
                     placeholder="e.g., +1 647 716 3362" 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
                   />
                 </div>
                <div>
@@ -1101,22 +1243,23 @@ rateSheetShown: payload?.rateSheetShown === true,
                     value={sharedData.consentEmail}
                     onChange={(e) => handleSharedInputChange('consentEmail', e.target.value)}
                     placeholder="e.g., name@example.com"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
+                    className={`${inputClassName(false)} focus:outline-none focus:ring-2 ${
                       sharedData.consentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedData.consentEmail)
                         ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-[#043677]'
                     }`}
+                    readOnly={isUpdate}
                     required
                   />
 
-  {/* Show validation message if invalid */}
-            {sharedData.consentEmail &&
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedData.consentEmail) && (
-                <p className="text-red-500 text-sm mt-1">
-                  Please enter a valid email address.
-                </p>
-              )}
-          </div>
+    {/* Show validation message if invalid */}
+              {sharedData.consentEmail &&
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedData.consentEmail) && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Please enter a valid email address.
+                  </p>
+                )}
+            </div>
 
               </div>
 
@@ -1128,6 +1271,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     checked={sharedData.policeDirected} 
                     onChange={() => handleSharedCheckboxChange('policeDirected')} 
                     className="mt-1 rounded border-gray-300 w-4 h-4" 
+                    disabled={isUpdate}
                   />
                   <span className="text-sm text-gray-700">Providing Services at the direction of Police Officer</span>
                 </label>
@@ -1143,7 +1287,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                       value={sharedData.officerNameBadge} 
                       onChange={(e) => handleSharedInputChange('officerNameBadge', e.target.value)} 
                       placeholder="e.g., Officer Name & Badge Number" 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                      className={inputClassName(false)}
+                      readOnly={isUpdate}
                     />
                   </div>
                   <div>
@@ -1153,7 +1298,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                       value={sharedData.detachmentDivision} 
                       onChange={(e) => handleSharedInputChange('detachmentDivision', e.target.value)} 
                       placeholder="e.g., Toronto Division" 
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                      className={inputClassName(false)}
+                      readOnly={isUpdate}
                     />
                   </div>
                     <div className="mb-6">
@@ -1163,7 +1309,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                   value={sharedData.incidentNumber} 
                   onChange={(e) => handleSharedInputChange('incidentNumber', e.target.value)} 
                   placeholder="e.g., 643874" 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]" 
+                  className={inputClassName(false)}
+                  readOnly={isUpdate}
                 />
               </div>
 
@@ -1183,6 +1330,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                   <DatePickerComponent
                     value={sharedData.consentDate}
                     onChange={(value) => handleSharedInputChange('consentDate', value)}
+                    disabled={isUpdate}
                   />
                 </div>
 
@@ -1193,109 +1341,112 @@ rateSheetShown: payload?.rateSheetShown === true,
                   <CustomTimePicker
                     value={sharedData.consentTime}
                     onChange={(value) => handleSharedInputChange('consentTime', value)}
+                    disabled={isUpdate}
                   />
                 </div>
               </div>
 
 
               {/* Consent Given - Radio Buttons */}
-<h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
-  Consent Given
-</h3>
-<div className="flex flex-col sm:flex-row gap-6 mb-6">
-  {/* Phone checkbox */}
-  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-    <input
-      type="checkbox"
-      checked={sharedData.consentMethod === 'Phone'}
-      onChange={() =>
-        handleConsentMethodChange(
-          sharedData.consentMethod === 'Phone' ? '' : 'Phone'
-        )
-      }
-      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-    />
-    <span>
-      Over the Phone <span className="text-red-500">*</span>
-    </span>
-  </label>
+  <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
+    Consent Given
+  </h3>
+  <div className="flex flex-col sm:flex-row gap-6 mb-6">
+    {/* Phone checkbox */}
+    <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+      <input
+        type="checkbox"
+        checked={sharedData.consentMethod === 'Phone'}
+        onChange={() =>
+          handleConsentMethodChange(
+            sharedData.consentMethod === 'Phone' ? '' : 'Phone'
+          )
+        }
+        className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+        disabled={isUpdate}
+      />
+      <span>
+        Over the Phone <span className="text-red-500">*</span>
+      </span>
+    </label>
 
-  {/* Email checkbox */}
-  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
-    <input
-      type="checkbox"
-      checked={sharedData.consentMethod === 'Email'}
-      onChange={() =>
-        handleConsentMethodChange(
-          sharedData.consentMethod === 'Email' ? '' : 'Email'
-        )
-      }
-      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
-    />
-    <span>
-      Over the Email <span className="text-red-500">*</span>
-    </span>
-  </label>
-</div>
-
-
-
-              {formType === 'storage' && (
-  <div className="max-w-full mt-8 mb-6">
-    <h2 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
-      Storage Rate Schedule
-    </h2>
-    <p className="text-[14px] text-[#333333CC] roboto-medium text-justify mb-5 leading-relaxed">
-      The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for charging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is charged the full daily rate.
-    </p>
-    <table className="w-full bg-white border border-gray-200">
-      <thead>
-        <tr className="bg-[#CCCCCC1A]">
-          <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">Vehicle Storage</th>
-          <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">$</th>
-          <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">Rate Structure</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &le;6.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">85.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &gt;6.5m and &le;12.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">170.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &gt;12.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">215.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &le;6.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">170.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &gt;6.5m and &le;12.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">310.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr className="border-b border-gray-300">
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &gt;12.5m</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">430.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
-        </tr>
-        <tr>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">After-hours access</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">85.00</td>
-          <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Event</td>
-        </tr>
-      </tbody>
-    </table>
+    {/* Email checkbox */}
+    <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+      <input
+        type="checkbox"
+        checked={sharedData.consentMethod === 'Email'}
+        onChange={() =>
+          handleConsentMethodChange(
+            sharedData.consentMethod === 'Email' ? '' : 'Email'
+          )
+        }
+        className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+        disabled={isUpdate}
+      />
+      <span>
+        Over the Email <span className="text-red-500">*</span>
+      </span>
+    </label>
   </div>
-)}
+
+
+
+                {formType === 'storage' && (
+    <div className="max-w-full mt-8 mb-6">
+      <h2 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">
+        Storage Rate Schedule
+      </h2>
+      <p className="text-[14px] text-[#333333CC] roboto-medium text-justify mb-5 leading-relaxed">
+        The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for charging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is charged the full daily rate.
+      </p>
+      <table className="w-full bg-white border border-gray-200">
+        <thead>
+          <tr className="bg-[#CCCCCC1A]">
+            <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">Vehicle Storage</th>
+            <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">$</th>
+            <th className="p-3 text-left text-[#333333E5] roboto-medium text-[14px] border-b border-gray-300">Rate Structure</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &le;6.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">85.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &gt;6.5m and &le;12.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">170.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Outdoor storage, vehicle length &gt;12.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">215.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &le;6.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">170.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &gt;6.5m and &le;12.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">310.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr className="border-b border-gray-300">
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">Indoor storage, vehicle length &gt;12.5m</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">430.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Day</td>
+          </tr>
+          <tr>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">After-hours access</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">85.00</td>
+            <td className="p-3 text-[14px] text-[#333333CC] roboto-medium">/Event</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )}
 
               {/* Disclosure Statement - Common */}
               <div className="mt-8 rounded-lg mb-6  p-0 sm:p-4 bg-gray-50">
@@ -1345,6 +1496,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                       checked={towSpecific.vehicleInspection} 
                       onChange={() => handleTowSpecificCheckboxChange('vehicleInspection')} 
                       className="mt-1 w-4 h-4 rounded border-gray-300" 
+                      disabled={isUpdate}
                     />
                     <span className="text-sm text-gray-700">I declare that the vehicle listed has been inspected in accordance with Ontario Schedule 1 Daily inspections of trucks, tractors, and trailers (Reg. 199/07)</span>
                   </label>
@@ -1366,6 +1518,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     checked={sharedData.informedOfRights}
                     onChange={() => handleSharedCheckboxChange('informedOfRights')}
                     className="mt-1 rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+                    disabled={isUpdate}
                     required
                   />
                   <span className="roboto-medium text-[14px] text-[#333333CC]">
@@ -1378,6 +1531,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     checked={sharedData.rateSheetShown}
                     onChange={() => handleSharedCheckboxChange('rateSheetShown')}
                     className="mt-1 rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+                    disabled={isUpdate}
                     required
                   />
                   <span className="roboto-medium text-[14px] text-[#333333CC]">
@@ -1391,16 +1545,28 @@ rateSheetShown: payload?.rateSheetShown === true,
                 <>
                   <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Signature</h3>
                   <div className="mb-6">
-                    <SignatureCanvas
-                      penColor="black"
-                      canvasProps={{
-                        width: 500,
-                        height: 40,
-                        className: "w-full border border-gray-300 rounded-lg"
-                      }}
-                      ref={towSignatureRef}
-                      onEnd={() => towSignatureRef.current && setTowSpecific(prev => ({ ...prev, secondSignature: towSignatureRef.current.toDataURL('image/png') }))}
-                    />
+                    {isUpdate ? (
+                      towSpecific.secondSignature ? (
+                        <img 
+                          src={towSpecific.secondSignature} 
+                          alt="Existing Signature" 
+                          className="w-full border border-gray-300 rounded-lg max-h-20 object-contain bg-white p-1"
+                        />
+                      ) : (
+                        <p className="text-gray-500">No signature available</p>
+                      )
+                    ) : (
+                      <SignatureCanvas
+                        penColor="black"
+                        canvasProps={{
+                          width: 500,
+                          height: 40,
+                          className: "w-full border border-gray-300 rounded-lg"
+                        }}
+                        ref={towSignatureRef}
+                        onEnd={() => towSignatureRef.current && setTowSpecific(prev => ({ ...prev, secondSignature: towSignatureRef.current.toDataURL('image/png') }))}
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -1429,9 +1595,12 @@ rateSheetShown: payload?.rateSheetShown === true,
                 <button 
                   type="button"
                   onClick={() => {
-                    // Reset form
-                    setFormType('');
-                    // ... reset other states
+                    if (isUpdate) {
+                      // Perhaps navigate back
+                    } else {
+                      // Reset form
+                      setFormType('');
+                    }
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                 >
@@ -1443,7 +1612,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                   onClick={() => handleSubmit(formType)}
                   className="px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? 'Submitting...' : 'Submit'}
+                  {isLoading ? 'Submitting...' : (isUpdate ? 'Update' : 'Submit')}
                 </button>
               </div>
             </div>
@@ -1451,27 +1620,27 @@ rateSheetShown: payload?.rateSheetShown === true,
         )}
 
         {/* Hidden PDF Generator - Updated styles for better rendering */}
-{showPdf && (
-  <div
-    ref={pdfRef}
-    style={{
-      position: "absolute",
-      left: "0px",
-      top: 0,
-      backgroundColor: "#ffffff",
-      height:
-     formType === "tow"
-          ? "fit-content" // auto-fit height for Tow
-          : "auto", // normal for Storage
-    }}
-  >
-    {formType === "storage" ? (
-      <StoragePdf data={pdfData} />
-    ) : (
-      <TowPdf data={pdfData} />
-    )}
-  </div>
-)}
+  {showPdf && (
+    <div
+      ref={pdfRef}
+      style={{
+        position: "absolute",
+        left: "0px",
+        top: 0,
+        backgroundColor: "#ffffff",
+        height:
+       formType === "tow"
+            ? "fit-content" // auto-fit height for Tow
+            : "auto", // normal for Storage
+      }}
+    >
+      {formType === "storage" ? (
+        <StoragePdf data={pdfData} />
+      ) : (
+        <TowPdf data={pdfData} />
+      )}
+    </div>
+  )}
 
 
 

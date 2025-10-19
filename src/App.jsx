@@ -73,6 +73,8 @@ function App() {
           <Route path="/form" element={<Froms />} />
           <Route path="/consent-form" element={ <ConsentForm/>} />
           <Route path='/form-details/:id' element={<FormDetails/>}/>
+          <Route path='/form/:id' element={<ConsentForm/>}/>
+
           {/* <Route path="/vehicleassignment" element={<VehicleAssignment />} /> */}
           <Route path="/profile" element={<Userprofile />} />
           <Route path="/myprofile/:userId" element={<MyProfilePage />} />

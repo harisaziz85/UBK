@@ -1,4 +1,4 @@
-import { Search, ChevronDown, Filter, Plus } from 'lucide-react';
+import { Search, ChevronDown, Edit } from 'lucide-react'; 
 import { useState, useEffect } from 'react';
 import vehicleImage from '../assets/image 104.png'
 import { useNavigate } from 'react-router-dom';
@@ -205,6 +205,7 @@ const MainContent = () => {
                 <th className="text-left py-3 px-4 roboto-medium text-[#333333E5]">Date</th>
                 <th className="text-left py-3 px-4 roboto-medium text-[#333333E5]">Driver</th>
                 <th className="text-left py-3 px-4 roboto-medium text-[#333333E5]">Vehicle</th>
+                <th className="text-left py-3 px-4 roboto-medium text-[#333333E5]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -230,11 +231,14 @@ const MainContent = () => {
                         <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
                       </div>
                     </td>
+                    <td className="py-4 px-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-4"></div>
+                    </td>
                   </tr>
                 ))
               ) : filteredForms.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">
+                  <td colSpan={6} className="text-center py-8 text-gray-500">
                     No forms found
                   </td>
                 </tr>
@@ -253,6 +257,18 @@ const MainContent = () => {
                         {/* <img src={vehicleImage} alt="Vehicle" className="w-8 h-8 rounded object-cover border" /> */}
                         <span className="text-gray-700">{form.vehicle.plate}</span>
                       </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      {form.type === 'Consent to Tow' && (
+                        <Edit 
+                          size={16} 
+                          className="text-blue-600 hover:text-blue-800 cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/form/${form._id}`);
+                          }} 
+                        />
+                      )}
                     </td>
                   </tr>
                 ))
