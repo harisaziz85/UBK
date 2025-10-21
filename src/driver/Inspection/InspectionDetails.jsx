@@ -113,10 +113,10 @@ const InspectionDetails = () => {
   const year = date.getUTCFullYear();
   
   // Optional: also show UTC time if needed
-  const hours = String(date.getUTCHours()).padStart(2, "0");
-  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  // const hours = String(date.getUTCHours()).padStart(2, "0");
+  // const minutes = String(date.getUTCMinutes()).padStart(2, "0");
 
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  return `${year}-${month}-${day}`;
 };
 
       const started = getFormattedDate(insp.inspectedOn);

@@ -29,7 +29,6 @@ const TowPdf = ({ data }) => {
     towedTo = "",
     dateEndTime = "",
     serviceDescription = "",
-    acknowledgementCheckbox = false,
     revisedDestinationSignature = "",
     consentPersonName = "",
     consentAddress = "",
@@ -51,7 +50,8 @@ const TowPdf = ({ data }) => {
     startTime = "",
     endDate = "",
     endTime = "",
-
+    acknowledgementSignature = "",
+acknowledgementRevisedDestination = false,
 
 
   } = data;
@@ -253,24 +253,44 @@ const TowPdf = ({ data }) => {
 
 
 
-        {/* Description of Services */}
-        <div className="p-3 sm:p-4 mx-4">
-          <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
-            DESCRIPTION OF SERVICES
-          </div>
-          <div className="text-xs space-y-2">
-            <div className="w-full border-b border-black px-1">{serviceDescription}</div>
-            <div className="flex items-center">
-              <span className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${acknowledgementCheckbox ? 'bg-black' : ''}`}></span>
-              <span>Acknowledgement of client&apos;s revised destination address - Signature:</span>
-              <span className="flex-1 border-b border-black px-1 ml-2">{revisedDestinationSignature}</span>
-            </div>
-            <div className="font-semibold">DISCLOSURE OF INTEREST:</div>
-            <p>1. UBK Towing Service Ltd. operates vehicle storage facilities.</p>
-            <p>2. UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
-            <p>3. UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
-          </div>
-        </div>
+       {/* Description of Services */}
+<div className="p-3 sm:p-4 mx-4">
+  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+    DESCRIPTION OF SERVICES
+  </div>
+  <div className="text-xs space-y-2">
+    <div className="w-full border-b border-black px-1">{serviceDescription}</div>
+
+    {/* ✅ Acknowledgement Checkbox + Signature */}
+   <div className="flex items-center">
+  <span
+    className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${
+      acknowledgementRevisedDestination ? "bg-black" : ""
+    }`}
+  ></span>
+  <span>Acknowledgement of client&apos;s revised destination address - Signature:</span>
+  
+  <span className="flex-1 border-b border-black px-1 ml-2">
+    {acknowledgementSignature ? (
+      <img
+        src={acknowledgementSignature}
+        alt="Acknowledgement Signature"
+        className="h-8 object-contain inline-block"
+      />
+    ) : (
+      "—"
+    )}
+  </span>
+</div>
+
+
+    <div className="font-semibold">DISCLOSURE OF INTEREST:</div>
+    <p>1. UBK Towing Service Ltd. operates vehicle storage facilities.</p>
+    <p>2. UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
+    <p>3. UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
+  </div>
+</div>
+
 
         {/* Person Giving Consent Information */}
         <div className="font-bold ml-4 text-xs sm:text-sm mb-2">PERSON GIVING CONSENT INFORMATION:</div>
@@ -415,19 +435,14 @@ const TowPdf = ({ data }) => {
 
             {/* Driver Signature */}
             <div className="text-center">
-              <span className="w-full border-b-2 border-black px-1 py-1 block">
-                {driverSignature ? (
-                  <img
-                    src={consentSignature}
-                    alt="Driver Signature"
-                    className=""
-                  />
-                ) : (
-                  "No signature provided"
-                )}
-              </span>
-              <label className="block font-bold mt-1">Driver signature the client</label>
-            </div>
+            <span className="w-full border-b-2 border-black px-1 py-1 block">
+              No signature provided
+            </span>
+            <label className="block font-bold mt-1">
+              Driver signature the client
+            </label>
+          </div>
+
           </div>
         </div>
 

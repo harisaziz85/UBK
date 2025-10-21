@@ -39,7 +39,7 @@ const customStyles = `
   }
 `;
 
-const DatePickerComponent = ({ label, value, onChange, minSelectableDate }) => {
+const DatePickerComponent = ({ label, value, onChange, minSelectableDate,disabled }) => {
   const dateInputRef = useRef(null);
 
   const handleInputChange = (date) => {
@@ -87,9 +87,10 @@ const DatePickerComponent = ({ label, value, onChange, minSelectableDate }) => {
           placeholderText="MM/DD/YYYY"
           preventOpenOnFocus={true}
           onKeyDown={preventTextInput}
+           disabled={disabled}
         />
         <Calendar
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+  className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${disabled ? 'pointer-events-none opacity-50' : 'pointer-events-auto'}`}
           size={20}
         />
       </div>

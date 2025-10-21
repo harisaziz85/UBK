@@ -184,10 +184,10 @@ const handleSelectVehicle = (e) => {
       return;
     }
 
-    if (!inspectionData.date) {
-      toast.error("Please select the date");
-      return;
-    }
+    // if (!inspectionData.date) {
+    //   toast.error("Please select the date");
+    //   return;
+    // }
 
     if (!inspectionData.currentMileage.trim()) {
       toast.error("Please enter current mileage");
@@ -493,7 +493,7 @@ const handleSelectVehicle = (e) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              {/* <div>
                 <label className="block text-sm text-gray-600 mb-1">Date</label>
                 <input
                   type="date"
@@ -502,7 +502,7 @@ const handleSelectVehicle = (e) => {
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                    min={new Date().toISOString().split("T")[0]} 
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Current Mileage</label>
                 <input
@@ -812,7 +812,7 @@ const handleSelectVehicle = (e) => {
 
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <div className="flex flex-col sm:flex-row  justify-end gap-6">
                       <button
               onClick={() => window.history.back()}
               className="cursor-pointer px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"

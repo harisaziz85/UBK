@@ -352,17 +352,17 @@ const FormDetails = () => {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
               <Field
-                label="Officer Name & Badge #:"
-                value={`${data.policeDirected?.officerName || ''} & ${data.policeDirected?.badgeNumber || ''}`}
+                label="Officer Name & Badge #"
+                value={`${data.policeDirected?.officerName || ''}  ${data.policeDirected?.badgeNumber || ''}`}
                 loading={loading}
               />
               <Field
-                label="Detachment / Division:"
+                label="Detachment / Division"
                 value={data.policeDirected?.detachmentDivision || ''}
                 loading={loading}
               />
               <Field
-                label="Call / Occurrence / Incident #:"
+                label="Call / Occurrence / Incident #"
                 value={data.policeDirected?.incidentNumber || ''}
                 loading={loading}
               />

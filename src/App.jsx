@@ -59,7 +59,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path='/forgot-password' element={<ForgotPasswordFlow/>}/>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Login />}/>
 
    {/* Driver Routes */}
         <Route element={<DriverLayout />}>

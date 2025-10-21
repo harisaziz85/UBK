@@ -39,7 +39,7 @@
     policeDirected = false,
     incidentNumber = '',
     officerNameBadge = '',
-    // detachmentDivision not directly in PDF
+    detachmentDivision = '',
     consentDateTime = '',
     consentMethod = '',
     informedOfRights = false,
@@ -52,8 +52,8 @@
 
 
   const storageLocationText = storageAddressConfirmed ? `7 Belvia Road Etobicoke Ontario M8W9R2 - ${storageType?.toUpperCase()}` : '7 Belvia Road Etobicoke Ontario M8W9R2';
-  const officerName = officerNameBadge ? officerNameBadge.split(' & ')[0] : '';
-  const badgeNumber = officerNameBadge ? officerNameBadge.split(' & ')[1] : '';
+  const officerName = officerNameBadge ? officerNameBadge.split('  ')[0] : '';
+  const badgeNumber = officerNameBadge ? officerNameBadge.split('  ')[1] : '';
 
   return (
     <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-0">
@@ -114,10 +114,10 @@
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">UBK Towing Truck Number:</label>
                 <span className="flex-1 border-b border-black px-1">{truckNumber}</span>
               </div>
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Driver Phone Number:</label>
                 <span className="flex-1 border-b border-black px-1">{towDriverPhone}</span>
-              </div>
+              </div> */}
               <div className="flex items-center">
                 <label className="font-bold w-32 sm:w-40 flex-shrink-0">Invoice Number:</label>
                 <span className="flex-1 border-b border-black px-1">{invoicePO}</span>
@@ -329,8 +329,8 @@
                 <span className="flex-1 border-b border-black px-1">{officerNameBadge}</span>
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-40 flex-shrink-0">Phone #:</label>
-                <span className="flex-1 border-b border-black px-1">{towDriverPhone || consentPhone}</span>
+                <label className="font-bold w-40 flex-shrink-0">Detachment/ Division#:</label>
+                <span className="flex-1 border-b border-black px-1">{detachmentDivision }</span>
               </div>
             </div>
           </div>

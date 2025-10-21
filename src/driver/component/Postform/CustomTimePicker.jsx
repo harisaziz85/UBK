@@ -2,14 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import {Clock } from 'lucide-react';
 
 // Custom Time Picker Component
-const CustomTimePicker = ({ label, value, onChange }) => {
+const CustomTimePicker = ({ label, value, onChange,disabled }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [hours, setHours] = useState(value ? parseInt(value.split(":")[0], 10) % 12 || 12 : 0);
   const [minutes, setMinutes] = useState(value ? value.split(":")[1] : "00");
   const [ampm, setAmPm] = useState(value ? (parseInt(value.split(":")[0], 10) >= 12 ? "PM" : "AM") : "AM");
   const pickerRef = useRef();
 
-  const togglePicker = () => setShowPicker(!showPicker);
+
+    const togglePicker = () => {
+    if (!disabled) setShowPicker(!showPicker); // ✅ Prevent opening if disabled
+  };
+
 
   const handleHourClick = (h) => {
     setHours(h);

@@ -13,6 +13,7 @@ import TowPdf from './pdf/Towpdf'
 import SignatureCanvas from 'react-signature-canvas';
 import { toPng } from "html-to-image";
 import * as htmlToImage from 'html-to-image';
+import { useNavigate } from 'react-router-dom';
 
 // Main Consent Form Component
 const ConsentForm = () => {
@@ -31,6 +32,7 @@ const ConsentForm = () => {
   const towSignatureRef = useRef();
   const storageSignatureRef = useRef();
   const preSignatureRef = useRef();
+  let navigate = useNavigate(); 
 
   // Shared data for both forms
   const [sharedData, setSharedData] = useState({
@@ -131,7 +133,7 @@ const ConsentForm = () => {
           consentPhone: form.consentBy.phone || '',
           consentEmail: form.consentBy.email || '',
           policeDirected: form.policeDirected.isDirected || false,
-          officerNameBadge: `${form.policeDirected.officerName || ''} & ${form.policeDirected.badgeNumber || ''}`,
+          officerNameBadge: `${form.policeDirected.officerName || ''}  ${form.policeDirected.badgeNumber || ''}`,
           detachmentDivision: form.policeDirected.detachmentDivision || '',
           incidentNumber: form.policeDirected.incidentNumber || '',
           consentDate: consentDateParsed,
@@ -168,6 +170,9 @@ const ConsentForm = () => {
       fetchForm();
     }
   }, [id]);
+
+
+  // sdfsdfsdfsfd
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -367,9 +372,9 @@ const ConsentForm = () => {
           : "Consent_to_Storage_Form.pdf";
       pdf.save(fileName);
 
-      toast.success("✅ PDF downloaded successfully!");
+      toast.success(" PDF downloaded successfully!");
     } catch (error) {
-      console.error("❌ PDF generation failed:", error);
+      console.error(" PDF generation failed:", error);
       toast.error(`Failed to generate PDF: ${error.message}`);
     } finally {
       // Step 6: Hide again
@@ -418,8 +423,9 @@ const ConsentForm = () => {
         const formattedStartDateTime = `${sharedData.startDate} ${sharedData.startTime}`;
         const formattedConsentDateTime = `${sharedData.consentDate} ${sharedData.consentTime}`;
 
-        const officerName = sharedData.officerNameBadge.split(' & ')[0] || sharedData.officerNameBadge;
-        const badgeNumber = sharedData.officerNameBadge.split(' & ')[1] || '';
+        const officerName = sharedData.officerNameBadge?.trim() || "";
+        const badgeNumber = "";
+
 
         const payload = {
           type: isTow ? "Consent to Tow" : "Consent to Storage",
@@ -488,9 +494,11 @@ const ConsentForm = () => {
             toLocation: towSpecific.towedTo,
             towDateTime: startDateTime,
              towEndDateTime: endDateTime,  
-            acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
             digitalSignature: towSpecific.acknowledgementRevised ? towSpecific.firstSignature : towSpecific.secondSignature,
-            descriptionOfServices: towSpecific.serviceDescription
+            descriptionOfServices: towSpecific.serviceDescription,
+             firstSignature: towSpecific.firstSignature,  // pre-tow signature Base64
+            acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
+
           };
         } else {
           const storageType = storageSpecific.storageOption === 'indoor' ? 'INDOOR' : storageSpecific.storageOption === 'outdoor' ? 'OUTDOOR' : '7 Belvia Road Etobicoke Ontario M8W9R2';
@@ -530,6 +538,13 @@ const ConsentForm = () => {
         const successMessage = isUpdate ? 'Tow form updated successfully!' : `${type} form submitted successfully!`;
         toast.success(successMessage);
 
+        // ✅ Navigate after successful update
+            setTimeout(() => {
+              navigate('/form'); // <-- your target route
+            }, 3000); // small delay to show toast
+          
+
+
 
         // ✅ Extract missing date/time fields before PDF generation
   const startDate = sharedData.startDate || "";
@@ -554,6 +569,10 @@ const ConsentForm = () => {
   plate: payload.vehicle?.plate || "",
   vin: payload.vehicle?.vin || "",
   currentMileage: payload.vehicle?.currentMileage || "",
+
+  acknowledgementSignature: towSpecific.firstSignature || "",
+   acknowledgementRevisedDestination: towSpecific.acknowledgementRevised,
+
 
   // 🔹 Time / Date
   startDateTime: formattedStartDateTime || "",
@@ -582,6 +601,8 @@ const ConsentForm = () => {
     : storageSpecific?.storageSignature || "",
 
   driverSignature: sharedData?.driverName || "",
+
+  
 
   // 🔹 Storage Type / Location
   storageOption: storageSpecific?.storageOption || "",
@@ -624,7 +645,8 @@ towTruckNumber:
     payload?.callNumber ||
     "",
   detachmentDivision: payload?.policeDirected?.detachmentDivision || "",
-  officerNameBadge: `${payload?.policeDirected?.officerName || ""} & ${payload?.policeDirected?.badgeNumber || ""}`,
+  officerNameBadge: `${payload?.policeDirected?.officerName || ""} ${payload?.policeDirected?.badgeNumber || ""}`,
+
 
 rightsInformed: payload?.informedOfRights === true,
 rateSheetShown: payload?.rateSheetShown === true,
@@ -1004,7 +1026,6 @@ rateSheetShown: payload?.rateSheetShown === true,
     <DatePickerComponent
       value={sharedData.startDate}
       onChange={(value) => handleSharedInputChange('startDate', value)}
-      disabled={isUpdate}
     />
   </div>
 
@@ -1015,7 +1036,6 @@ rateSheetShown: payload?.rateSheetShown === true,
     <CustomTimePicker
       value={sharedData.startTime}
       onChange={(value) => handleSharedInputChange('startTime', value)}
-      disabled={isUpdate}
     />
   </div>
 </div>

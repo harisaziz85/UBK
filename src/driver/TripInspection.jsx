@@ -54,6 +54,7 @@ const TripInspection = () => {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'UTC'
       }),
 
           
@@ -148,9 +149,9 @@ const TripInspection = () => {
               <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Vehicle
               </th>
-              <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+              {/* <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Date
-              </th>
+              </th> */}
               <th className=" whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
                 Inspection Form
               </th>
@@ -216,10 +217,10 @@ const TripInspection = () => {
                     {insp.vehicle}
                   </div>
                 </td>
-
+{/* 
                   <td className="p-3 whitespace-nowrap border-b roboto-regular " style={{ borderColor: "#33333333" }}>
                     {insp.date}
-                  </td>
+                  </td> */}
                   <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
                   <span className="flex items-center gap-2 whitespace-nowrap">
                     <span className="w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
