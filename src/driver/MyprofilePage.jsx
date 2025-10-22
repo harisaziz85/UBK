@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom"; 
 
 const Shimmer = () => {
   return (
@@ -101,6 +102,8 @@ const MyProfilePage = () => {
   const [userId, setUserId] = useState(null);
   const [comments, setComments] = useState([]);
   const [error, setError] = useState(null);
+const { userId: receiverId } = useParams();
+
 
   const BASE_URL = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -115,19 +118,21 @@ const MyProfilePage = () => {
     return `${Math.floor(diffInHours / 24)} days ago`;
   };
 
+
+
   const fetchComments = async () => {
-    if (!userId) return;
+    if (!receiverId) return;
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(
-        `${BASE_URL}/common/comment/get-with/${userId}?page=1&limit=10`,
+        `${BASE_URL}/common/comment/get-with/${receiverId}?page=1&limit=10`,
         {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        }                                             
       );
 
       if (response.ok) {
@@ -139,34 +144,42 @@ const MyProfilePage = () => {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim() || !userId) return;
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `${BASE_URL}/common/comment/create`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            receiverId: userId,
-            text: newComment,
-          }),
-        }
-      );
+const handleCommentSubmit = async (e) => {
+  e.preventDefault();
+  if (!newComment.trim() || !receiverId) return;
 
-      if (response.ok) {
-        setNewComment("");
-        fetchComments();
-      }
-    } catch (err) {
-      console.error("Error posting comment:", err);
+
+  try {
+    const token = localStorage.getItem("authToken");
+    const response = await fetch(`${BASE_URL}/common/comment/create`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        receiverId,
+        text: newComment,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setNewComment("");
+      fetchComments();
+    } else {
+      console.error("❌ Failed to post comment:", data);
     }
-  };
+  } catch (err) {
+    console.error("Error posting comment:", err);
+  }
+};
+
+useEffect(() => {
+  if (receiverId) fetchComments();
+}, [receiverId]);
+
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -201,6 +214,7 @@ const MyProfilePage = () => {
         }
 
         const data = await response.json();
+        console.log("me",data);
         if (!data.user) {
           throw new Error("No user data returned");
         }

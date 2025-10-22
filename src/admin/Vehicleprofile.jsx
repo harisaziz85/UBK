@@ -84,12 +84,15 @@ const Vehicleprofile = () => {
   const fetchComments = async () => {
     try {
       const token = localStorage.getItem("authToken");
-      const response = await axios.get(`${baseUrl}/common/comment/get-with/${vehicleId}?page=${currentPage}&limit=10`, {
+      const response = await axios.get(`${baseUrl}/common/comment/on-vechile/${vehicleId}?page=${currentPage}&limit=10`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
       const newComments = response.data.comments || [];
+
+      console.log(response.data);
       if (currentPage === 1) {
         setComments(newComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } else {
@@ -107,7 +110,7 @@ const Vehicleprofile = () => {
     try {
       const token = localStorage.getItem("authToken");
       await axios.post(`${baseUrl}/common/comment/create`, {
-        receiverId: vehicleId,
+        vechileId: vehicleId,
         text: commentText,
       }, {
         headers: {

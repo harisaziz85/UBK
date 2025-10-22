@@ -68,7 +68,7 @@ const VehicleDetailsPage = () => {
   const fetchComments = async () => {
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${baseUrl}/common/comment/get-with/${id}?page=1&limit=10`, {
+      const response = await fetch(`${baseUrl}/common/comment/on-vechile/${id}?page=1&limit=10`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -93,7 +93,7 @@ const VehicleDetailsPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          receiverId: id,
+          vechileId: id,
           text: commentText,
         }),
       });
