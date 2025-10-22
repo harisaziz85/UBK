@@ -92,6 +92,8 @@ const AdminLayout = () => {
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+   localStorage.removeItem("userRole");
+
     navigate('/login');
     setIsLogoutModalOpen(false);
     setIsOpen(false);

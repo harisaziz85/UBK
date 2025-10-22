@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { toast, ToastContainer } from "react-toastify"; // Assuming toast is from react-toastify
+import { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 
-const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
+const DriverAttachmentPopup = ({ isOpen, onClose, documentId }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
-  const [vehicles, setVehicles] = useState([]);
+  const [selectedDriverId, setSelectedDriverId] = useState(null);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchVehicles = async () => {
+    const fetchAllDrivers = async () => {
       try {
         const token = localStorage.getItem("authToken");
         if (!token) {
@@ -16,55 +16,55 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
           return;
         }
 
-        const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api'; // Replace with actual Baseurl from env or define it
+        const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
 
-        const response = await fetch(`${Baseurl}/driver/vechile/my`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        let allDrivers = [];
+        let pg = 1;
+        while (true) {
+          const response = await fetch(`${Baseurl}/admin/driver/get?page=${pg}&limit=10`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            }
+          });
+          if (!response.ok) {
+            throw new Error('Failed to fetch drivers');
           }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch vehicles');
+          const data = await response.json();
+          allDrivers = [...allDrivers, ...(data.drivers || [])];
+          if (pg >= data.totalPages || data.drivers.length === 0) break;
+          pg++;
         }
-        const data = await response.json();
-        setVehicles(data.vehicles || []);
+        setDrivers(allDrivers);
       } catch (error) {
-        console.error('Error fetching vehicles:', error);
-        toast.error('Failed to load vehicles');
-        // Optionally set to empty array or handle error state
-        setVehicles([]);
+        console.error('Error fetching drivers:', error);
+        toast.error('Failed to load drivers');
+        setDrivers([]);
       } finally {
         setLoading(false);
       }
     };
 
     if (isOpen) {
-      setSelectedVehicleId(null);
-      fetchVehicles();
+      setSelectedDriverId(null);
+      fetchAllDrivers();
     }
   }, [isOpen]);
 
-  const filteredVehicles = vehicles.filter(vehicle =>
-    vehicle.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehicle.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehicle.make?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vehicle.model?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDrivers = drivers.filter(driver =>
+    (driver.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (driver.phone || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (driver.jobTitle || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const toggleVehicleSelection = (vehicleId) => {
-    setSelectedVehicleId(prev => prev === vehicleId ? null : vehicleId);
+  const toggleDriverSelection = (driverId) => {
+    setSelectedDriverId(prev => prev === driverId ? null : driverId);
   };
 
   const handleAttach = async () => {
-    console.log('handleAttach clicked');
-    console.log('selectedVehicleId:', selectedVehicleId);
-    console.log('documentId:', documentId);
-
-    if (selectedVehicleId && documentId) {
+    if (selectedDriverId && documentId) {
       try {
         const token = localStorage.getItem("authToken");
-        console.log('token:', token ? 'present' : 'missing');
         if (!token) {
           toast.error("Authentication required. Please log in.");
           return;
@@ -73,10 +73,7 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
         const Baseurl = 'https://ubktowingbackend-production.up.railway.app/api';
 
         const formData = new FormData();
-        formData.append('vehicleId', selectedVehicleId);
-
-        console.log('Sending request to:', `${Baseurl}/common/document/update/${documentId}`);
-        console.log('formData vehicleId:', selectedVehicleId);
+        formData.append('driverId', selectedDriverId);
 
         const response = await fetch(`${Baseurl}/common/document/update/${documentId}`, {
           method: 'PUT',
@@ -86,24 +83,21 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
           body: formData,
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
-          throw new Error('Failed to attach vehicle to document');
+          throw new Error('Failed to attach driver to document');
         }
 
-        toast.success('Vehicle attached successfully');
-        setTimeout(() => {
-  setSelectedVehicleId(null);
+        toast.success('Driver attached successfully');
+      setTimeout(() => {
+  setSelectedDriverId(null);
   onClose();
-}, 3000);
+}, 3000); 
       } catch (error) {
-        console.error('Error attaching vehicle:', error);
-        toast.error('Failed to attach vehicle');
+        console.error('Error attaching driver:', error);
+        toast.error('Failed to attach driver');
       }
     } else {
-      console.log('Condition failed: selectedVehicleId && documentId');
-      toast.error('No vehicle selected or document ID missing');
+      toast.error('No driver selected or document ID missing');
     }
   };
 
@@ -116,7 +110,7 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-blue-100 rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Attach document to Vehicle</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Attach document to Driver</h2>
             <button
               onClick={onClose}
               className="text-gray-500 cursor-pointer hover:text-gray-700 text-2xl sm:text-3xl font-bold"
@@ -124,7 +118,7 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
               ×
             </button>
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">Drag and drop files to upload</p>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">Select a driver to attach</p>
           {/* Mobile Sidebar Info */}
           <div className="lg:hidden flex items-center justify-between mt-2 p-2 bg-blue-50 rounded-lg">
             <div className="flex items-center space-x-2">
@@ -140,10 +134,10 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
                   fill="#043677"
                 />
               </svg>
-              <span className="text-xs font-medium text-gray-700">All Vehicles</span>
+              <span className="text-xs font-medium text-gray-700">All Drivers</span>
             </div>
             <div className="flex items-center justify-center bg-[#043677] text-white text-xs font-semibold rounded-full w-5 h-5">
-              {vehicles.length}
+              {drivers.length}
             </div>
           </div>
         </div>
@@ -153,7 +147,7 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Find Vehicles, types, group"
+              placeholder="Search drivers by name, phone, or job title"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -184,60 +178,68 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
                 </svg>
 
                 <div>
-                  <span className="text-sm font-medium text-gray-700">All Vehicles</span>
+                  <span className="text-sm font-medium text-gray-700">All Drivers</span>
                 </div>
               </div>
 
               {/* ✅ Perfect circular badge */}
               <div className="flex items-center justify-center bg-[#043677] text-white text-xs font-semibold rounded-full w-6 h-6">
-                {vehicles.length}
+                {drivers.length}
               </div>
             </div>
             <div className="flex-1"></div>
             <div className="text-xs text-gray-500">
-              <p>Vehicles</p>
+              <p>Drivers</p>
             </div>
           </div>
 
-          {/* Right Content - Vehicles List */}
+          {/* Right Content - Drivers List */}
           <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-white">
             {loading ? (
               <div className="flex justify-center items-center h-32">
-                <p className="text-gray-500">Loading vehicles...</p>
+                <p className="text-gray-500">Loading drivers...</p>
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
-                {filteredVehicles.length > 0 ? (
-                  filteredVehicles.map((vehicle) => {
-                    const isSelected = selectedVehicleId === vehicle._id;
+                {filteredDrivers.length > 0 ? (
+                  filteredDrivers.map((driver) => {
+                    const isSelected = selectedDriverId === driver._id;
                     return (
                       <div
-                        key={vehicle._id}
+                        key={driver._id}
                         className={`relative rounded-xl sm:rounded-2xl overflow-hidden hover:bg-[#3333330F] hover:shadow-lg transition-all cursor-pointer flex ${
                           isSelected ? "ring-2 ring-blue-500 ring-opacity-50" : ""
                         }`}
-                        onClick={() => toggleVehicleSelection(vehicle._id)}
+                        onClick={() => toggleDriverSelection(driver._id)}
                       >
-                        {/* Vehicle Image */}
+                        {/* Driver Image */}
                         <div className="relative flex-shrink-0 w-12 h-12 sm:w-[50px] sm:h-[50px]">
-                          <img
-                            src={vehicle.photo || "https://via.placeholder.com/50x50?text=No+Image"}
-                            alt={vehicle.name}
-                            className="w-full h-full object-cover rounded-l-xl sm:rounded-l-2xl"
-                          />
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          {driver.profileImage ? (
+                            <img
+                              src={driver.profileImage}
+                              alt={driver.name}
+                              className="w-full h-full object-cover rounded-l-xl sm:rounded-l-2xl"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 rounded-l-xl sm:rounded-l-2xl flex items-center justify-center">
+                              <span className="text-gray-500 text-sm font-medium">{(driver.name || '').charAt(0).toUpperCase()}</span>
+                            </div>
+                          )}
+                          {driver.accountStatus === 'active' && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          )}
                         </div>
 
-                        {/* Vehicle Info and Button */}
+                        {/* Driver Info and Button */}
                         <div className="flex-1 flex items-center justify-between p-3 sm:p-4">
                           <div className="flex flex-col">
-                            <h3 className="text-sm sm:text-[14px] text-[#043677] font-medium">{vehicle.name}</h3>
-                            <p className="text-xs text-gray-500">{vehicle.make} {vehicle.model} ({vehicle.type})</p>
+                            <h3 className="text-sm sm:text-[14px] text-[#043677] font-medium">{driver.name}</h3>
+                            <p className="text-xs text-gray-500">{driver.jobTitle || 'Driver'} - {driver.phone}</p>
                           </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleVehicleSelection(vehicle._id);
+                              toggleDriverSelection(driver._id);
                             }}
                             className={`cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors min-w-[70px] sm:min-w-[80px]`
                               + (isSelected
@@ -252,7 +254,7 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
                   })
                 ) : (
                   <div className="flex justify-center items-center h-32">
-                    <p className="text-gray-500">No vehicles found.</p>
+                    <p className="text-gray-500">No drivers found.</p>
                   </div>
                 )}
               </div>
@@ -261,13 +263,13 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
         </div>
 
         {/* Footer - Attach Button */}
-        {selectedVehicleId && (
+        {selectedDriverId && (
           <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
             <button
               onClick={handleAttach}
               className="w-full bg-[#043677] text-white py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-semibold hover:bg-[#043677]/90 transition-colors text-sm"
             >
-              Attach Vehicle
+              Attach Driver
             </button>
           </div>
         )}
@@ -276,4 +278,4 @@ const VehicleAttachmentPopup = ({ isOpen, onClose, documentId }) => {
   );
 };
 
-export default VehicleAttachmentPopup;
+export default DriverAttachmentPopup;

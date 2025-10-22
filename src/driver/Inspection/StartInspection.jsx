@@ -310,10 +310,17 @@ const handleSelectVehicle = (e) => {
 
       if (res.data.inspection) {
         toast.success("Inspection saved successfully!");
+       const userRole = localStorage.getItem("userRole");
 
-          setTimeout(() => {
-    navigate("/tripinspection");
+  setTimeout(() => {
+    if (userRole === "admin") {
+      navigate("/admin/tripinspection");
+    } else {
+      navigate("/tripinspection");
+    }
   }, 3000);
+
+
         // Reset form
         setSelectedVehicleId("");
         setSelectedVehicle(null);
@@ -533,7 +540,7 @@ const handleSelectVehicle = (e) => {
                         e.stopPropagation();
                         setVehicleImages(prev => ({ ...prev, front: null }));
                       }} 
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 "
                     >
                       <X size={12} />
                     </button>
@@ -558,7 +565,7 @@ const handleSelectVehicle = (e) => {
                         e.stopPropagation();
                         setVehicleImages(prev => ({ ...prev, driverSide: null }));
                       }} 
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className=" cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 "
                     >
                       <X size={12} />
                     </button>
@@ -583,7 +590,7 @@ const handleSelectVehicle = (e) => {
                         e.stopPropagation();
                         setVehicleImages(prev => ({ ...prev, rear: null }));
                       }} 
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className=" cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 "
                     >
                       <X size={12} />
                     </button>
@@ -608,7 +615,7 @@ const handleSelectVehicle = (e) => {
                         e.stopPropagation();
                         setVehicleImages(prev => ({ ...prev, passengerSide: null }));
                       }} 
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="cursor-pointer absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 "
                     >
                       <X size={12} />
                     </button>

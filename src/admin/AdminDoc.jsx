@@ -4,6 +4,7 @@ import { FaFilePdf } from "react-icons/fa6";
 import Doctopbar from "./components/Doctopbar";
 import { useNavigate } from "react-router-dom";
 import VehicleAttachmentPopup from "./VechileAttechmentPopup";
+import DriverAttachmentPopup from "./components/DriverAttachmentPopup";
 
 const Shimmer = () => {
   return (
@@ -49,6 +50,7 @@ const AdminDoc = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState(null);
+  const [showDriverPopup, setShowDriverPopup] = useState(false);
   const [attachedVehicles, setAttachedVehicles] = useState([]);
 
   const handleOpenPopup = (docId) => {
@@ -59,6 +61,18 @@ const AdminDoc = () => {
   const handleClosePopup = () => {
     setShowPopup(false);
     setSelectedDocumentId(null);
+    fetchDocuments();
+  };
+
+  const handleOpenDriverPopup = (docId) => {
+    setSelectedDocumentId(docId);
+    setShowDriverPopup(true);
+  };
+
+  const handleCloseDriverPopup = () => {
+    setShowDriverPopup(false);
+    setSelectedDocumentId(null);
+    fetchDocuments();
   };
 
   const handleAttachVehicles = (selectedIds) => {
@@ -295,24 +309,41 @@ const AdminDoc = () => {
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
                   </td>
-                <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
-                  {doc.vehicleId ? (
-                    doc.vehicleId.model // ✅ show vehicle model if vehicleId has data
-                  ) : doc.category === "UBK Towing" ? (
-                    <span
-                      className="text-blue-600 cursor-pointer hover:underline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectVehicle(doc._id);
-                      }}
-                    >
-                      Select Vehicle
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
+                    {doc.category === "UBK Towing" ? (
+                      doc.vehicleId ? (
+                        doc.vehicleId.model // ✅ show vehicle model if vehicleId has data
+                      ) : (
+                        <span
+                          className="text-blue-600 cursor-pointer hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectVehicle(doc._id);
+                          }}
+                        >
+                          Select Vehicle
+                        </span>
+                      )
+                    ) : doc.category === "CAA" ? (
+                      doc.driverId ? (
+                        <span className="text-gray-800">
+                          {doc.driverId.name}
+                        </span>
+                      ) : (
+                        <span
+                          className="text-blue-600 cursor-pointer hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDriverPopup(doc._id);
+                          }}
+                        >
+                          Select Driver
+                        </span>
+                      )
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
@@ -361,6 +392,13 @@ const AdminDoc = () => {
       <VehicleAttachmentPopup
         isOpen={showPopup}
         onClose={handleClosePopup}
+        documentId={selectedDocumentId}
+      />
+
+      {/* Driver Attachment Popup */}
+      <DriverAttachmentPopup
+        isOpen={showDriverPopup}
+        onClose={handleCloseDriverPopup}
         documentId={selectedDocumentId}
       />
 
@@ -414,6 +452,7 @@ const AdminDoc = () => {
                   <option value="">Select Category</option>
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
@@ -505,6 +544,7 @@ const AdminDoc = () => {
                   <option value="">Select Category</option>
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>

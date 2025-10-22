@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { LiaUserTimesSolid } from "react-icons/lia";
+import { CropIcon, CrossIcon } from "lucide-react";
+
 const VehicleAssignment = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,8 +22,15 @@ const VehicleAssignment = () => {
     startDate: "",
     endDate: "",
   });
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const days = Array.from({ length: 13 }, (_, i) => i + 1);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const monthName = currentDate.toLocaleDateString("en-US", { month: "long" });
+  const gridTemplateColumns = `minmax(150px, 200px) repeat(${daysInMonth}, minmax(50px, 60px))`;
+  const spanColumns = 4; // Adjust span for driver content visibility
 
   // Fetch all drivers
   const fetchDrivers = async () => {
@@ -105,50 +114,61 @@ const VehicleAssignment = () => {
       const data = await response.json();
       console.log("Vehicles response:", data);
 
-      const mappedVehicles = (data.vehicles || []).map((vehicle) => ({
-        id: vehicle._id,
-        name: vehicle.name || "N/A",
-        status: vehicle.assignment?.driverId ? "Assigned" : "Unassigned",
-        image: vehicle.photo || "https://via.placeholder.com/60x40?text=Car",
-        vin: vehicle.vin || "N/A",
-        year: vehicle.year || "N/A",
-        make: vehicle.make || "N/A",
-        model: vehicle.model || "N/A",
-        color: vehicle.color || "N/A",
-        currentMilage: vehicle.currentMilage || 0,
-        type: vehicle.type || "Car",
-        fuelType: vehicle.fuelType || "N/A",
-        licensePlate: vehicle.licensePlate || "N/A",
-        driverId: vehicle.assignment?.driverId?._id || null,
-        driverName: vehicle.assignment?.driverId?.name || "N/A",
-        driverEmployeeNumber: vehicle.assignment?.driverId?.employeeNumber || "N/A",
-        startDate: vehicle.assignment?.startDate
-          ? new Date(vehicle.assignment.startDate).toLocaleDateString("en-US", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }) +
-            " " +
-            new Date(vehicle.assignment.startDate).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A",
-        endDate: vehicle.assignment?.endDate
-          ? new Date(vehicle.assignment.endDate).toLocaleDateString("en-US", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }) +
-            " " +
-            new Date(vehicle.assignment.endDate).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "N/A",
-        _id: vehicle._id,
-        documents: [],
-      }));
+      const mappedVehicles = (data.vehicles || []).map((vehicle) => {
+        const assignmentStartDate = vehicle.assignment?.startDate ? new Date(vehicle.assignment.startDate) : null;
+        let startDay = null;
+        if (assignmentStartDate) {
+          const assignmentMonth = assignmentStartDate.getMonth();
+          const assignmentYear = assignmentStartDate.getFullYear();
+          if (assignmentMonth === month && assignmentYear === year) {
+            startDay = assignmentStartDate.getDate();
+          }
+        }
+
+        return {
+          id: vehicle._id,
+          name: vehicle.name || "N/A",
+          status: vehicle.assignment?.driverId ? "Assigned" : "Unassigned",
+          image: vehicle.photo || "https://via.placeholder.com/60x40?text=Car",
+          vin: vehicle.vin || "N/A",
+          year: vehicle.year || "N/A",
+          make: vehicle.make || "N/A",
+          model: vehicle.model || "N/A",
+          color: vehicle.color || "N/A",
+          currentMilage: vehicle.currentMilage || 0,
+          type: vehicle.type || "Car",
+          fuelType: vehicle.fuelType || "N/A",
+          licensePlate: vehicle.licensePlate || "N/A",
+          driverId: vehicle.assignment?.driverId?._id || null,
+          driverName: vehicle.assignment?.driverId?.name || "N/A",
+          DriverProfile: vehicle.assignment?.driverId?.profileImage,
+          driverEmployeeNumber: vehicle.assignment?.driverId?.employeeNumber || "N/A",
+
+startDate: assignmentStartDate
+  ? assignmentStartDate.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+  : "N/A",
+endDate: vehicle.assignment?.endDate
+  ? new Date(vehicle.assignment.endDate).toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+  : "N/A",
+
+
+
+
+          startDay,
+          _id: vehicle._id,
+          documents: [],
+        };
+      });
 
       setVehicles(mappedVehicles);
       setTotalPages(data.pages || 1);
@@ -165,6 +185,69 @@ const VehicleAssignment = () => {
       setLoading(false);
       setVehicleLoading(false);
     }
+  };
+
+  const renderDayCells = (vehicle) => {
+    const cells = [];
+    let day = 1;
+    while (day <= daysInMonth) {
+      if (vehicle.driverId && day === vehicle.startDay) {
+        cells.push(
+          <div
+            key={`assigned-${day}`}
+            className="col-span-4 border-l border-gray-200 px-3 py-3 text-sm bg-blue-50 text-blue-800 font-medium flex flex-col justify-center min-h-[60px] relative"
+            style={{
+              gridColumn: `span ${Math.min(spanColumns, daysInMonth - day + 1)}`,
+            }}
+          >
+            <div className="text-center">
+              <p className="font-semibold truncate" title={vehicle.driverName}>
+                {vehicle.driverName}
+              </p>
+              <p className="text-xs text-gray-500">{vehicle.startDate}</p>
+            </div>
+          </div>
+        );
+        day += spanColumns;
+      } else {
+        cells.push(
+          <div
+            key={day}
+            className="border-l border-gray-200 px-1 py-3 text-center text-xs min-h-[60px]"
+          >
+            {/* Empty cell */}
+          </div>
+        );
+        day++;
+      }
+    }
+    return cells;
+  };
+
+  const renderSkeletonDayCells = () => {
+    const cells = [];
+    let day = 1;
+    while (day <= daysInMonth) {
+      if (day % 7 === 1) { // Simulate occasional span for skeleton
+        cells.push(
+          <div
+            key={`skeleton-${day}`}
+            className="col-span-4 border-l border-gray-200 px-3 py-3"
+          >
+            <div className="h-4 bg-gray-200 rounded w-20 mx-auto"></div>
+          </div>
+        );
+        day += 4;
+      } else {
+        cells.push(
+          <div key={day} className="border-l border-gray-200 px-1 py-3">
+            <div className="h-4 bg-gray-200 rounded w-8 mx-auto"></div>
+          </div>
+        );
+        day++;
+      }
+    }
+    return cells;
   };
 
   // Fetch documents for a specific vehicle
@@ -265,6 +348,7 @@ const VehicleAssignment = () => {
         autoClose: 3000,
       });
       setIsModalOpen(false);
+      setAssignmentData({ vehicleId: "", driverId: "", startDate: "", endDate: "" });
       fetchVehicles(currentPage); // Refresh vehicle list
     } catch (err) {
       console.error("Error assigning vehicle:", err);
@@ -327,11 +411,31 @@ const VehicleAssignment = () => {
     }
   };
 
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+    fetchVehicles(currentPage); // Refetch to update visibility
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+    fetchVehicles(currentPage);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+    fetchVehicles(currentPage);
+  };
+
   // Initial load
   useEffect(() => {
     fetchVehicles(1);
     fetchDrivers();
   }, []);
+
+  // Refetch when month changes
+  useEffect(() => {
+    fetchVehicles(currentPage);
+  }, [currentDate]);
 
   // Fetch documents when vehicle is selected
   useEffect(() => {
@@ -369,27 +473,29 @@ const VehicleAssignment = () => {
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-50 justify-center items-center">
-        <div className="animate-pulse  w-full ">
-          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        <div className="animate-pulse w-full max-w-4xl">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
           <div className="space-y-2">
-            {Array(5).fill().map((_, index) => (
-              <div key={index} className="grid grid-cols-[200px_repeat(13,1fr)] bg-white border border-gray-200 rounded">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-12 h-8 bg-gray-200 rounded"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-3 bg-gray-200 rounded w-16"></div>
-                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+            {Array(5)
+              .fill()
+              .map((_, index) => (
+                <div
+                  key={index}
+                  className="grid"
+                  style={{ gridTemplateColumns }}
+                >
+                  <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
+                    <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20"></div>
+                    </div>
                   </div>
+                  {renderSkeletonDayCells()}
                 </div>
-                {days.map((day) => (
-                  <div key={day} className="border-l border-gray-200 px-2 py-3">
-                    <div className="h-4 bg-gray-200 rounded w-12 mx-auto"></div>
-                  </div>
-                ))}
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>
@@ -397,160 +503,170 @@ const VehicleAssignment = () => {
   }
 
   return (
-    <div className="relative p-6 bg-gray-50 min-h-screen overflow-hidden">
+    <div className="relative p-4 sm:p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold text-gray-800">
             Vehicle Assignments
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mt-1">
             Assign available vehicles to drivers and manage their usage in one place
           </p>
         </div>
         <button
           onClick={openModal}
-          className="mt-3 sm:mt-0 bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-md text-sm font-medium shadow"
+          className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-md text-sm font-medium shadow disabled:opacity-50 flex-shrink-0"
           disabled={vehicleLoading}
         >
           {vehicleLoading ? "Loading..." : "+ Add Assignment"}
         </button>
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="text-sm text-gray-600">
-          Showing {vehicles.length} of {totalVehicles} vehicles
-        </div>
-       
-      </div>
 
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <button className="text-gray-500 hover:text-gray-700">&lt;</button>
-          <h2 className="text-lg font-semibold text-gray-700">September 2025</h2>
-          <button className="text-gray-500 hover:text-gray-700">&gt;</button>
+      {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+        <div className="flex items-center gap-2 flex-1 justify-center sm:justify-start">
+          <button
+            onClick={handlePrevMonth}
+            className="text-gray-500 hover:text-gray-700 text-xl p-1"
+            disabled={vehicleLoading}
+          >
+            &lt;
+          </button>
+          <h2 className="text-lg font-semibold text-gray-700">
+            {monthName} {year}
+          </h2>
+          <button
+            onClick={handleNextMonth}
+            className="text-gray-500 hover:text-gray-700 text-xl p-1"
+            disabled={vehicleLoading}
+          >
+            &gt;
+          </button>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="border border-gray-300 rounded-md px-3 py-1 text-sm hover:bg-gray-100">
+        <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-end">
+          <button
+            onClick={handleToday}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-50"
+            disabled={vehicleLoading}
+          >
             Today
           </button>
-          <select className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700">
+          <select
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700 disabled:opacity-50"
+            disabled={vehicleLoading}
+          >
             <option>Month</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Scrollable Table Container */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        {/* Table Header */}
-        <div className="grid grid-cols-[200px_repeat(13,1fr)] border-b border-gray-300 bg-gray-100 text-sm font-medium text-gray-600">
-          <div className="px-4 py-2">Vehicle</div>
-          {days.map((day) => (
-            <div key={day} className="px-4 py-2 text-center border-l border-gray-300">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Table Body */}
-        {vehicleLoading ? (
-          <div className="animate-pulse space-y-2">
-            {Array(5).fill().map((_, index) => (
-              <div key={index} className="grid grid-cols-[200px_repeat(13,1fr)] bg-white border-t border-gray-200">
-                <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
-                  <div className="w-12 h-8 bg-gray-200 rounded"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-3 bg-gray-200 rounded w-16"></div>
-                    <div className="h-3 bg-gray-200 rounded w-20"></div>
-                  </div>
-                </div>
-                {days.map((day) => (
-                  <div key={day} className="border-l border-gray-200 px-2 py-3">
-                    <div className="h-4 bg-gray-200 rounded w-12 mx-auto"></div>
-                  </div>
-                ))}
+      <div className="w-full overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+        <div className="min-w-max">
+          {/* Table Header */}
+          <div
+            className="grid border-b border-gray-300 bg-gray-100 text-xs sm:text-sm font-medium text-gray-600 sticky top-0 z-10"
+            style={{ gridTemplateColumns }}
+          >
+            <div className="px-3 sm:px-4 py-3 text-left">Vehicle</div>
+            {days.map((day) => (
+              <div key={day} className="px-1 sm:px-2 py-3 text-center border-l border-gray-300">
+                {day}
               </div>
             ))}
           </div>
-        ) : (
-          vehicles.map((vehicle) => (
-            <div
-              key={vehicle._id}
-              onClick={() => handleVehicleClick(vehicle)}
-              className="grid grid-cols-[200px_repeat(13,1fr)] border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              {/* Vehicle Info */}
-              <div className="flex items-center gap-3 px-4 py-3 border-r border-gray-200">
-                <img
-                  src={vehicle.image}
-                  alt={vehicle.name}
-                  className="w-12 h-8 rounded object-cover"
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/60x40?text=Car";
-                  }}
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{vehicle.name}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span
-                      className={`w-2 h-2 rounded-full inline-block ${
-                        vehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    ></span>
-                    {vehicle.status}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {vehicle.make} {vehicle.model}
-                  </p>
-                </div>
-              </div>
 
-              {/* Calendar Cells */}
-              {days.map((day) => (
-                <div
-                  key={day}
-                  className={`border-l border-gray-200 px-2 py-3 text-sm ${
-                    vehicle.driverId && day === 4
-                      ? "bg-blue-50 text-blue-800 font-medium"
-                      : ""
-                  }`}
-                >
-                  {vehicle.driverId && day === 4 && (
-                    <div>
-                      <p>{vehicle.driverName}</p>
-                      <p className="text-xs text-gray-500">{vehicle.startDate}</p>
+          {/* Table Body */}
+          {vehicleLoading ? (
+            <div className="space-y-2 py-4">
+              {Array(5)
+                .fill()
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="grid bg-white border-t border-gray-200"
+                    style={{ gridTemplateColumns }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-r border-gray-200">
+                      <div className="w-10 sm:w-12 h-6 sm:h-8 bg-gray-200 rounded"></div>
+                      <div className="space-y-1 sm:space-y-2">
+                        <div className="h-3 sm:h-4 bg-gray-200 rounded w-20 sm:w-24"></div>
+                        <div className="h-2 sm:h-3 bg-gray-200 rounded w-12 sm:w-16"></div>
+                        <div className="h-2 sm:h-3 bg-gray-200 rounded w-16 sm:w-20"></div>
+                      </div>
                     </div>
-                  )}
+                    {renderSkeletonDayCells()}
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {vehicles.map((vehicle) => (
+                <div
+                  key={vehicle._id}
+                  onClick={() => handleVehicleClick(vehicle)}
+                  className="grid border-t border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                  style={{ gridTemplateColumns }}
+                >
+                  {/* Vehicle Info */}
+                  <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-r border-gray-200 min-h-[60px]">
+                    <img
+                      src={vehicle.image}
+                      alt={vehicle.name}
+                      className="w-10 sm:w-12 h-6 sm:h-8 rounded object-cover flex-shrink-0"
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/60x40?text=Car";
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-800 truncate" title={vehicle.name}>
+                        {vehicle.name}
+                      </p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                        <span
+                          className={`w-2 h-2 rounded-full inline-block flex-shrink-0 ${
+                            vehicle.status === "Assigned" ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        ></span>
+                        {vehicle.status}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1 truncate" title={`${vehicle.make} ${vehicle.model}`}>
+                        {vehicle.make} {vehicle.model}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Calendar Cells */}
+                  {renderDayCells(vehicle)}
                 </div>
               ))}
             </div>
-          ))
-        )}
+          )}
+        </div>
       </div>
 
       {/* Pagination Footer */}
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 gap-2">
         <div className="text-sm text-gray-600">
           Showing {vehicles.length} of {totalVehicles} vehicles
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1 || vehicleLoading}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
           >
             Previous
           </button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 whitespace-nowrap">
             Page {currentPage} of {totalPages}
           </span>
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages || vehicleLoading}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
           >
             Next
           </button>
@@ -560,30 +676,30 @@ const VehicleAssignment = () => {
       {/* Right Slide Panel */}
       {selectedVehicle && (
         <div className="fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl border-l border-gray-200 z-50 animate-slideIn overflow-y-auto">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
             <h2 className="text-lg font-semibold text-gray-800">
-              Assignment #{selectedVehicle.id.slice(-4)}
+              Assignment #{selectedVehicle.driverEmployeeNumber}
             </h2>
             <button
               onClick={closePanel}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className=" cursor-pointer text-gray-500 hover:text-gray-700 text-sm"
             >
-              ×
+              <CrossIcon className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-5">
             <button
               onClick={unassignVehicle}
-              className="w-[174px] border border-[#3333334D] flex items-center gap-3 justify-center text-[#333333b0] rounded-md py-2 hover:bg-red-50 disabled:opacity-50"
+              className=" cursor-pointer w-full sm:w-[174px] border border-[#3333334D] flex items-center gap-3 justify-center text-[#333333b0] rounded-md py-2 hover:bg-red-50 disabled:opacity-50"
               disabled={vehicleLoading || selectedVehicle.status !== "Assigned"}
             >
-              <LiaUserTimesSolid className="text-[20px] robotomedium "/>
+              <LiaUserTimesSolid className="text-[20px] robotomedium" />
               Unassign Vehicle
             </button>
 
             {/* Assigned Vehicle */}
-            <div className="flex gap-2 items-center p-4 rounded-lg">
+            <div className="p-4 rounded-lg bg-gray-50">
               <h3 className="text-[12px] robotoregular text-gray-700 mb-3">
                 Assigned Vehicle
               </h3>
@@ -591,16 +707,16 @@ const VehicleAssignment = () => {
                 <img
                   src={selectedVehicle.image}
                   alt={selectedVehicle.name}
-                  className="w-16 h-10 rounded object-cover"
+                  className="w-16 h-10 rounded object-cover flex-shrink-0"
                   onError={(e) => {
                     e.target.src = "https://via.placeholder.com/80x50?text=Car";
                   }}
                 />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 truncate" title={selectedVehicle.name}>
                     {selectedVehicle.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate" title={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`}>
                     {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
                   </p>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -611,50 +727,51 @@ const VehicleAssignment = () => {
                     ></span>
                     {selectedVehicle.status} • {selectedVehicle.type}
                   </p>
-                  
                 </div>
               </div>
             </div>
 
-          
-
             {/* Operator */}
-            <div className="flex items-center gap-2 p-4 rounded-lg">
-              
-              <h3 className="text-[12px] robotoregular  text-gray-700 mb-3">
+            <div className="p-4 rounded-lg bg-gray-50">
+              <h3 className="text-[12px] robotoregular text-gray-700 mb-3">
                 Operator
               </h3>
               <div className="flex items-center gap-3">
                 <img
-                  src="https://via.placeholder.com/60x40?text=Driver"
+                  src={selectedVehicle.DriverProfile}
                   alt="operator"
-                  className="w-12 h-8 rounded object-cover"
+                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                 />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{selectedVehicle.driverName}</p>
-                  <p className="text-xs text-gray-500">{selectedVehicle.driverEmployeeNumber}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 truncate" title={selectedVehicle.driverName}>
+                    {selectedVehicle.driverName}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate" title={selectedVehicle.driverEmployeeNumber}>
+                    {selectedVehicle.driverEmployeeNumber}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Dates */}
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2">
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-2 p-4 rounded-lg bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-700 min-w-0 flex-1 sm:flex-none">
                   Start Date
                 </h3>
-                <p className="text-sm text-[#105388]">{selectedVehicle.startDate}</p>
+                <p className="text-sm text-[#105388] truncate" title={selectedVehicle.startDate}>
+                  {selectedVehicle.startDate}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">
+              <div className="flex flex-col sm:flex-row gap-2 p-4 rounded-lg bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-700 min-w-0 flex-1 sm:flex-none">
                   End Date
                 </h3>
-                <p className="text-sm text-[#105388]">{selectedVehicle.endDate}</p>
+                <p className="text-sm text-[#105388] truncate" title={selectedVehicle.endDate}>
+                  {selectedVehicle.endDate}
+                </p>
               </div>
             </div>
-
-            {/* Additional Vehicle Info */}
-           
           </div>
         </div>
       )}
@@ -667,97 +784,112 @@ const VehicleAssignment = () => {
         />
       )}
 
-      {/* Add Assignment Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Add Assignment</h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                ×
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
-                <select
-                  name="vehicleId"
-                  value={assignmentData.vehicleId}
-                  onChange={handleAssignmentChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
-                  disabled={vehicleLoading}
-                >
-                  <option value="">Select Vehicle</option>
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle._id} value={vehicle._id}>
-                      {vehicle.name} - {vehicle.make} {vehicle.model}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-                <select
-                  name="driverId"
-                  value={assignmentData.driverId}
-                  onChange={handleAssignmentChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
-                >
-                  <option value="">Select Driver</option>
-                  {drivers.map((driver) => (
-                    <option key={driver._id} value={driver._id}>
-                      {driver.name} ({driver.employeeNumber})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-1/2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={assignmentData.startDate}
-                      min={new Date().toISOString().split("T")[0]} // ✅ Disable past dates
-                    onChange={handleAssignmentChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
-                  />
-                </div>
-                <div className="w-1/2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={assignmentData.endDate}
-                    onChange={handleAssignmentChange}
-                    min={assignmentData.startDate}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={closeModal}
-                  className=" cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                  disabled={vehicleLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={assignVehicle}
-                  className=" cursor-pointer px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50"
-                  disabled={vehicleLoading}
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
+ {/* Add Assignment Modal */}
+{isModalOpen && (
+  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">Add Assignment</h2>
+        <button
+          onClick={closeModal}
+          className="text-gray-500 hover:text-gray-700 text-sm cursor-pointer"
+        >
+          <CrossIcon className="cursor-pointer w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Vehicle
+          </label>
+          <select
+            name="vehicleId"
+            value={assignmentData.vehicleId}
+            onChange={handleAssignmentChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700 disabled:opacity-50 cursor-pointer"
+            disabled={vehicleLoading}
+          >
+            <option value="">Select Vehicle</option>
+            {vehicles.map((vehicle) => (
+              <option key={vehicle._id} value={vehicle._id}>
+                {vehicle.name} - {vehicle.make} {vehicle.model}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Driver
+          </label>
+          <select
+            name="driverId"
+            value={assignmentData.driverId}
+            onChange={handleAssignmentChange}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700 cursor-pointer"
+          >
+            <option value="">Select Driver</option>
+            {drivers.map((driver) => (
+              <option key={driver._id} value={driver._id}>
+                {driver.name} ({driver.employeeNumber})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              name="startDate"
+              value={assignmentData.startDate}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={handleAssignmentChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700 cursor-pointer"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              name="endDate"
+              value={assignmentData.endDate}
+              onChange={handleAssignmentChange}
+              min={assignmentData.startDate}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-700 cursor-pointer"
+            />
           </div>
         </div>
-      )}
+
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+          <button
+            onClick={closeModal}
+            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer disabled:opacity-50"
+            disabled={vehicleLoading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={assignVehicle}
+            className={`px-4 py-2 bg-blue-900 text-white text-sm rounded-md hover:bg-blue-800 disabled:opacity-50 cursor-pointer ${
+              vehicleLoading ? 'cursor-not-allowed' : 'cursor-pointer'
+            }`}
+            disabled={vehicleLoading}
+          >
+            {vehicleLoading ? "Assigning..." : "Assign"}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
       <ToastContainer />
     </div>

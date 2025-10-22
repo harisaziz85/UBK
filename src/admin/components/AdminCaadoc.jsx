@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { FaFilePdf } from "react-icons/fa6";
 import Doctopbar from "./Doctopbar";
+import { toast, ToastContainer } from "react-toastify";
+import DriverAttachmentPopup from "./DriverAttachmentPopup";
+import { useNavigate } from "react-router-dom";
+
+
 
 const Shimmer = () => {
   return (
@@ -26,6 +31,9 @@ const Shimmer = () => {
           <td className="px-5 py-4">
             <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
           </td>
+          <td className="px-5 py-4">
+            <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+          </td>
         </tr>
       ))}
     </>
@@ -33,12 +41,15 @@ const Shimmer = () => {
 };
 
 const AdminCaadoc = () => {
+  const [allDocuments, setAllDocuments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showDriverPopup, setShowDriverPopup] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -52,28 +63,54 @@ const AdminCaadoc = () => {
   const limit = 10;
   const dateInputRef = useRef(null);
   const updateDateInputRef = useRef(null);
+  let navigation = useNavigate();
 
-  // Fetch documents
-  const fetchDocuments = async () => {
+  const handleOpenDriverPopup = (docId) => {
+    setSelectedDocumentId(docId);
+    setShowDriverPopup(true);
+  };
+
+  const handleCloseDriverPopup = () => {
+    setShowDriverPopup(false);
+    setSelectedDocumentId(null);
+    fetchAllDocuments();
+  };
+
+  // Fetch all documents
+  const fetchAllDocuments = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
-      const response = await axios.get(
-        `https://ubktowingbackend-production.up.railway.app/api/common/document/all?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      let allDocs = [];
+      let pg = 1;
+      while (true) {
+        const response = await axios.get(
+          `https://ubktowingbackend-production.up.railway.app/api/common/document/all?page=${pg}&limit=100`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const docs = response.data.documents || [];
+        allDocs = [...allDocs, ...docs];
+        if (docs.length < 100) break;
+        pg++;
+      }
       // Filter documents to show only those with category "CAA"
-      const filteredDocuments = (response.data.documents || []).filter(
+      const filteredDocuments = allDocs.filter(
         (doc) => doc.category === "CAA"
       );
-      setDocuments(filteredDocuments);
-      setTotalPages(response.data.totalPages || 1);
+      setAllDocuments(filteredDocuments);
+      setTotalPages(Math.ceil(filteredDocuments.length / limit));
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      setDocuments(filteredDocuments.slice(startIndex, endIndex));
     } catch (error) {
       console.error("Error fetching documents:", error);
+      setAllDocuments([]);
+      setDocuments([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -88,8 +125,17 @@ const AdminCaadoc = () => {
   };
 
   useEffect(() => {
-    fetchDocuments();
-  }, [page]);
+    fetchAllDocuments();
+  }, []);
+
+  useEffect(() => {
+    if (allDocuments.length > 0) {
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      setDocuments(allDocuments.slice(startIndex, endIndex));
+      setTotalPages(Math.ceil(allDocuments.length / limit));
+    }
+  }, [page, allDocuments, limit]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -132,7 +178,7 @@ const AdminCaadoc = () => {
 
       setShowUploadModal(false);
       setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
-      fetchDocuments();
+      fetchAllDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
@@ -166,7 +212,7 @@ const AdminCaadoc = () => {
       setShowUpdateModal(false);
       setSelectedDoc(null);
       setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
-      fetchDocuments();
+      fetchAllDocuments();
     } catch (error) {
       console.error("Update failed:", error);
     } finally {
@@ -238,6 +284,7 @@ const openUpdateModal = (doc) => {
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
               <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
+              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
             </tr>
           </thead>
           <tbody>
@@ -247,7 +294,8 @@ const openUpdateModal = (doc) => {
               documents.map((doc) => (
                 <tr
                   key={doc._id}
-                  onClick={() => openUpdateModal(doc)}
+                  // onClick={() => openUpdateModal(doc)}
+                   onClick={() => navigation(`/admin/document/${doc._id}`)}
                   className="border-b border-gray-200 hover:bg-gray-50 transition-all text-[14px] font-robotoregular cursor-pointer"
                 >
                   <td className="px-5 py-4 flex items-center space-x-2">
@@ -266,11 +314,28 @@ const openUpdateModal = (doc) => {
                   <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
                     {new Date(doc.createdAt).toLocaleDateString()}
                   </td>
+                  <td className="px-5 py-4 robotomedium text-[14px] text-[#333333E5]">
+                    {doc.driverId ? (
+                      <span className="text-gray-800">
+                        {doc.driverId.name}
+                      </span>
+                    ) : (
+                      <span
+                        className="text-blue-600 cursor-pointer hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDriverPopup(doc._id);
+                        }}
+                      >
+                        Select Driver
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center py-6 text-gray-500">
+                <td colSpan="6" className="text-center py-6 text-gray-500">
                   No documents found.
                 </td>
               </tr>
@@ -360,6 +425,7 @@ const openUpdateModal = (doc) => {
                   <option value="">Select Category</option>
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
@@ -451,6 +517,7 @@ const openUpdateModal = (doc) => {
                   <option value="">Select Category</option>
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
@@ -490,6 +557,12 @@ const openUpdateModal = (doc) => {
           </div>
         </div>
       )}
+
+      <DriverAttachmentPopup
+        isOpen={showDriverPopup}
+        onClose={handleCloseDriverPopup}
+        documentId={selectedDocumentId}
+      />
     </div>
   );
 };

@@ -187,6 +187,8 @@ const DriverLayout = () => {
           label: 'Yes',
           onClick: () => {
             localStorage.removeItem('authToken');
+           localStorage.removeItem("userRole");
+
             toast.success('Logged out successfully');
             setIsOpen(false);
            setTimeout(() => {

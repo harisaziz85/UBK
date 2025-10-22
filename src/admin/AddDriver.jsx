@@ -267,7 +267,7 @@ const AddDriver = () => {
           position: "top-right",
           autoClose: 2000,
         });
-        setTimeout(() => navigate(`/admin/dashboard`), 2000); // or to driver list/details
+        setTimeout(() => navigate(`/admin/drivers`), 2000); // or to driver list/details
       } else {
         // Validate password for new driver
         if (!formData.password) {
@@ -295,6 +295,8 @@ const AddDriver = () => {
           position: "top-right",
           autoClose: 2000,
         });
+
+
 
         // Reset form
         setFormData({
@@ -332,7 +334,7 @@ const AddDriver = () => {
         setFile(null);
 
         // Redirect to AllDrivers page
-        setTimeout(() => navigate("/admin/dashboard"), 2000);
+        setTimeout(() => navigate("/admin/drivers"), 2000);
       }
     } catch (err) {
       console.error("Driver operation error:", err);

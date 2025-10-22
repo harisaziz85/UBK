@@ -1,583 +1,1041 @@
 import React, { useState, useEffect } from "react";
-import { FaFilePdf, FaPaperPlane, FaImage, FaFileAlt, FaComment } from "react-icons/fa";
+import { Search, FileText, MoreVertical, Pencil, Trash2, Download } from "lucide-react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 const Vehicleprofile = () => {
-  const { vehicleId } = useParams();
-  const [dragActive, setDragActive] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [vehicleData, setVehicleData] = useState(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [vehicle, setVehicle] = useState(null);
+  const [inspections, setInspections] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [comments, setComments] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [commentText, setCommentText] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [commentText, setCommentText] = useState('');
+  const [showComments, setShowComments] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ title: '', expiryDate: '', category: '', file: null });
+  const [imageUploadForm, setImageUploadForm] = useState({ title: '', expiryDate: '', category: 'UBK Towing', file: null });
+  const [formData, setFormData] = useState({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+  const [selectedDoc, setSelectedDoc] = useState(null);
   const [isSendingComment, setIsSendingComment] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreComments, setHasMoreComments] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { vehicleId } = useParams();
+  const navigate = useNavigate();
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
-  // Fetch vehicle data
-  useEffect(() => {
-    const fetchVehicleData = async () => {
-      setIsLoading(true);
-      const token = localStorage.getItem("authToken");
+  const timeAgo = (dateString) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return `${Math.floor(diffInHours / 24)} days ago`;
+  };
 
+  const fetchVehicle = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
       if (!token) {
-        toast.error("No authentication token found. Please log in.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-        setIsLoading(false);
+        setError("No token found. Please log in.");
         return;
       }
 
-      try {
-        const response = await axios.get(
-          `${baseUrl}/admin/vehicle/${vehicleId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const { vehicle, documents } = response.data;
-        setVehicleData(vehicle);
-        setDocuments(documents || []);
-      } catch (err) {
-        console.error("Error fetching vehicle data:", err);
-        toast.error(
-          err.response?.data?.message || "Failed to fetch vehicle data.",
-          {
-            position: "top-right",
-            autoClose: 3000,
-          }
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchVehicleData();
-  }, [vehicleId]);
-
-  // Fetch comments
-  useEffect(() => {
-    const fetchComments = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-
-      try {
-        const response = await axios.get(
-          `${baseUrl}/common/comment/get-with/${vehicleId}?page=${currentPage}&limit=10`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const newComments = response.data.comments || [];
-        if (currentPage === 1) {
-          setComments(newComments);
-        } else {
-          setComments(prev => [...prev, ...newComments]);
-        }
-        setHasMoreComments(newComments.length === 10);
-      } catch (err) {
-        console.error("Error fetching comments:", err);
-      }
-    };
-
-    fetchComments();
-  }, [vehicleId, currentPage]);
-
-  // Send comment
-  const handleSendComment = async () => {
-    if (!commentText.trim()) {
-      toast.error("Please enter a comment.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      return;
-    }
-
-    setIsSendingComment(true);
-    const token = localStorage.getItem("authToken");
-
-    try {
-      await axios.post(
-        `${baseUrl}/common/comment/create`,
-        {
-          receiverId: vehicleId,
-          text: commentText,
+      const response = await axios.get(`${baseUrl}/admin/vehicle/${vehicleId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setCommentText("");
-      setCurrentPage(1);
-      
-      const response = await axios.get(
-        `${baseUrl}/common/comment/get-with/${vehicleId}?page=1&limit=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      
-      setComments(response.data.comments || []);
-      
-      toast.success("Comment sent successfully!", {
-        position: "top-right",
-        autoClose: 3000,
       });
+
+      if (!response.data.vehicle) {
+        throw new Error("Failed to fetch vehicle");
+      }
+
+      const data = response.data;
+      console.log("Fetched vehicle data:", data);
+      setVehicle(data.vehicle);
+      setInspections((data.inspections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      setDocuments((data.documents || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (err) {
-      console.error("Error sending comment:", err);
-      toast.error(
-        err.response?.data?.message || "Failed to send comment.",
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to fetch vehicle data.");
+      toast.error(err.response?.data?.message || "Failed to fetch vehicle data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await axios.get(`${baseUrl}/common/comment/get-with/${vehicleId}?page=${currentPage}&limit=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const newComments = response.data.comments || [];
+      if (currentPage === 1) {
+        setComments(newComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      } else {
+        setComments(prev => [...prev, ...newComments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+      setHasMoreComments(newComments.length === 10);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!commentText.trim()) return;
+    setIsSendingComment(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      await axios.post(`${baseUrl}/common/comment/create`, {
+        receiverId: vehicleId,
+        text: commentText,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      setCommentText('');
+      setCurrentPage(1);
+      await fetchComments();
+      toast.success("Comment sent successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to send comment.");
     } finally {
       setIsSendingComment(false);
     }
   };
 
-  // Handle file drop
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setDragActive(false);
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => setPreviewImage(e.target.result);
-        reader.readAsDataURL(file);
-      } else {
-        toast.error("Please drop an image file.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
+  const handleUpload = async () => {
+    if (!uploadForm.file || !uploadForm.title.trim() || !uploadForm.expiryDate || !uploadForm.category) return;
+    setUploadLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const formData = new FormData();
+      formData.append('file', uploadForm.file);
+      formData.append('title', uploadForm.title);
+      formData.append('expiryDate', uploadForm.expiryDate);
+      formData.append('vehicleId', vehicleId);
+      formData.append('category', uploadForm.category);
+
+      await axios.post(`${baseUrl}/common/document/create`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success("Document uploaded successfully");
+      setShowUploadModal(false);
+      setUploadForm({ title: '', expiryDate: '', category: '', file: null });
+      await fetchVehicle();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to upload document");
+    } finally {
+      setUploadLoading(false);
     }
   };
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    setDragActive(true);
-  };
+  const handleImageUpload = async () => {
+    if (!imageUploadForm.file || !imageUploadForm.title.trim() || !imageUploadForm.expiryDate || !imageUploadForm.category) return;
+    setImageUploadLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const formData = new FormData();
+      formData.append('file', imageUploadForm.file);
+      formData.append('title', imageUploadForm.title);
+      formData.append('expiryDate', imageUploadForm.expiryDate);
+      formData.append('vehicleId', vehicleId);
+      formData.append('category', imageUploadForm.category);
 
-  const handleDragLeave = (event) => {
-    event.preventDefault();
-    setDragActive(false);
-  };
+      await axios.post(`${baseUrl}/common/document/create`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  const handleFileInput = (event) => {
-    const files = event.target.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => setPreviewImage(e.target.result);
-        reader.readAsDataURL(file);
-      } else {
-        toast.error("Please select an image file.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
+      toast.success("Image uploaded successfully");
+      setShowImageUploadModal(false);
+      setImageUploadForm({ title: '', expiryDate: '', category: 'UBK Towing', file: null });
+      await fetchVehicle();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to upload image");
+    } finally {
+      setImageUploadLoading(false);
     }
   };
 
-  const handleImageClick = () => {
-    document.getElementById("fileInput").click();
-  };
-
-  const getFileIcon = (fileUrl) => {
-    const extension = fileUrl.split('.').pop().toLowerCase();
-    if (extension === 'pdf') {
-      return <FaFilePdf className="w-10 h-10 text-red-600" />;
-    } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension)) {
-      return <img src={fileUrl} alt="file" className="w-10 h-10 object-cover rounded" />;
-    } else if (['doc', 'docx'].includes(extension)) {
-      return <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">DOC</div>;
-    } else if (['xls', 'xlsx', 'csv'].includes(extension)) {
-      return <div className="w-10 h-10 bg-green-600 rounded flex items-center justify-center text-white text-xs font-bold">XLS</div>;
-    } else {
-      return <div className="w-10 h-10 bg-gray-600 rounded flex items-center justify-center text-white text-xs font-bold">FILE</div>;
+  const handleDownload = async (fileUrl, filename) => {
+    try {
+      const response = await axios.get(fileUrl, { responseType: 'blob' });
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Download failed', err);
+      toast.error('Download failed');
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  // Update document
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const form = new FormData();
+      form.append("title", formData.title);
+      form.append("expiryDate", formData.expiryDate);
+      form.append("category", formData.category);
+      if (formData.file) form.append("file", formData.file);
+
+      const updateResponse = await axios.put(
+        `${baseUrl}/common/document/update/${selectedDoc.documentId}`,
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      toast.success("Document updated successfully");
+      setShowUpdateModal(false);
+      setSelectedDoc(null);
+      setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+      fetchVehicle();
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast.error("Update failed");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const formatCommentTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Delete document
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      await axios.delete(`${baseUrl}/common/document/delete/${selectedDoc.documentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      toast.success("Document deleted successfully");
+      setShowDocumentModal(false);
+      setSelectedDoc(null);
+      fetchVehicle();
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error("Delete failed");
+    }
   };
+
+  useEffect(() => {
+    fetchVehicle();
+    fetchComments();
+  }, [vehicleId, currentPage]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Vehicle Header Skeleton */}
+        <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative">
+              <Skeleton circle height={64} width={64} />
+            </div>
+            <div className="flex-1">
+              <Skeleton height={24} width={200} />
+              <Skeleton height={16} width={150} className="mt-1" />
+              <Skeleton height={16} width={250} className="mt-1" />
+            </div>
+          </div>
+          {/* Tabs Skeleton */}
+          <div className="flex gap-6 mt-4 overflow-x-auto">
+            <Skeleton height={20} width={80} />
+            <Skeleton height={20} width={80} />
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="px-4 lg:px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column Skeleton */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+                  <Skeleton height={24} width={150} />
+                </div>
+                <div className="px-4 lg:px-6 py-4">
+                  <div className="flex flex-col gap-4">
+                    {[...Array(12)].map((_, i) => (
+                      <div key={i} className="flex flex-row items-center gap-16 p-4 border-b border-[#33333333] pb-2">
+                        <Skeleton height={16} width={100} />
+                        <Skeleton height={16} width={200} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <Skeleton height={20} width={100} />
+                  <div className="flex flex-row gap-2">
+                    <Skeleton height={24} width={24} />
+                    <Skeleton height={24} width={62} />
+                    <Skeleton height={24} width={24} />
+                  </div>
+                </div>
+                <div className="px-4 lg:px-6 py-4">
+                  <div className="relative mb-4">
+                    <Skeleton height={40} width="100%" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex flex-col items-center">
+                          <Skeleton circle height={48} width={48} className="mb-2" />
+                          <div className="flex items-center gap-1 mb-1">
+                            <Skeleton height={12} width={80} />
+                            <Skeleton height={14} width={14} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !vehicle) {
+    return <p className="p-6">Vehicle not found or error loading.</p>;
+  }
+
+  const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A", profileImage: "/placeholder-avatar.png" };
 
   const filteredDocuments = documents.filter(doc => 
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const Shimmer = () => {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="animate-pulse">
-          <div className="mb-6">
-            <div className="h-8 w-1/3 bg-gray-200 rounded"></div>
-            <div className="h-4 w-2/3 mt-2 bg-gray-200 rounded"></div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white shadow-sm rounded-2xl p-6">
-              <div className="h-6 w-1/4 bg-gray-200 rounded mb-4"></div>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                {[...Array(14)].map((_, index) => (
-                  <div key={index} className="h-4 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-white shadow-sm rounded-2xl p-6">
-              <div className="h-6 w-1/4 bg-gray-200 rounded mb-4"></div>
-              <div className="h-10 w-full bg-gray-200 rounded mb-4"></div>
-              <div className="border-2 border-dashed rounded-lg py-8">
-                <div className="h-4 w-1/2 mx-auto bg-gray-200 rounded"></div>
-                <div className="h-10 w-32 mx-auto mt-2 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const CommentIcon = () => (
+    <svg width="24" height="25" cursor="pointer" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8.5 19.5H8C4 19.5 2 18.5 2 13.5V8.5C2 4.5 4 2.5 8 2.5H16C20 2.5 22 4.5 22 8.5V13.5C22 17.5 20 19.5 16 19.5H15.5C15.19 19.5 14.89 19.65 14.7 19.9L13.2 21.9C12.54 22.78 11.46 22.78 10.8 21.9L9.3 19.9C9.14 19.68 8.77 19.5 8.5 19.5Z" stroke="#333333" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 8.5H17" stroke="#333333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 13.5H13" stroke="#333333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 
-  if (isLoading) {
-    return <Shimmer />;
-  }
+  const FolderIcon = () => (
+    <svg width="62" height="24" cursor='pointer' viewBox="0 0 62 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M28 22H34C39 22 41 20 41 15V9C41 4 39 2 34 2H28C23 2 21 4 21 9V15C21 20 23 22 28 22Z" stroke="#292D32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M28 10C29.1046 10 30 9.10457 30 8C30 6.89543 29.1046 6 28 6C26.8954 6 26 6.89543 26 8C26 9.10457 26.8954 10 28 10Z" stroke="#292D32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M21.6719 18.9505L26.6019 15.6405C27.3919 15.1105 28.5319 15.1705 29.2419 15.7805L29.5719 16.0705C30.3519 16.7405 31.6119 16.7405 32.3919 16.0705L36.5519 12.5005C37.3319 11.8305 38.5919 11.8305 39.3719 12.5005L41.0019 13.9005" stroke="#292D32" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 
-  if (!vehicleData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-lg text-red-600">Failed to load vehicle data.</p>
-      </div>
-    );
-  }
+  const UploadIcon = () => (
+    <svg width="24" height="25" cursor="pointer" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 10.5V15.5C22 20.5 20 22.5 15 22.5H9C4 22.5 2 20.5 2 15.5V9.5C2 4.5 4 2.5 9 2.5H14" stroke="#043677" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 10.5H18C15 10.5 14 9.5 14 6.5V2.5L22 10.5Z" stroke="#043677" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 13.5H13" stroke="#043677" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M7 17.5H11" stroke="#043677" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const SendIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.1401 2.96004L7.11012 5.96004C1.04012 7.99004 1.04012 11.3 7.11012 13.32L9.79012 14.21L10.6801 16.89C12.7001 22.96 16.0201 22.96 18.0401 16.89L21.0501 7.87004C22.3901 3.82004 20.1901 1.61004 16.1401 2.96004ZM16.4601 8.34004L12.6601 12.16C12.5101 12.31 12.3201 12.38 12.1301 12.38C11.9401 12.38 11.7501 12.31 11.6001 12.16C11.3101 11.87 11.3101 11.39 11.6001 11.1L15.4001 7.28004C15.6901 6.99004 16.1701 6.99004 16.4601 7.28004C16.7501 7.57004 16.7501 8.05004 16.4601 8.34004Z" fill="white"/>
+    </svg>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          {vehicleData.name}
-        </h1>
-        <p className="text-gray-600">
-          {vehicleData.make} • {vehicleData.year} • {vehicleData.licensePlate} •{" "}
-          {vehicleData.currentMeter} Km •{" "}
-          <span className="text-blue-600 cursor-pointer hover:underline">
-            {vehicleData.assignment?.driverId ? "Assigned" : "Unassigned"}
-          </span>
-        </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Vehicle Header */}
+      <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="relative">
+            <img
+              src={vehicle.photo}
+              alt={vehicle.name}
+              className="w-16 h-16 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = '/placeholder-avatar.png';
+              }}
+            />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-xl lg:text-2xl roboto-semi-bold text-[#333333]">
+              {vehicle.name}
+            </h1>
+            <p className="text-sm text-[#4B5563] roboto-medium mt-1">
+              {vehicle.year} • {vehicle.make} • {vehicle.licensePlate}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              <span className="text-[#4B5563] roboto-medium">{vehicle.currentMilage || vehicle.currentMeter}</span>  • <span className="text-[#043677] roboto-medium">  {operator.name} {operator.employeeNumber}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-6 mt-4 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`cursor-pointer pb-1 px-1 text-sm roboto-medium whitespace-nowrap ${
+              activeTab === "overview"
+                ? "text-[#043677] border-b-2 border-[#043677]"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("inspections")}
+            className={`cursor-pointer pb-1 px-1 text-sm roboto-medium whitespace-nowrap ${
+              activeTab === "inspections"
+                ? "text-[#043677] border-b-2 border-[#043677]"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Inspections
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vehicle Details Card */}
-        <div className="bg-white shadow-sm rounded-2xl p-6">
-          <h2 className="text-[24px] robotosemibold mb-4">Vehicle Details</h2>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm text-gray-700">
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Name</p>
-              <p className="robotomedium">{vehicleData.name || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Status</p>
-              <p className="text-green-600 robotomedium">
-                ● {vehicleData.assignment?.driverId ? "Assigned" : "Unassigned"}
-              </p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Meter</p>
-              <p className="robotomedium">{vehicleData.currentMeter ? `${vehicleData.currentMeter} Km` : "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Operator</p>
-              <div className="flex items-center space-x-2">
-                <img
-                  src={vehicleData.photo || "https://via.placeholder.com/32"}
-                  alt="vehicle"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <p className="robotomedium">{vehicleData.assignment?.driverId ? "Assigned" : "Unassigned"}</p>
-              </div>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Type</p>
-              <p className="robotomedium">{vehicleData.type || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Fuel Type</p>
-              <p className="robotomedium">{vehicleData.fuelType || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">VIN/SN</p>
-              <div className="flex items-center space-x-2">
-                <span className="robotomedium">{vehicleData.vin || "—"}</span>
-              </div>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">License Plate</p>
-              <p className="robotomedium">{vehicleData.licensePlate || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Year</p>
-              <p className="robotomedium">{vehicleData.year || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Make</p>
-              <p className="robotomedium">{vehicleData.make || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Model</p>
-              <p className="robotomedium">{vehicleData.model || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Registration State/Province</p>
-              <p className="robotomedium">{vehicleData.registrationState || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Color</p>
-              <p className="robotomedium">{vehicleData.color || "—"}</p>
-            </div>
-            <div className="border-b border-[#33333333] w-full flex justify-between pt-[38px] pb-[12px]">
-              <p className="robotoregular">Ownership</p>
-              <p className="robotomedium">{vehicleData.ownership || "—"}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side - Documents and Comments */}
-        <div className="space-y-6">
-          {/* Documents Section */}
-          <div className="bg-white shadow-sm rounded-2xl p-6 relative">
-            <h2 className="text-lg font-semibold mb-4">Documents ({documents.length})</h2>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search files"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Vehicle Image */}
-            <div className="border border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 mb-6 hover:shadow-sm transition">
-              <img
-                src={vehicleData.photo || "https://via.placeholder.com/40?text=No+Image"}
-                alt="Vehicle"
-                className="w-12 h-12 object-cover mb-2"
-              />
-              <p className="text-sm text-gray-700">Vehicle Photo</p>
-            </div>
-
-            {/* Documents List */}
-            <div className="mb-6 max-h-[300px] overflow-y-auto">
-              {filteredDocuments.length > 0 ? (
-                <div className="space-y-3">
-                  {filteredDocuments.map((doc, index) => (
-                    <div
-                      key={doc.documentId}
-                      className={`border border-gray-200 rounded-lg p-3 hover:shadow-md transition flex items-center justify-between ${
-                        index % 2 === 0 && index + 1 < filteredDocuments.length ? 'pr-12' : ''
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        {getFileIcon(doc.fileUrl)}
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">{doc.title}</p>
-                          <p className="text-xs text-gray-500">
-                            {doc.category} • Expires: {formatDate(doc.expiryDate)}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            By: {doc.uploadedBy.name}
-                          </p>
-                        </div>
-                      </div>
-                      <a
-                        href={doc.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        View
-                      </a>
-                    </div>
-                  ))}
+      {/* Content */}
+      <div className="px-4 lg:px-6 py-6">
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Vehicle Details */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-[24px] roboto-semi-bold  text-[#333333]">
+                    Vehicle Details
+                  </h2>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  {searchQuery ? "No documents found matching your search." : "No documents available for this vehicle."}
-                </p>
-              )}
-            </div>
-
-            {/* Drag & Drop Area */}
-            <div
-              className={`border-2 border-dashed rounded-lg py-8 text-center text-sm ${
-                dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 text-gray-500"
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              {previewImage ? (
-                <div className="relative">
-                  <img
-                    src={previewImage}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-lg cursor-pointer"
-                    onClick={handleImageClick}
-                  />
-                </div>
-              ) : (
-                <>
-                  <p>Drag and drop files to upload</p>
-                  <input
-                    type="file"
-                    id="fileInput"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileInput}
-                  />
-                  <button
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    onClick={() => document.getElementById("fileInput").click()}
-                  >
-                    Browse Files
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Icons on the Right */}
-            <div className="absolute top-6 right-6 flex space-x-2">
-              <div className="cursor-pointer">
-                <FaImage className="w-6 h-6 text-gray-600 hover:text-gray-800" />
-              </div>
-              <div className="cursor-pointer">
-                <FaFileAlt className="w-6 h-6 text-gray-600 hover:text-gray-800" />
-              </div>
-              <div className="cursor-pointer">
-                <FaComment className="w-6 h-6 text-gray-600 hover:text-gray-800" />
-              </div>
-            </div>
-          </div>
-
-          {/* Comments Section */}
-          <div className="bg-white shadow-sm rounded-2xl p-6">
-            <h2 className="text-lg font-semibold mb-4">Comments</h2>
-
-            {/* Comments List */}
-            <div className="mb-4 max-h-[400px] overflow-y-auto space-y-3">
-              {comments.length > 0 ? (
-                <>
-                  {comments.map((comment) => (
-                    <div
-                      key={comment._id}
-                      className="border-b border-gray-200 pb-3 last:border-b-0"
-                    >
-                      <div className="flex items-start space-x-3">
-                        <img
-                          src={comment.senderId?.profileImage || "https://via.placeholder.com/32"}
-                          alt={comment.senderId?.name || "User"}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold text-gray-800">
-                              {comment.senderId?.name || "Unknown User"}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {formatCommentTime(comment.createdAt)}
-                            </p>
-                          </div>
-                          <p className="text-sm text-gray-700 mt-1">{comment.text}</p>
+                <div className="px-4 lg:px-6 py-4">
+                  <div className=" whitespace-nowrap flex flex-col gap-4">
+                    <DetailRow  label="Name" value={vehicle.name} />
+                    <DetailRow label="Status" value="Assign" status />
+                    <DetailRow label="Meter" value={vehicle.currentMilage || vehicle.currentMeter} />
+                    <DetailRow
+                      label="Operator"
+                      value={
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={operator.profileImage}
+                            alt={operator.name}
+                            className="w-6 h-6 rounded-full"
+                            onError={(e) => { e.target.src = '/placeholder-avatar.png'; }}
+                          />
+                          <span>
+                            {operator.name} {operator.employeeNumber}
+                          </span>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                  {hasMoreComments && (
-                    <button
-                      onClick={() => setCurrentPage(prev => prev + 1)}
-                      className="w-full text-blue-600 hover:text-blue-700 text-sm font-medium py-2"
-                    >
-                      Load More
+                      }
+                    />
+                    <DetailRow label="Type" value={vehicle.type} />
+                    <DetailRow label="Fuel Type" value={vehicle.fuelType} />
+                    <DetailRow
+                      label="VIN/SN"
+                      value={
+                        <div className="flex items-center gap-2">
+                          <span>{vehicle.vin}</span>
+                          <button className="text-blue-600 text-xs hover:underline">
+                            Decode VIN
+                          </button>
+                        </div>
+                      }
+                    />
+                    <DetailRow label="License Plate" value={vehicle.licensePlate} />
+                    <DetailRow label="Year" value={vehicle.year} />
+                    <DetailRow label="Make" value={vehicle.make} />
+                    <DetailRow label="Model" value={vehicle.model} />
+                    <DetailRow
+                      label="Registration State/Province"
+                      value={vehicle.registrationState}
+                    />
+                    <DetailRow label="Color" value={vehicle.color} />
+                    <DetailRow label="Ownership" value={vehicle.ownership} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Documents and Comments */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                {/* Header with Action Icons */}
+                <div className="px-4 lg:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <h2 className="text-lg roboto-semi-bold text-gray-900">
+                    Documents
+                  </h2>
+                  {/* Action icons */}
+                  <div className="flex flex-row gap-2">
+                    <button onClick={() => setShowComments(!showComments)} className="p-1 hover:bg-gray-100 rounded-full">
+                      <CommentIcon />
                     </button>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No comments yet. Be the first to comment!
-                </p>
+
+                    <button onClick={() => setShowImageUploadModal(true)} className="p-1 hover:bg-gray-100 rounded-full">
+                      <FolderIcon />
+                    </button>
+
+                    <button onClick={() => setShowUploadModal(true)} className="p-1 hover:bg-gray-100 rounded-full">
+                      <UploadIcon />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-4 lg:px-6 py-4">
+                  {/* Search */}
+                  <div className="relative mb-4">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search files"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Documents Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {filteredDocuments.length === 0 ? (
+                      <div className="col-span-2 flex flex-col items-center justify-center py-8 text-gray-400">
+                        <FileText size={48} className="mb-2 opacity-50" />
+                        <p className="text-sm text-center">No documents assigned</p>
+                      </div>
+                    ) : (
+                      filteredDocuments.map((doc, index) => (
+                        <div
+                          key={doc.documentId || index}
+                          className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer"
+                          onClick={() => {
+                            setSelectedDoc(doc);
+                            setShowDocumentModal(true);
+                          }}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div className="w-12 h-12 bg-red-500 rounded flex items-center justify-center mb-2">
+                              <FileText className="text-white" size={24} />
+                            </div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <span className="text-xs font-medium text-gray-700 truncate max-w-[80px]">
+                                {doc.title}
+                              </span>
+                              <button className="text-gray-400 hover:text-gray-600">
+                                <MoreVertical size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {showComments && (
+                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-lg roboto-semi-bold text-gray-900">Comments</h2>
+                  </div>
+                  <div className="px-4 lg:px-6 py-4 max-h-96 overflow-y-auto">
+                    {comments.map((comment) => (
+                      <div key={comment._id} className="mb-4 pb-4 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-start gap-3">
+                          <img 
+                            src={comment.senderId?.profileImage || '/placeholder-avatar.png'} 
+                            alt={comment.senderId?.name} 
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            onError={(e) => { e.target.src = '/placeholder-avatar.png'; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900 truncate">{comment.senderId?.name || 'Unknown'}</span>
+                              <span className="text-xs text-gray-500">{timeAgo(comment.createdAt)}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 break-words">{comment.text}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {comments.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                        <FileText size={48} className="mb-2 opacity-50" />
+                        <p className="text-sm text-center">No comments yet</p>
+                      </div>
+                    )}
+                    {hasMoreComments && (
+                      <button
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        className="w-full text-[#043677] hover:text-blue-700 text-sm roboto-medium py-2 border-t border-gray-200 mt-2"
+                      >
+                        Load More
+                      </button>
+                    )}
+                  </div>
+                  <div className="px-4 lg:px-6 py-4 border-t border-gray-200">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Add a comment..."
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#043677]"
+                        onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                        disabled={isSendingComment}
+                      />
+                      <button
+                        onClick={handlePostComment}
+                        disabled={!commentText.trim() || isSendingComment}
+                        className="cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                      >
+                        <SendIcon />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Modal */}
+              {showDocumentModal && selectedDoc && (
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg w-full max-w-sm border border-gray-200">
+                    <div className="flex flex-col">
+                      <button 
+                        onClick={() => {
+                          setFormData({
+                            title: selectedDoc.title,
+                            expiryDate: selectedDoc.expiryDate,
+                            category: selectedDoc.category,
+                            file: null,
+                            fileSize: ""
+                          });
+                          setShowUpdateModal(true);
+                          setShowDocumentModal(false);
+                        }}
+                        className=" cursor-pointer flex justify-between items-center py-3 px-4 w-full text-left border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <span className="text-sm font-medium text-gray-900">Edit</span>
+                        <Pencil size={16} className="text-gray-400" />
+                      </button>
+                      <button 
+                        onClick={handleDelete}
+                        className=" cursor-pointer flex justify-between items-center py-3 px-4 w-full text-left border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        <span className="text-sm font-medium text-gray-900">Delete</span>
+                        <Trash2 size={16} className="text-gray-400" />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          handleDownload(selectedDoc.fileUrl, selectedDoc.title);
+                          setShowDocumentModal(false);
+                        }}
+                        className=" cursor-pointer flex justify-between items-center py-3 px-4 w-full text-left hover:bg-gray-50"
+                      >
+                        <span className="text-sm font-medium text-gray-900">Download</span>
+                        <Download size={16} className="text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Modal */}
+              {showUploadModal && (
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Upload Document</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter Title"
+                          value={uploadForm.title}
+                          onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={uploadLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                        <input 
+                          type="date" 
+                          value={uploadForm.expiryDate}
+                          onChange={(e) => setUploadForm({ ...uploadForm, expiryDate: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={uploadLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                        <select 
+                          value={uploadForm.category}
+                          onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={uploadLoading}
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          <option value="UBK Towing">UBK Towing</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload PDF *</label>
+                        <input 
+                          type="file" 
+                          accept="application/pdf"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            setUploadForm({ ...uploadForm, file, title: file ? file.name : '' });
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                          disabled={uploadLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                      <button 
+                        onClick={() => {
+                          setShowUploadModal(false);
+                          setUploadForm({ title: '', expiryDate: '', category: '', file: null });
+                        }}
+                        className=" cursor-pointer px-4 py-2 text-gray-600 hover:text-gray-900"
+                        disabled={uploadLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleUpload}
+                        disabled={!uploadForm.file || uploadLoading || !uploadForm.title.trim() || !uploadForm.expiryDate || !uploadForm.category}
+                        className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                      >
+                        {uploadLoading ? 'Uploading...' : 'Upload'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Image Upload Modal */}
+              {showImageUploadModal && (
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Upload Vehicle Image</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter Title"
+                          value={imageUploadForm.title}
+                          onChange={(e) => setImageUploadForm({ ...imageUploadForm, title: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={imageUploadLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                        <input 
+                          type="date" 
+                          value={imageUploadForm.expiryDate}
+                          onChange={(e) => setImageUploadForm({ ...imageUploadForm, expiryDate: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={imageUploadLoading}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                        <select 
+                          value={imageUploadForm.category}
+                          onChange={(e) => setImageUploadForm({ ...imageUploadForm, category: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                          disabled={imageUploadLoading}
+                          required
+                        >
+                          <option value="UBK Towing">UBK Towing</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image *</label>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            setImageUploadForm({ ...imageUploadForm, file, title: file ? file.name : '' });
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                          disabled={imageUploadLoading}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6">
+                      <button 
+                        onClick={() => {
+                          setShowImageUploadModal(false);
+                          setImageUploadForm({ title: '', expiryDate: '', category: 'UBK Towing', file: null });
+                        }}
+                        className="cursor-pointer px-4 py-2 text-gray-600 hover:text-gray-900"
+                        disabled={imageUploadLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleImageUpload}
+                        disabled={!imageUploadForm.file || imageUploadLoading || !imageUploadForm.title.trim() || !imageUploadForm.expiryDate || !imageUploadForm.category}
+                        className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                      >
+                        {imageUploadLoading ? 'Uploading...' : 'Upload'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Update Modal */}
+              {showUpdateModal && selectedDoc && (
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Update Document</h3>
+                    <form onSubmit={handleUpdate}>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter Title"
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                            disabled={isUpdating}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date *</label>
+                          <input 
+                            type="date" 
+                            value={formData.expiryDate}
+                            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                            disabled={isUpdating}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                          <select 
+                            value={formData.category}
+                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50"
+                            disabled={isUpdating}
+                            required
+                          >
+                            <option value="">Select Category</option>
+                            <option value="UBK Towing">UBK Towing</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Upload New File (Optional)</label>
+                          <input 
+                            type="file" 
+                            accept="application/pdf,image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              setFormData({ ...formData, file });
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677] disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#043677] file:text-white hover:file:bg-[#032b5c]"
+                            disabled={isUpdating}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-6">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setShowUpdateModal(false);
+                            setFormData({ title: "", expiryDate: "", category: "", file: null, fileSize: "" });
+                          }}
+                          className=" cursor-pointer px-4 py-2 text-gray-600 hover:text-gray-900"
+                          disabled={isUpdating}
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit"
+                          disabled={!formData.title.trim() || !formData.expiryDate || !formData.category || isUpdating}
+                          className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                        >
+                          {isUpdating ? 'Updating...' : 'Update'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Comment Input */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Write a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !isSendingComment) {
-                    handleSendComment();
-                  }
-                }}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                disabled={isSendingComment}
-              />
-              <button
-                onClick={handleSendComment}
-                disabled={isSendingComment}
-                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                <FaPaperPlane className="w-5 h-5" />
-              </button>
+        {activeTab === "inspections" && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
+              <h2 className="text-[24px] roboto-semi-bold text-[#333333]">Inspections</h2>
+            </div>
+            <div className="overflow-x-auto rounded-lg shadow">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead style={{ backgroundColor: "#04367714" }}>
+                  <tr>
+                    <th className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      <input type="checkbox" />
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Submitted At
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Submission
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Vehicle
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Inspection Form
+                    </th>
+                    <th className="whitespace-nowrap p-3 border-b" style={{ borderColor: "#33333333" }}>
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspections.map((insp) => {
+                    const submittedAt = new Date(insp.createdAt).toLocaleString();
+                    const status = insp.inspectionStatus === 'passed' ? 'Pass' : 'Fail';
+                    const vehicleImg = insp.vehicleImage || vehicle.photo;
+                    const vehicleName = `${vehicle.name} (${vehicle.licensePlate})`;
+                    return (
+                      <tr key={insp.inspectionId} onClick={() => navigate(`/inspection/${insp.inspectionId}`)} className="cursor-pointer bg-white hover:bg-[#04367714]">
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <input type="checkbox" />
+                        </td>
+                        <td className="p-3 whitespace-nowrap border-b roboto-regular" style={{ borderColor: "#33333333" }}>
+                          {submittedAt}
+                        </td>
+                        <td
+                          className="p-3 whitespace-nowrap border-b roboto-regular text-blue-600"
+                          style={{ borderColor: "#33333333" }}
+                        >
+                          {insp.inspectionId.slice(0, 7)}
+                        </td>
+                        <td
+                          className="p-3 whitespace-nowrap border-b flex items-center roboto-regular gap-2 text-blue-600"
+                          style={{ borderColor: "#33333333" }}
+                        >
+                          <img
+                            src={vehicleImg}
+                            alt="vehicle"
+                            className="w-8 h-8 rounded object-cover"
+                            onError={(e) => {
+                              e.target.src = '/placeholder-avatar.png';
+                            }}
+                          />
+                          {vehicleName}
+                        </td>
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <span className="flex items-center gap-2">
+                            <span className="whitespace-nowrap w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
+                            Pre-Trip Inspection
+                          </span>
+                        </td>
+                        <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
+                          <span 
+                            className={`px-3 py-1 roboto-medium rounded-full text-xs ${
+                              status === "Pass" 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
+        )}
       </div>
       <ToastContainer />
     </div>
   );
 };
+
+const DetailRow = ({ label, value, status }) => (
+  <div className="flex flex-row items-center gap-4 sm:gap-16 p-4 border-b border-[#33333333] pb-2">
+    <span className="text-[14px] text-[#333333] roboto-regular w-full sm:w-40 text-left sm:text-right">{label}</span>
+    {status ? (
+      <div className="flex items-center gap-2 flex-1">
+        <span className="text-[#3CCE14] text-lg leading-none">•</span>
+        <span className="text-[14px] roboto-medium text-[#333333E5]">{value}</span>
+      </div>
+    ) : (
+      <div className="text-[14px] roboto-medium text-[#333333E5] flex-1 text-left sm:text-right">{value}</div>
+    )}
+  </div>
+);
 
 export default Vehicleprofile;

@@ -38,6 +38,7 @@ const Shimmer = () => {
 };
 
 const UBKTowing = () => {
+  const [allDocuments, setAllDocuments] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -65,30 +66,42 @@ const UBKTowing = () => {
   const handleClosePopup = () => {
     setShowPopup(false);
     setSelectedDocumentId(null);
-    fetchDocuments();
+    fetchAllDocuments();
   };
 
-  // Fetch documents
-  const fetchDocuments = async () => {
+  // Fetch all documents
+  const fetchAllDocuments = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("authToken");
-      const response = await axios.get(
-        `https://ubktowingbackend-production.up.railway.app/api/common/document/all?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      let allDocs = [];
+      let pg = 1;
+      while (true) {
+        const response = await axios.get(
+          `https://ubktowingbackend-production.up.railway.app/api/common/document/all?page=${pg}&limit=100`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const docs = response.data.documents || [];
+        allDocs = [...allDocs, ...docs];
+        if (docs.length < 100) break;
+        pg++;
+      }
       // Filter documents to show only those with category "UBK Towing"
-      const filteredDocuments = (response.data.documents || []).filter(
+      const filteredDocuments = allDocs.filter(
         (doc) => doc.category === "UBK Towing"
       );
-      setDocuments(filteredDocuments);
-      setTotalPages(response.data.totalPages || 1);
+      setAllDocuments(filteredDocuments);
+      setTotalPages(Math.ceil(filteredDocuments.length / limit));
+      setDocuments(filteredDocuments.slice(0, limit));
     } catch (error) {
       console.error("Error fetching documents:", error);
+      setAllDocuments([]);
+      setDocuments([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -103,8 +116,17 @@ const UBKTowing = () => {
   };
 
   useEffect(() => {
-    fetchDocuments();
-  }, [page]);
+    fetchAllDocuments();
+  }, []);
+
+  useEffect(() => {
+    if (allDocuments.length > 0) {
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      setDocuments(allDocuments.slice(startIndex, endIndex));
+      setTotalPages(Math.ceil(allDocuments.length / limit));
+    }
+  }, [page, allDocuments, limit]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -147,7 +169,7 @@ const UBKTowing = () => {
 
       setShowUploadModal(false);
       setFormData({ title: "", expiryDate: "", category: "UBK Towing", file: null, fileSize: "" });
-      fetchDocuments();
+      fetchAllDocuments();
     } catch (error) {
       console.error("Upload failed:", error);
     } finally {
@@ -337,6 +359,7 @@ const UBKTowing = () => {
                 >
                   <option value="UBK Towing">UBK Towing</option>
                   <option value="CAA">CAA</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div>
