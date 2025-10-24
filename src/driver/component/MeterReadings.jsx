@@ -44,17 +44,28 @@ const MeterReadings = () => {
   const formatRelativeTime = (dateString) => {
     const now = new Date();
     const date = new Date(dateString);
-    const diff = now - date;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      });
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const commentDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffTime = commentDay.getTime() - today.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const time = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+    if (diffDays === 0) {
+      return `Today, ${time}`;
     }
-    if (days === 1) return "Yesterday";
-    return `${days} days ago`;
+    if (diffDays === -1) {
+      return `Yesterday, ${time}`;
+    }
+    if (diffDays === 1) {
+      return `Tomorrow, ${time}`;
+    }
+    if (diffDays > -7 && diffDays < 0) {
+      return `${date.toLocaleDateString('en-US', { weekday: 'long' })}, ${time}`;
+    }
+    return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`;
   };
 
   const fetchComments = useCallback(async (pageNum) => {

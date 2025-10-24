@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Search, FileText, MoreVertical } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import Skeleton from 'react-loading-skeleton';
@@ -20,11 +20,13 @@ const VehicleDetailsPage = () => {
   const [uploadForm, setUploadForm] = useState({ title: '', expiryDate: '', category: '', file: null });
   const [imageUploadForm, setImageUploadForm] = useState({ title: '', expiryDate: '', category: 'UBK Towing', file: null });
   const [commentText, setCommentText] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { id } = useParams();
   const navigate = useNavigate();
+  const commentsRef = useRef(null);
 
   const baseUrl = "https://ubktowingbackend-production.up.railway.app/api";
 
@@ -75,7 +77,7 @@ const VehicleDetailsPage = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setComments((data.comments || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        setComments((data.comments || []).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
       }
     } catch (err) {
       console.error(err);
@@ -84,6 +86,7 @@ const VehicleDetailsPage = () => {
 
   const handlePostComment = async () => {
     if (!commentText.trim()) return;
+    setCommentLoading(true);
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(`${baseUrl}/common/comment/create`, {
@@ -99,10 +102,15 @@ const VehicleDetailsPage = () => {
       });
       if (response.ok) {
         setCommentText('');
-        fetchComments();
+        await fetchComments();
+      } else {
+        toast.error("Failed to post comment");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Error posting comment");
+    } finally {
+      setCommentLoading(false);
     }
   };
 
@@ -219,6 +227,12 @@ const VehicleDetailsPage = () => {
     fetchComments();
     fetchProfile();
   }, [id, baseUrl]);
+
+  useEffect(() => {
+    if (commentsRef.current && comments.length > 0) {
+      commentsRef.current.scrollTop = commentsRef.current.scrollHeight;
+    }
+  }, [comments]);
 
   if (loading) {
     return (
@@ -405,7 +419,7 @@ const VehicleDetailsPage = () => {
         </div>
 
         {/* Content */}
-        <div className="px-4 lg:px-6 py-6">
+        <div className="px-0 lg:px-6 py-6">
           {activeTab === "overview" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Vehicle Details */}
@@ -546,7 +560,7 @@ const VehicleDetailsPage = () => {
                       <div className="px-4 lg:px-6 py-4 border-b border-gray-200">
                         <h2 className="text-lg roboto-semi-bold text-gray-900">Comments</h2>
                       </div>
-                      <div className="px-4 lg:px-6 py-4 max-h-96 overflow-y-auto">
+                      <div ref={commentsRef} className="px-4 lg:px-6 py-4 max-h-96 overflow-y-auto">
                         {comments.map((comment) => (
                           <div key={comment._id} className="mb-4 pb-4 border-b border-gray-100 last:border-b-0">
                             <div className="flex items-start gap-3">
@@ -581,14 +595,22 @@ const VehicleDetailsPage = () => {
                             onChange={(e) => setCommentText(e.target.value)}
                             placeholder="Add a comment..."
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#043677]"
-                            onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && !commentLoading && commentText.trim()) {
+                                handlePostComment();
+                              }
+                            }}
                           />
                           <button
                             onClick={handlePostComment}
-                            disabled={!commentText.trim()}
-                            className=" cursor-pointer px-4 py-2 bg-[#043677] text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                            disabled={commentLoading || !commentText.trim()}
+                            className="px-4 py-2 bg-[#043677] text-white rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors flex items-center justify-center"
                           >
-                            <SendIcon />
+                            {commentLoading ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <SendIcon />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -828,8 +850,8 @@ const VehicleDetailsPage = () => {
                           {/* <td className="p-3 whitespace-nowrap border-b roboto-regular " style={{ borderColor: "#33333333" }}>
                             {date}
                           </td> */}
-                          <td className="p-3 border-b" style={{ borderColor: "#33333333" }}>
-                            <span className="flex items-center gap-2">
+                          <td className=" p-3 border-b" style={{ borderColor: "#33333333" }}>
+                            <span className="ml-2 sm:ml-0 whitespace-nowrap flex items-center gap-2">
                               <span className="whitespace-nowrap w-2 h-2 bg-green-500 roboto-medium rounded-full"></span>
                               Pre-Trip Inspection
                             </span>

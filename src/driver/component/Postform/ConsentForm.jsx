@@ -303,6 +303,23 @@ const ConsentForm = () => {
       toast.error("Officer Name & Badge is required when directed by police.");
       return false;
     }
+
+
+      if (
+    isUpdate &&
+    formType === 'tow' &&
+    towSpecific.towedTo.trim() &&
+    towSpecific.towedTo !== originalToLocation
+  ) {
+    if (!towSpecific.acknowledgementRevised) {
+      toast.error("Please acknowledge the revised destination address.");
+      return false;
+    }
+    if (!towSpecific.firstSignature) {
+      toast.error("Pre-Tow signature is required for revised destination.");
+      return false;
+    }
+  }
     return true;
   };
 
@@ -1509,7 +1526,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                   <p>2. UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
                   <p>3. UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
                 </div>
-                {formType === 'tow' && (
+                {/* {formType === 'tow' && (
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input 
                       type="checkbox" 
@@ -1520,7 +1537,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     />
                     <span className="text-sm text-gray-700">I declare that the vehicle listed has been inspected in accordance with Ontario Schedule 1 Daily inspections of trucks, tractors, and trailers (Reg. 199/07)</span>
                   </label>
-                )}
+                )} */}
               </div>
 
               {/* Consent Statement - Common */}
