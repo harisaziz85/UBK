@@ -74,22 +74,60 @@ const Login = () => {
     }
   };
 
-  const handleScan = (data) => {
-    if (data && data.length > 0) {
-      const decodedData = data[0].decodedText;
-      try {
-        const payload = JSON.parse(decodedData);
-        const token = payload.token;
-        handleQrLogin(token);
-      } catch (e) {
-        console.error('Invalid QR data:', e);
-        toast.error("Invalid QR code format.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
-    }
-  };
+
+// const handleScan = (data) => {
+//   console.log("Raw scan data:", data);
+
+//   if (!data || data.length === 0 || !data[0]?.rawValue) return;
+
+//   const decodedData = data[0].rawValue.trim();
+//   console.log("Decoded QR Data:", decodedData);
+
+//   try {
+//     const payload = JSON.parse(decodedData);
+
+//     if (payload && payload.token) {
+//       console.log("Token from QR:", payload.token);
+//       handleQrLogin(payload.token); // ✅ Login with token
+//     } else {
+//       throw new Error("Invalid QR payload structure");
+//     }
+//   } catch (e) {
+//     console.error("Invalid QR data:", e);
+//     toast.error("Invalid QR code format.", {
+//       position: "top-right",
+//       autoClose: 3000,
+//     });
+//   }
+// };
+
+
+const handleScan = (data) => {
+  console.log("Raw scan data:", data);
+
+  if (!data || data.length === 0) return;
+
+  const result = data[0];
+  const decodedData = (result.rawValue || result.decodedText || "").trim();
+  if (!decodedData) return;
+
+  console.log("Decoded QR Data:", decodedData);
+
+  try {
+    const payload = JSON.parse(decodedData);
+    if (payload?.token) handleQrLogin(payload.token);
+    else throw new Error("Invalid QR payload");
+  } catch (e) {
+    console.error("Invalid QR data:", e);
+    toast.error("Invalid QR code format.", {
+      position: "top-right",
+      autoClose: 3000,
+    });
+  }
+};
+
+
+
 
   const handleError = (err) => {
     console.error("QR Scan Error:", err);

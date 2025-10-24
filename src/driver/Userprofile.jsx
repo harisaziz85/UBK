@@ -460,7 +460,11 @@ const Userprofile = () => {
               <h3 className="text-lg font-semibold mb-4 text-center">QR Code</h3>
               {qrData && (
                 <div className="flex flex-col items-center">
-                <QRCodeCanvas value={JSON.stringify(qrData.qrPayload)} size={200} />
+                {/* <QRCodeCanvas value={JSON.stringify(qrData.qrPayload)} size={200} /> */}
+               <QRCodeCanvas
+                  value={JSON.stringify(qrData.qrPayload)}
+                  size={200}
+                />
                   {/* <p className="mt-4 text-sm text-gray-600 text-center">Token: {qrData.token}</p> */}
                   <p className="text-sm text-gray-600 text-center">Expires: {new Date(qrData.expiresAt).toLocaleString()}</p>
                 </div>
