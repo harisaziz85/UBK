@@ -96,17 +96,17 @@ const Vehicles = () => {
   };
 
   return (
-    <div className="p-6 bg-[#F9FAFB] min-h-screen overflow-x-hidden">
+    <div className="p-4 sm:p-6 bg-[#F9FAFB] min-h-screen overflow-x-hidden">
       {/* Top Bar */}
       <Vehicletopbar />
 
       {/* Table */}
-      <div className="mt-6 bg-white w-full overflow-x-auto">
+      <div className="mt-4 sm:mt-6 bg-white w-full overflow-x-auto">
         {/* Table Header */}
-        <div className="bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-[200px_120px_80px_100px_120px_120px_80px_120px_80px_80px] items-center py-3 px-4">
+        <div className="min-w-[1132px] bg-[#04367714] text-black robotomedium text-[14px] font-medium grid grid-cols-[200px_120px_80px_100px_120px_120px_80px_120px_80px_80px] items-center py-3 px-4">
           <div className="flex items-center space-x-2 whitespace-nowrap min-w-0">
             <input type="checkbox" className="w-4 h-4 accent-white flex-shrink-0" />
-            <span className="truncate">Name</span>
+            <span className="truncate whitespace-nowrap">Name</span>
           </div>
           <span className="whitespace-nowrap truncate">License Plate</span>
           <span className="whitespace-nowrap truncate">Year</span>
@@ -119,11 +119,11 @@ const Vehicles = () => {
         </div>
 
         {/* Shimmer Loader */}
-        {loading && <Shimmer />}
+        {loading && <div className="min-w-[1132px]"><Shimmer /></div>}
 
         {/* Table Rows */}
         {!loading && (
-          <div>
+          <div className="min-w-[1132px]">
             {vehicles.length > 0 ? (
               vehicles.map((v) => (
                 <div
@@ -133,15 +133,18 @@ const Vehicles = () => {
                 >
                   <div className="flex items-center space-x-2 min-w-0">
                     <input type="checkbox" className="w-4 h-4 accent-blue-600 flex-shrink-0" />
-                    <img
-                      src={
-                        v.photo ||
-                        "https://via.placeholder.com/40?text=No+Image"
-                      }
-                      alt="vehicle"
-                      className="w-10 h-10 rounded-md object-cover flex-shrink-0"
-                    />
-                    <span className="font-medium truncate">{v.name || "—"}</span>
+                    {v.photo ? (
+                      <img
+                        src={v.photo}
+                        alt="vehicle"
+                        className="w-10 h-10 rounded-md object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-md bg-gray-300 flex items-center justify-center flex-shrink-0 text-xs font-medium text-gray-600">
+                        {v.name ? v.name.substring(0, 2).toUpperCase() : "—"}
+                      </div>
+                    )}
+                    <span className="font-medium truncate whitespace-nowrap">{v.name || "—"}</span>
                   </div>
                   <span className="whitespace-nowrap truncate">{v.licensePlate || "—"}</span>
                   <span className="whitespace-nowrap truncate">{v.year || "—"}</span>
@@ -157,14 +160,14 @@ const Vehicles = () => {
                   <span className="whitespace-nowrap truncate">{v.color || "—"}</span>
                   <div className="flex items-center space-x-2 min-w-0">
                     {v.driverId || (v.assignment && v.assignment.driverId) ? (
-                      <span className="flex items-center space-x-1 truncate">
+                      <span className="flex items-center space-x-1 truncate whitespace-nowrap">
                         <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
-                        <span className="text-gray-700 truncate">Assigned</span>
+                        <span className="text-gray-700 truncate whitespace-nowrap">Assigned</span>
                       </span>
                     ) : (
-                      <span className="flex items-center space-x-1 truncate">
+                      <span className="flex items-center space-x-1 truncate whitespace-nowrap">
                         <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
-                        <span className="text-gray-700 truncate">Unassigned</span>
+                        <span className="text-gray-700 truncate whitespace-nowrap">Unassigned</span>
                       </span>
                     )}
                   </div>
@@ -174,7 +177,7 @@ const Vehicles = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-6 text-gray-500 text-[14px]">
+              <div className="min-w-[1132px] text-center py-6 text-gray-500 text-[14px]">
                 No vehicles found.
               </div>
             )}

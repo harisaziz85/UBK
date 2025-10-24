@@ -129,7 +129,7 @@ const VehicleAssignment = () => {
           id: vehicle._id,
           name: vehicle.name || "N/A",
           status: vehicle.assignment?.driverId ? "Assigned" : "Unassigned",
-          image: vehicle.photo || "https://via.placeholder.com/60x40?text=Car",
+          image: vehicle.photo || "",
           vin: vehicle.vin || "N/A",
           year: vehicle.year || "N/A",
           make: vehicle.make || "N/A",

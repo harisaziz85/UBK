@@ -20,6 +20,8 @@ const CreateVehicle = () => {
     currentMilage: "",
   });
 
+  
+
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
 

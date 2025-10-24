@@ -355,12 +355,12 @@ const AddDriver = () => {
   }
 
   return (
-    <div className="p-6 min-h-screen">
-      <div className="rounded-lg p-6 space-y-8">
+    <div className=" p-0 sm:p-6 min-h-screen">
+      <div className="rounded-lg  p-4 sm:p-6 space-y-8">
         <h1 className="text-2xl font-bold mb-6">{isEdit ? 'Edit Driver' : 'Add Driver'}</h1>
         <form onSubmit={handleSubmit}>
           {/* Basic Details */}
-          <div className="bg-white p-[28px] rounded-[10px] mb-[28px]">
+          <div className="bg-white  p-[28px] rounded-[10px] mb-[28px]">
             <h2 className="text-[22px] robotosemibold mb-4">Basic details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

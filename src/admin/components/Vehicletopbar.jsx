@@ -19,67 +19,67 @@ const Vehicletopbar = ({ onSearch }) => {
   };
 
   return (
-    <div className="flex justify-between items-center w-full">
-      {/* Left Section */}
-      <div className="flex flex-col">
-        <p className="robotosemibold text-[24px] text-[#333333] mb-[10px]">Vehicles</p>
-        
-        {/* Tabs */}
-        <nav className="flex items-center space-x-8 mb-[16px]">
-          <NavLink
-            to="/admin/vehicles"
-            className={({ isActive }) =>
-              `text-[14px] robotomedium ${
-                isActive
-                  ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
-                  : 'text-[#7A7A7A]'
-              }`
-            }
-          >
-            All
-          </NavLink>
+<div className="flex flex-col w-full">
+  {/* Header Section */}
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3 mb-4">
+    <p className="text-start robotosemibold text-[22px] sm:text-[24px] text-[#333333]">
+      Vehicles
+    </p>
 
-          <NavLink
-            to="/admin/assigned-vehicles"
-            className={({ isActive }) =>
-              `text-[14px] robotomedium ${
-                isActive
-                  ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
-                  : 'text-[#7A7A7A]'
-              }`
-            }
-          >
-            Assigned
-          </NavLink>
+    <button
+      onClick={handleAddVehicle}
+      className="bg-[#0046A5] robotomedium hover:bg-[#003B8A] text-white text-[14px] px-5 py-2 rounded-md flex items-center space-x-1 shadow-sm w-full sm:w-auto justify-center"
+    >
+      <span className="text-[18px]">+</span>
+      <span>Add Vehicle</span>
+    </button>
+  </div>
 
-          <NavLink
-            to="/admin/unassigned-vehicles"
-            className={({ isActive }) =>
-              `text-[14px] robotomedium ${
-                isActive
-                  ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
-                  : 'text-[#7A7A7A]'
-              }`
-            }
-          >
-            Unassigned
-          </NavLink>
-        </nav>
+  {/* Tabs Section */}
+  <div className="flex flex-col">
+    <nav className="flex flex-wrap items-center gap-4 sm:gap-8 mb-[16px]">
+      <NavLink
+        to="/admin/vehicles"
+        className={({ isActive }) =>
+          `text-[14px] robotomedium ${
+            isActive
+              ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
+              : 'text-[#7A7A7A]'
+          }`
+        }
+      >
+        All
+      </NavLink>
 
-      
-      </div>
+      <NavLink
+        to="/admin/assigned-vehicles"
+        className={({ isActive }) =>
+          `text-[14px] robotomedium ${
+            isActive
+              ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
+              : 'text-[#7A7A7A]'
+          }`
+        }
+      >
+        Assigned
+      </NavLink>
 
-      {/* Right Section */}
-      <div>
-        <button 
-          onClick={handleAddVehicle}
-          className="bg-[#0046A5] robotomedium hover:bg-[#003B8A] text-white text-[14px] px-5 py-2 rounded-md flex items-center space-x-1 shadow-sm"
-        >
-          <span className="text-[18px]">+</span>
-          <span>Add Vehicle</span>
-        </button>
-      </div>
-    </div>
+      <NavLink
+        to="/admin/unassigned-vehicles"
+        className={({ isActive }) =>
+          `text-[14px] robotomedium ${
+            isActive
+              ? 'text-[#0046A5] border-b-2 border-[#0046A5] pb-[4px]'
+              : 'text-[#7A7A7A]'
+          }`
+        }
+      >
+        Unassigned
+      </NavLink>
+    </nav>
+  </div>
+</div>
+
   );
 };
 

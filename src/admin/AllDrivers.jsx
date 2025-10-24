@@ -207,19 +207,20 @@ const AllDrivers = () => {
           <IoMdAdd className="text-white" /> Add Driver
         </button>
       </div>
-      <div className="flex items-center justify-between">
-        {/* Search */}
-        <div className="relative w-1/4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search drivers..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-[40px] rounded-[52px] pr-3 py-2 w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+     <div className="flex flex-wrap items-center justify-between gap-3">
+  {/* Search Bar */}
+  <div className="relative w-full sm:w-1/2 lg:w-1/4">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+    <input
+      type="text"
+      placeholder="Search drivers..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="pl-9 h-[40px] rounded-full pr-3 py-2 w-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm sm:text-base"
+    />
+  </div>
+</div>
+
 
       {/* Table */}
       <div className="overflow-x-auto shadow-md rounded-lg">
@@ -275,19 +276,19 @@ const AllDrivers = () => {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="px-3 py-2 text-left">Name</th>
-                <th className="px-3 py-2">Monday</th>
-                <th className="px-3 py-2">Tuesday</th>
-                <th className="px-3 py-2">Wednesday</th>
-                <th className="px-3 py-2">Thursday</th>
-                <th className="px-3 py-2">Friday</th>
-                <th className="px-3 py-2">Saturday</th>
-                <th className="px-3 py-2">Sunday</th>
-                <th className="px-3 py-2">Country</th>
-                <th className="px-3 py-2">Created On</th>
-                <th className="px-3 py-2">Employee Number</th>
-                <th className="px-3 py-2">Email</th>
-                <th className="px-3 py-2">Actions</th>
+                <th className=" whitespace-nowrap px-3 py-2 text-left">Name</th>
+                <th className="whitespace-nowrap px-3 py-2">Monday</th>
+                <th className="whitespace-nowrap px-3 py-2">Tuesday</th>
+                <th className="whitespace-nowrap px-3 py-2">Wednesday</th>
+                <th className="whitespace-nowrap px-3 py-2">Thursday</th>
+                <th className="whitespace-nowrap px-3 py-2">Friday</th>
+                <th className="whitespace-nowrap px-3 py-2">Saturday</th>
+                <th className="whitespace-nowrap px-3 py-2">Sunday</th>
+                <th className="whitespace-nowrap px-3 py-2">Country</th>
+                <th className="whitespace-nowrap px-3 py-2">Created On</th>
+                <th className="whitespace-nowrap px-3 py-2">Employee Number</th>
+                <th className="whitespace-nowrap px-3 py-2">Email</th>
+                <th className="whitespace-nowrap px-3 py-2">Actions</th>
               </tr>
             </thead>
 
@@ -353,7 +354,6 @@ const AllDrivers = () => {
                     onClick={(e) => e.stopPropagation()} // Prevent row click when clicking action icons
                   >
                     <div className="flex gap-3 justify-center">
-                      <MessageSquare className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" />
                       <QrCode 
                         className="w-5 h-5 cursor-pointer text-gray-600 hover:text-blue-600" 
                         onClick={(e) => {

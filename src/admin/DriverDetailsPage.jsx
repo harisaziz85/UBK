@@ -549,7 +549,7 @@ const DriverDetailsPage = () => {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-3">
                       <span className="text-gray-500 font-medium">View Vehicle Documents</span>
-                      <span className={`font-semibold px-3 py-1 rounded-full text-sm ${
+                      <span className={`font-semibold whitespace-nowrap  px-3 py-1 rounded-full text-sm ${
                         driver.viewAccess === "View access" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                       }`}>
                         {driver.viewAccess}
@@ -557,7 +557,7 @@ const DriverDetailsPage = () => {
                     </div>
                     <div className="flex justify-between items-center py-3">
                       <span className="text-gray-500 font-medium">Upload Vehicle Documents</span>
-                      <span className={`font-semibold px-3 py-1 rounded-full text-sm ${
+                      <span className={`font-semibold whitespace-nowrap  px-3 py-1 rounded-full text-sm ${
                         driver.uploadAccess === "Upload access" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                       }`}>
                         {driver.uploadAccess}
@@ -636,15 +636,15 @@ const DriverDetailsPage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">Vehicle</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">License Plate</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Year</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">Make</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">Model</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Mileage</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Color</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">Status</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[7%]">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%] whitespace-nowrap">Vehicle</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">License Plate</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%] whitespace-nowrap">Year</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%] whitespace-nowrap">Make</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%] whitespace-nowrap">Model</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%] whitespace-nowrap">Mileage</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%] whitespace-nowrap">Color</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%] whitespace-nowrap">Status</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[7%] whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -722,11 +722,11 @@ const DriverDetailsPage = () => {
                             className="rounded"
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Submitted At</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Inspection ID</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">Vehicle</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Type</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] whitespace-nowrap">Submitted At</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Inspection ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%] whitespace-nowrap">Vehicle</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%] whitespace-nowrap">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%] whitespace-nowrap">Status</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">

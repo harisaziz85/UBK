@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom"; 
 
 const Shimmer = () => {
@@ -98,10 +98,12 @@ const Shimmer = () => {
 const MyProfilePage = () => {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isPosting, setIsPosting] = useState(false);
   const [driver, setDriver] = useState(null);
   const [userId, setUserId] = useState(null);
   const [comments, setComments] = useState([]);
   const [error, setError] = useState(null);
+  const commentsRef = useRef(null);
 const { userId: receiverId } = useParams();
 
 
@@ -137,7 +139,7 @@ const { userId: receiverId } = useParams();
 
       if (response.ok) {
         const data = await response.json();
-        setComments((data.comments || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        setComments((data.comments || []).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
       }
     } catch (err) {
       console.error("Error fetching comments:", err);
@@ -149,6 +151,7 @@ const handleCommentSubmit = async (e) => {
   if (!newComment.trim() || !receiverId) return;
 
 
+  setIsPosting(true);
   try {
     const token = localStorage.getItem("authToken");
     const response = await fetch(`${BASE_URL}/common/comment/create`, {
@@ -167,18 +170,26 @@ const handleCommentSubmit = async (e) => {
 
     if (response.ok) {
       setNewComment("");
-      fetchComments();
+      await fetchComments();
     } else {
       console.error("❌ Failed to post comment:", data);
     }
   } catch (err) {
     console.error("Error posting comment:", err);
+  } finally {
+    setIsPosting(false);
   }
 };
 
 useEffect(() => {
   if (receiverId) fetchComments();
 }, [receiverId]);
+
+useEffect(() => {
+  if (commentsRef.current) {
+    commentsRef.current.scrollTop = commentsRef.current.scrollHeight;
+  }
+}, [comments]);
 
 
   const formatDate = (dateString) => {
@@ -360,7 +371,7 @@ useEffect(() => {
           {/* Right: Comments */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Comments</h2>
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+            <div ref={commentsRef} className="space-y-4 mb-6 max-h-96 overflow-y-auto">
               {comments.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">No comments yet.</p>
               ) : (
@@ -392,14 +403,21 @@ useEffect(() => {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#043677]"
                 />
                 <button
                   type="submit"
-                  disabled={!newComment.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+                  disabled={isPosting || !newComment.trim()}
+                  className="px-4 py-2 bg-[#043677]/90 text-white rounded-lg font-medium hover:bg-[#043677] disabled:bg-gray-300 transition-colors flex items-center"
                 >
-                  Send
+                  {isPosting ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    'Send'
+                  )}
                 </button>
               </div>
             </form>

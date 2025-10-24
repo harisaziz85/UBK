@@ -159,9 +159,9 @@ export default function DocumentDetails() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-60px)]">
+      <div className="flex flex-col lg:flex-row  h-auto lg:h-[calc(100vh-60px)]">
         {/* Left Side - PDF Viewer */}
-        <div className="flex-1 bg-gray-100 overflow-auto">
+        <div className="hidden sm:flex flex-1 bg-gray-100 overflow-auto">
      
 
           {/* ✅ PDF Viewer */}

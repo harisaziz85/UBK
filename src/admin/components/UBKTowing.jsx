@@ -208,12 +208,12 @@ const UBKTowing = () => {
         <table className="w-full text-sm text-left text-gray-600">
           <thead className="bg-[#F5F5F5] text-[#1E1E1E] text-[13px] uppercase font-robotomedium tracking-wide">
             <tr>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Document Name</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">File Size</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Expiry</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Created On</th>
-              <th className="px-5 py-5 robotomedium text-[14px] text-[#333333E5]">Attached To</th>
+              <th className="px-5 py-5 whitespace-nowrap  robotomedium text-[14px] text-[#333333E5]">Document Name</th>
+              <th className="px-5 py-5  whitespace-nowrap robotomedium text-[14px] text-[#333333E5]">File Size</th>
+              <th className="px-5 py-5  whitespace-nowrap robotomedium text-[14px] text-[#333333E5]">Uploaded By</th>
+              <th className="px-5 py-5  whitespace-nowrap robotomedium text-[14px] text-[#333333E5]">Expiry</th>
+              <th className="px-5 py-5  whitespace-nowrap robotomedium text-[14px] text-[#333333E5]">Created On</th>
+              <th className="px-5 py-5  whitespace-nowrap robotomedium text-[14px] text-[#333333E5]">Attached To</th>
             </tr>
           </thead>
           <tbody>

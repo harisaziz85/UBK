@@ -100,7 +100,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen overflow-x-hidden">
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 w-64 md:w-[280px] bg-[#043677] h-[100vh] text-white p-4 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
@@ -196,7 +196,7 @@ const AdminLayout = () => {
       )}
 
       {/* Content Area */}
-      <div className="flex-1 flex flex-col md:ml-[280px]">
+      <div className="flex-1 flex flex-col md:ml-[280px] overflow-x-hidden">
         {/* Topbar */}
         <header className="bg-white h-[72px] flex gap-4 justify-between items-center px-4 shadow border-b border-[#E5E7EB]">
           <button
@@ -282,7 +282,7 @@ const AdminLayout = () => {
           </div>
         )}
 
-        <main className="p-6 flex-1 bg-gray-100">
+        <main className="p-0 flex-1 bg-gray-100 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

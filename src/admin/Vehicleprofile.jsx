@@ -68,7 +68,7 @@ const Vehicleprofile = () => {
       }
 
       const data = response.data;
-      console.log("Fetched vehicle data:", data);
+      console.log("Fetched vehicle data with document:", data);
       setVehicle(data.vehicle);
       setInspections((data.inspections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       setDocuments((data.documents || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -353,7 +353,7 @@ const Vehicleprofile = () => {
     return <p className="p-6">Vehicle not found or error loading.</p>;
   }
 
-  const operator = vehicle.assignment?.driverId || { name: "N/A", employeeNumber: "N/A", profileImage: "/placeholder-avatar.png" };
+  const operator = vehicle.assignment?.driverId || { name: " ", employeeNumber: "", profileImage: "" };
 
   const filteredDocuments = documents.filter(doc => 
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -402,7 +402,7 @@ const Vehicleprofile = () => {
               alt={vehicle.name}
               className="w-16 h-16 rounded-full object-cover"
               onError={(e) => {
-                e.target.src = '/placeholder-avatar.png';
+                e.target.src = '';
               }}
             />
           </div>
@@ -1028,17 +1028,23 @@ const Vehicleprofile = () => {
 };
 
 const DetailRow = ({ label, value, status }) => (
-  <div className="flex flex-row items-center gap-4 sm:gap-16 p-4 border-b border-[#33333333] pb-2">
-    <span className="text-[14px] text-[#333333] roboto-regular w-full sm:w-40 text-left sm:text-right">{label}</span>
+  <div className="flex justify-between items-center border-b border-[#33333333] py-3">
+    {/* Label on the left */}
+    <span className="text-[14px] text-[#333333] roboto-regular">{label}</span>
+
+    {/* Value on the right */}
     {status ? (
-      <div className="flex items-center gap-2 flex-1">
+      <div className="flex items-center gap-2 text-right">
         <span className="text-[#3CCE14] text-lg leading-none">•</span>
         <span className="text-[14px] roboto-medium text-[#333333E5]">{value}</span>
       </div>
     ) : (
-      <div className="text-[14px] roboto-medium text-[#333333E5] flex-1 text-left sm:text-right">{value}</div>
+      <div className="text-[14px] roboto-medium text-[#333333E5] text-right">
+        {value}
+      </div>
     )}
   </div>
 );
+
 
 export default Vehicleprofile;

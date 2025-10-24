@@ -46,7 +46,13 @@ const MeterReadings = () => {
     const date = new Date(dateString);
     const diff = now - date;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days === 0) return "Today";
+    if (days === 0) {
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
+    }
     if (days === 1) return "Yesterday";
     return `${days} days ago`;
   };
