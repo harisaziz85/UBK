@@ -60,37 +60,37 @@ acknowledgementRevisedDestination = false,
   const formattedEndDateTime = dateEndTime || ''; // Assuming dateEndTime is formatted as "YYYY-MM-DD HH:MM"
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-0">
-      <div className="max-w-6xl mx-auto bg-white">
+    <div className="min-h-screen bg-gray-100 p-[0px]">
+      <div className="w-full mx-auto bg-white">
         
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 gap-3">
-          <div className="flex items-end gap-2">
+        <div className="flex flex-row items-start items-center justify-between p-[16px] gap-[12px]">
+          <div className="flex items-end gap-[8px]">
             <div className="relative">
-              <div className="bg-blue-900 text-white px-4 sm:px-8 py-1">
-                <div className="text-2xl sm:text-4xl font-bold tracking-wider">UBK</div>
+              <div className="bg-blue-900 text-white px-[32px] py-[4px]">
+                <div className="text-[36px] font-bold tracking-wider">UBK</div>
               </div>
-              <div className="bg-orange-500 text-white text-center text-xs sm:text-sm font-bold py-0.5 sm:py-1 mt-1">
+              <div className="bg-orange-500 text-white text-center text-[14px] font-bold py-[4px] mt-[4px]">
                 TOWING.
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm sm:text-base">
+          <div className="flex items-center gap-[8px] text-[16px]">
             <span className="font-bold italic">CONSENT TO TOW</span>
-            <span className="text-xs sm:text-sm">PO#</span>
-            <span className="border w-20 sm:w-24 h-7 sm:h-8 px-1 text-sm">{invoicePO}</span>
+            <span className="text-[14px]">PO#</span>
+            <span className="border w-[96px] h-[32px] px-[4px] text-[14px]">{invoicePO}</span>
           </div>
         </div>
 
         {/* Two Column Section - Operator and Driver Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mx-4">
+        <div className="grid grid-cols-2 gap-[8px] mx-[16px]">
           
           {/* Left Column - Tow Operator Information */}
-          <div className="p-3 sm:p-4 border">
-            <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+          <div className="p-[16px] border">
+            <div className="text-black font-bold text-[14px] px-[8px] py-[4px] mb-[8px]">
               TOW OPERATOR INFORMATION:
             </div>
-            <div className="space-y-0.5 text-xs leading-tight">
+            <div className="space-y-[2px] text-[12px] leading-tight">
               <div><span className="font-bold">Legal Name:</span> 1878272 Ontario Inc O/A UBK Towing</div>
               <div><span className="font-bold">Business/Mailing Address:</span> 3D–35 King St. Toronto, Ontario M9N 3R8</div>
               <div><span className="font-bold">Email address:</span> ubktowing@gmail.com</div>
@@ -101,60 +101,60 @@ acknowledgementRevisedDestination = false,
           </div>
 
           {/* Right Column - Tow Driver Information */}
-          <div className="p-3 sm:p-4 border">
-            <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+          <div className="p-[16px] border">
+            <div className="text-black font-bold text-[14px] px-[8px] py-[4px] mb-[8px]">
               TOW DRIVER INFORMATION
             </div>
-            <div className="space-y-1.5 text-xs">
+            <div className="space-y-[6px] text-[12px]">
               <div className="flex items-center">
-                <label className="font-bold w-32 sm:w-40 flex-shrink-0">Name:</label>
-                 <span className="flex-1 border-b border-black px-1"> {towDriverName}</span>
+                <label className="font-bold w-[160px] flex-shrink-0">Name:</label>
+                 <span className="flex-1 border-b border-black px-[4px]"> {towDriverName}</span>
 
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Truck Number:</label>
-                 <span className="flex-1 border-b border-black px-1"> {data.towTruckNumber }</span>
+                <label className="font-bold w-[160px] flex-shrink-0">Tow Truck Number:</label>
+                 <span className="flex-1 border-b border-black px-[4px]"> {data.towTruckNumber }</span>
 
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-32 sm:w-40 flex-shrink-0">Tow Driver Certificate:</label>
-                <span className="flex-1 border-b border-black px-1">TD {driverCertificate}</span>
+                <label className="font-bold w-[160px] flex-shrink-0">Tow Driver Certificate:</label>
+                <span className="flex-1 border-b border-black px-[4px]">TD {driverCertificate}</span>
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-32 sm:w-40 flex-shrink-0">Call #:</label>
-                <span className="flex-1 border-b border-black px-1">{callNumber}</span>
+                <label className="font-bold w-[160px] flex-shrink-0">Call #:</label>
+                <span className="flex-1 border-b border-black px-[4px]">{callNumber}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Disclosure Statement */}
-        <div className="p-3 sm:p-4 mx-4">
-          <div className="font-bold text-center text-xs sm:text-sm mb-2 underline">
+        <div className="p-[16px] mx-[16px]">
+          <div className="font-bold text-center text-[14px] mb-[8px] underline">
             DISCLOSURE STATEMENT / PURSUANT TO ONTARIO REGULATION 167/23 - SCHEDULE 2
           </div>
-          <div className="text-xs leading-snug space-y-1">
+          <div className="text-[12px] leading-snug space-y-[4px]">
             <p><span className="font-bold">1.</span> Tow operators and tow truck drivers must follow /pursuant to the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for tow operators and tow drivers related to towing services.</p>
             <p><span className="font-bold">2.</span> You have the right to:</p>
-            <p className="pl-4">(a) decide where your vehicle will be towed to;</p>
-            <p className="pl-4">(b) receive and review your Consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</p>
-            <p className="pl-4">(c) choose the payment method and get a receipt when you pay;</p>
+            <p className="pl-[16px]">(a) decide where your vehicle will be towed to;</p>
+            <p className="pl-[16px]">(b) receive and review your Consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</p>
+            <p className="pl-[16px]">(c) choose the payment method and get a receipt when you pay;</p>
             <p><span className="font-bold">3.</span> Tow truck drivers and tow operators must:</p>
-            <p className="pl-4">(a) contact the Ministry of Transportation if you have any concerns about the towing services you receive or the conduct of the tow truck driver or tow operator.</p>
-            <p className="pl-4">(b) not charge multiple forms of payment rates published on the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021;</p>
+            <p className="pl-[16px]">(a) contact the Ministry of Transportation if you have any concerns about the towing services you receive or the conduct of the tow truck driver or tow operator.</p>
+            <p className="pl-[16px]">(b) not charge multiple forms of payment rates published on the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021;</p>
             <p><span className="font-bold">4.</span> Tow operators and tow drivers should read this form carefully before asking a person to sign it. Tow operators are responsible for the safety of tow truck drivers; the operation of a tow truck; conduct toward persons whose vehicles are being towed; and the handling and storage of towed vehicles. See the Ministry of Transportation&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021;</p>
             <p><span className="font-bold">5.</span> Towed vehicle information is subject to a Code of Conduct. See the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021.</p>
           </div>
         </div>
 
         {/* Towed Vehicle Information */}
-       <div className="p-3 sm:p-4 mx-4">
-  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+       <div className="p-[16px] mx-[16px]">
+  <div className="text-black font-bold text-[14px] px-[8px] py-[4px] mb-[8px]">
     TOWED VEHICLE INFORMATION
   </div>
 
   {/* Line 1 - Year / Make / Model / Colour / Unit */}
-  <div className="grid grid-cols-5 gap-4 text-xs mb-2">
+  <div className="grid grid-cols-5 gap-[16px] text-[12px] mb-[8px]">
     {[
     { label: "Year", value: data?.year || "—" },
 { label: "Make", value: data?.make || "—" },
@@ -163,25 +163,25 @@ acknowledgementRevisedDestination = false,
 
     ].map((field, index) => (
       <div key={index} className="flex items-center w-full">
-        <label className="font-bold whitespace-nowrap mr-1">{field.label}:</label>
-        <span className="w-full border-b border-black px-1">{field.value}</span>
+        <label className="font-bold whitespace-nowrap mr-[4px]">{field.label}:</label>
+        <span className="w-full border-b border-black px-[4px]">{field.value}</span>
       </div>
     ))}
   </div>
 
   {/* Line 2 - Plate / VIN + Odometer horizontally */}
-  <div className="grid grid-cols-3 gap-4 text-xs">
+  <div className="grid grid-cols-3 gap-[16px] text-[12px]">
     {/* Plate */}
     <div className="flex items-center w-full">
-      <label className="font-bold whitespace-nowrap mr-1">Plate:</label>
-      <span className="w-full border-b border-black px-1">{data?.plate || "—"}</span>
+      <label className="font-bold whitespace-nowrap mr-[4px]">Plate:</label>
+      <span className="w-full border-b border-black px-[4px]">{data?.plate || "—"}</span>
     </div>
 
     {/* VIN + Odometer on same line */}
     <div className="flex items-center w-full col-span-2 justify-between">
       {/* VIN */}
-     <div className="flex items-center mb-2">
-  <label className="font-bold text-[12px] sm:text-[13px] text-black whitespace-nowrap mr-2">
+     <div className="flex items-center mb-[8px]">
+  <label className="font-bold text-[13px] text-black whitespace-nowrap mr-[8px]">
     VIN#:
   </label>
 
@@ -190,7 +190,7 @@ acknowledgementRevisedDestination = false,
             {(data?.vin || '').padEnd(17, ' ').split('').map((char, index) => (
               <div
                 key={index}
-                className="w-[18px] h-[20px] sm:w-[20px] sm:h-[22px] border border-black flex items-center justify-center text-[11px] sm:text-[12px] font-medium text-black"
+                className="w-[22px] h-[24px] border border-black flex items-center justify-center text-[13px] font-medium text-black"
               >
                 {char.trim() || ''}
               </div>
@@ -200,9 +200,9 @@ acknowledgementRevisedDestination = false,
 
 
       {/* Odometer */}
-      <div className="flex items-center ml-6 flex-shrink-0">
-        <label className="font-bold whitespace-nowrap mr-1">Odometer:</label>
-        <span className="w-24 border-b border-black px-1">
+      <div className="flex items-center ml-[24px] flex-shrink-0">
+        <label className="font-bold whitespace-nowrap mr-[4px]">Odometer:</label>
+        <span className="w-[96px] border-b border-black px-[4px]">
           {data?.currentMileage || "—"}
         </span>
       </div>
@@ -213,36 +213,36 @@ acknowledgementRevisedDestination = false,
 
         {/* Towed Location Information */}
 {/* Towed Location Information */}
-<div className="p-3 sm:p-4 mx-4">
-  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+<div className="p-[16px] mx-[16px]">
+  <div className="text-black font-bold text-[14px] px-[8px] py-[4px] mb-[8px]">
     TOWED LOCATION INFORMATION
   </div>
 
-  <div className="grid grid-cols-2 gap-4 text-xs">
+  <div className="grid grid-cols-2 gap-[16px] text-[12px]">
     {/* Towed From */}
     <div className="flex items-center">
-      <label className="font-bold whitespace-nowrap mr-1">Towed From:</label>
+      <label className="font-bold whitespace-nowrap mr-[4px]">Towed From:</label>
       <span className="w-full border-b border-black">{towedFrom}</span>
     </div>
 
     {/* Start Date & Time */}
     <div className="flex items-center">
-      <label className="font-bold whitespace-nowrap mr-1">Start Date & Time:</label>
+      <label className="font-bold whitespace-nowrap mr-[4px]">Start Date & Time:</label>
       <span className="w-full border-b border-black">
         {startDate} {startTime}
       </span>
-      <span className="ml-2 text-xs italic">(must be after time consent given)</span>
+      <span className="ml-[8px] text-[12px] italic">(must be after time consent given)</span>
     </div>
 
     {/* Towed To */}
     <div className="flex items-center">
-      <label className="font-bold whitespace-nowrap mr-1">Towed To:</label>
+      <label className="font-bold whitespace-nowrap mr-[4px]">Towed To:</label>
       <span className="w-full border-b border-black">{towedTo}</span>
     </div>
 
     {/* End Date & Time */}
     <div className="flex items-center">
-      <label className="font-bold whitespace-nowrap mr-1">End Date & Time:</label>
+      <label className="font-bold whitespace-nowrap mr-[4px]">End Date & Time:</label>
       <span className="w-full border-b border-black">
         {endDate} {endTime}
       </span>
@@ -254,28 +254,28 @@ acknowledgementRevisedDestination = false,
 
 
        {/* Description of Services */}
-<div className="p-3 sm:p-4 mx-4">
-  <div className="text-black font-bold text-xs sm:text-sm px-2 py-1 mb-2">
+<div className="p-[16px] mx-[16px]">
+  <div className="text-black font-bold text-[14px] px-[8px] py-[4px] mb-[8px]">
     DESCRIPTION OF SERVICES
   </div>
-  <div className="text-xs space-y-2">
-    <div className="w-full border-b border-black px-1">{serviceDescription}</div>
+  <div className="text-[12px] space-y-[8px]">
+    <div className="w-full border-b border-black px-[4px]">{serviceDescription}</div>
 
     {/* ✅ Acknowledgement Checkbox + Signature */}
    <div className="flex items-center">
   <span
-    className={`w-4 h-4 border-2 border-black flex-shrink-0 mr-2 ${
+    className={`w-[16px] h-[16px] border-2 border-black flex-shrink-0 mr-[8px] ${
       acknowledgementRevisedDestination ? "bg-black" : ""
     }`}
   ></span>
   <span>Acknowledgement of client&apos;s revised destination address - Signature:</span>
   
-  <span className="flex-1 border-b border-black px-1 ml-2">
+  <span className="flex-1 border-b border-black px-[4px] ml-[8px]">
     {acknowledgementSignature ? (
       <img
         src={acknowledgementSignature}
         alt="Acknowledgement Signature"
-        className="h-8 object-contain inline-block"
+        className="h-[32px] object-contain inline-block"
       />
     ) : (
       "—"
@@ -293,38 +293,38 @@ acknowledgementRevisedDestination = false,
 
 
         {/* Person Giving Consent Information */}
-        <div className="font-bold ml-4 text-xs sm:text-sm mb-2">PERSON GIVING CONSENT INFORMATION:</div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 px-4">
+        <div className="font-bold ml-[16px] text-[14px] mb-[8px]">PERSON GIVING CONSENT INFORMATION:</div>
+        <div className="grid grid-cols-2 gap-[8px] px-[16px]">
           
           {/* Left Column */}
-          <div className="p-3 sm:p-4 border">
-            <div className="space-y-2 text-xs">
+          <div className="p-[16px] border">
+            <div className="space-y-[8px] text-[12px]">
               <div className="flex items-center">
-                <label className="font-bold w-20 flex-shrink-0">Name:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPersonName}</span>
+                <label className="font-bold w-[80px] flex-shrink-0">Name:</label>
+                <span className="flex-1 border-b border-black px-[4px]">{consentPersonName}</span>
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-20 flex-shrink-0">Address:</label>
-                <span className="flex-1 border-b border-black px-1">{consentAddress}</span>
+                <label className="font-bold w-[80px] flex-shrink-0">Address:</label>
+                <span className="flex-1 border-b border-black px-[4px]">{consentAddress}</span>
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-20 flex-shrink-0">Phone #:</label>
-                <span className="flex-1 border-b border-black px-1">{consentPhone}</span>
+                <label className="font-bold w-[80px] flex-shrink-0">Phone #:</label>
+                <span className="flex-1 border-b border-black px-[4px]">{consentPhone}</span>
               </div>
               <div className="flex items-center">
-                <label className="font-bold w-20 flex-shrink-0">Email Address:</label>
-                <span className="flex-1 border-b border-black px-1">{consentEmail}</span>
+                <label className="font-bold w-[80px] flex-shrink-0">Email Address:</label>
+                <span className="flex-1 border-b border-black px-[4px]">{consentEmail}</span>
               </div>
             </div>
           </div>
 
           {/* Right Column */}
-          <div className="p-3 sm:p-4 border">
-  <div className="space-y-2 text-xs">
+          <div className="p-[16px] border">
+  <div className="space-y-[8px] text-[12px]">
     {/* ✅ Police Direction Checkbox */}
-    <label className="flex items-start gap-2">
+    <label className="flex items-start gap-[8px]">
       <span
-        className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${
+        className={`mt-[2px] w-[16px] h-[16px] flex-shrink-0 border-2 border-black ${
           data?.providingServiceAtPoliceDirection ? "bg-black" : ""
         }`}
       ></span>
@@ -333,24 +333,24 @@ acknowledgementRevisedDestination = false,
 
     {/* ✅ Call / Occurrence Number */}
     <div className="flex items-center">
-      <label className="font-bold w-40 flex-shrink-0">Call/Occurrence #:</label>
-      <span className="flex-1 border-b border-black px-1">
+      <label className="font-bold w-[160px] flex-shrink-0">Call/Occurrence #:</label>
+      <span className="flex-1 border-b border-black px-[4px]">
          {data?.incidentNumber || "—"}
       </span>
     </div>
 
     {/* ✅ Officer Name & Badge */}
     <div className="flex items-center">
-      <label className="font-bold w-40 flex-shrink-0">Officer Name & Badge #:</label>
-      <span className="flex-1 border-b border-black px-1">
+      <label className="font-bold w-[160px] flex-shrink-0">Officer Name & Badge #:</label>
+      <span className="flex-1 border-b border-black px-[4px]">
         {data?.officerNameBadge || "—"}
       </span>
     </div>
 
     {/* ✅ Detachment / Division */}
     <div className="flex items-center">
-      <label className="font-bold w-40 flex-shrink-0">Detachment/ Division:</label>
-      <span className="flex-1 border-b border-black px-1">
+      <label className="font-bold w-[160px] flex-shrink-0">Detachment/ Division:</label>
+      <span className="flex-1 border-b border-black px-[4px]">
         {data?.detachmentDivision || "—"}
       </span>
     </div>
@@ -360,37 +360,37 @@ acknowledgementRevisedDestination = false,
         </div>
 
         {/* Terms and Conditions Paragraph */}
-        <div className="p-3 sm:p-4 mx-4 text-xs leading-snug">
+        <div className="p-[16px] mx-[16px] text-[12px] leading-snug">
           <p>You have read and understand the terms and conditions outlined in this document and authorize UBK Towing Service Ltd. to provide towing, recovery, labour to the roadside pursuant to Ontario Regulation 167/23, Schedule 2 and the Towing and Storage Safety and Enforcement Act, 2021. Informing you of your rights pursuant to this Consent to Tow form. Storage liens act.</p>
         </div>
 
         {/* Consent Checkboxes */}
-        <div className="p-3 sm:p-4 mx-4 text-xs space-y-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${rightsInformed ? 'bg-black' : ''}`}></span>
+        <div className="p-[16px] mx-[16px] text-[12px] space-y-[12px]">
+          <div className="flex flex-row items-start items-center gap-[24px]">
+            <label className="flex items-start gap-[8px] w-[576px]">
+              <span className={`mt-[2px] w-[16px] h-[16px] flex-shrink-0 border-2 border-black ${rightsInformed ? 'bg-black' : ''}`}></span>
               <span className='font-bold'>You must be informed of your rights before you sign this Consent to Tow form.</span>
             </label>
 
-            <label className="flex items-start gap-2 w-full sm:w-1/2">
-              <span className={`mt-0.5 w-4 h-4 flex-shrink-0 border-2 border-black ${rateSheetShown ? 'bg-black' : ''}`}></span>
+            <label className="flex items-start gap-[8px] w-[576px]">
+              <span className={`mt-[2px] w-[16px] h-[16px] flex-shrink-0 border-2 border-black ${rateSheetShown ? 'bg-black' : ''}`}></span>
               <span className="font-bold">Rate sheet shown client</span>
             </label>
           </div>
         </div>
 
         {/* Signature Section */}
-        <div className="p-3 sm:p-4 mx-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="p-[16px] mx-[16px]">
+          <div className="grid grid-cols-3 gap-[16px] text-[12px]">
             
             {/* Signature of the person giving consent */}
             <div className="text-center">
-           <span className="w-full border-b-2 border-black px-1 py-1 block text-center">
+           <span className="w-full border-b-2 border-black px-[4px] py-[4px] block text-center">
   {consentSignature ? (
     <img
       src={consentSignature}
       alt="Consent Signature"
-      className="mx-auto max-h-24 object-contain"
+      className="mx-auto max-h-[96px] object-contain"
       onError={(e) => {
         console.error("❌ Invalid signature image");
         e.target.style.display = "none";
@@ -405,11 +405,11 @@ acknowledgementRevisedDestination = false,
   )}
 </span>
 
-              <label className="block font-bold mt-1">Signature of the person giving consent</label>
+              <label className="block font-bold mt-[4px]">Signature of the person giving consent</label>
 
-                <div className="flex justify-center items-center mt-2 gap-2">
+                <div className="flex justify-center items-center mt-[8px] gap-[8px]">
     <span
-      className={`w-4 h-4 border-2 border-black ${
+      className={`w-[16px] h-[16px] border-2 border-black ${
         data?.consentMethod?.toLowerCase() === "phone" ? "bg-black" : ""
       }`}
     ></span>
@@ -420,12 +420,12 @@ acknowledgementRevisedDestination = false,
 
             {/* Date and Time of consent */}
             <div className="text-center">
-              <span className="w-full border-b-2 border-black px-1 py-1 block">{consentDateTime}</span>
-              <label className="block font-bold mt-1">Date & Time of the consent given</label>
+              <span className="w-full border-b-2 border-black px-[4px] py-[4px] block">{consentDateTime}</span>
+              <label className="block font-bold mt-[4px]">Date & Time of the consent given</label>
 
-              <div className="flex justify-center items-center mt-2 gap-2">
+              <div className="flex justify-center items-center mt-[8px] gap-[8px]">
               <span
-                className={`w-4 h-4 border-2 border-black ${
+                className={`w-[16px] h-[16px] border-2 border-black ${
                   data?.consentMethod?.toLowerCase() === "email" ? "bg-black" : ""
                 }`}
               ></span>
@@ -435,10 +435,10 @@ acknowledgementRevisedDestination = false,
 
             {/* Driver Signature */}
             <div className="text-center">
-            <span className="w-full border-b-2 border-black px-1 py-1 block">
+            <span className="w-full border-b-2 border-black px-[4px] py-[4px] block">
               No signature provided
             </span>
-            <label className="block font-bold mt-1">
+            <label className="block font-bold mt-[4px]">
               Driver signature the client
             </label>
           </div>
@@ -447,7 +447,7 @@ acknowledgementRevisedDestination = false,
         </div>
 
         {/* Footer */}
-        <div className="p-2 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs bg-gray-100">
+        <div className="p-[8px] flex flex-row justify-between items-center gap-[8px] text-[12px] bg-gray-100">
           <span className="font-bold">White Copy - UBK Towing</span>
           <span className="font-bold">Yellow Copy - Customer</span>
           <span className="font-bold underline">ubktowing@gmail.com</span>

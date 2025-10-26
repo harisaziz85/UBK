@@ -351,9 +351,9 @@ const ConsentForm = () => {
       element.style.backgroundColor = "#ffffff";
       // ✅ Dynamic width based on form type
       if (type === "tow") {
-        element.style.width = "1000px";
+        element.style.width = "1050px";
       } else {
-        element.style.width = "1310px";
+        element.style.width = "1340px";
       }
 
 
