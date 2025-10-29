@@ -152,7 +152,7 @@ useEffect(() => {
         element.style.left = "0px";
         element.style.top = "0";
         element.style.backgroundColor = "#ffffff";
-        element.style.width = formType === "tow" ? "1070px" : "1300px";
+        element.style.width = formType === "tow" ? "1250px" : "1340px";
 
         const dataUrl = await htmlToImage.toPng(element, {
           useCORS: true,
@@ -187,7 +187,7 @@ useEffect(() => {
         left: "0px",
         top: "0",
         backgroundColor: "#ffffff",
-        width: formType === "tow" ? "1000px" : "1300px",
+        width: formType === "tow" ? "1090px" : "1380px",
         zIndex: "-1",
       }}
     >

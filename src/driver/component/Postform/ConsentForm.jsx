@@ -211,6 +211,31 @@ const ConsentForm = () => {
     }
   }, [selectedVehicle, vehicles]);
 
+
+
+  useEffect(() => {
+  // ✅ Only auto-set date/time when creating a new form (not updating)
+  if (!isUpdate) {
+    const now = new Date();
+
+    const currentDate = now.toISOString().split("T")[0]; // e.g. "2025-10-28"
+    const currentTime = now.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }); // e.g. "14:35"
+
+    setSharedData(prev => ({
+      ...prev,
+      consentDate: currentDate,
+      consentTime: currentTime,
+      startDate: currentDate,
+      startTime: currentTime,
+    }));
+  }
+}, [isUpdate]);
+
+
   
 
   const getVehicleDetails = () => {
@@ -271,10 +296,12 @@ const ConsentForm = () => {
       toast.error("Towed From location is required.");
       return false;
     }
+    
     if (!sharedData.startDate || !sharedData.startTime) {
       toast.error("Start Date and Time are required.");
       return false;
     }
+
     if (!sharedData.consentDate || !sharedData.consentTime) {
       toast.error("Consent Date and Time are required.");
       return false;
@@ -351,7 +378,7 @@ const ConsentForm = () => {
       element.style.backgroundColor = "#ffffff";
       // ✅ Dynamic width based on form type
       if (type === "tow") {
-        element.style.width = "1050px";
+        element.style.width = "1100px";
       } else {
         element.style.width = "1340px";
       }
@@ -817,6 +844,101 @@ rateSheetShown: payload?.rateSheetShown === true,
                 </div>
               </div>
 
+
+
+
+                {/* Vehicle Selection */}
+              <div className="mb-6">
+                <label className="block text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-2">Tow Truck Information <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <select 
+                    value={selectedVehicle} 
+                    onChange={(e) => setSelectedVehicle(e.target.value)}
+                    className={`${inputClassName(false)} appearance-none`}
+                    disabled={isUpdate}
+                    required
+                  >
+                    <option value="">Select Vehicle</option>
+                    {vehicles.map((vehicle) => (
+                      <option key={vehicle._id} value={vehicle._id}>
+                        {vehicle.name} - {vehicle.licensePlate}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                </div>
+              </div> 
+
+              {/* Vehicle Details */}
+              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Client Vehicle Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Year</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().year || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Make</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().make || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Model</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().model || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Color</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().color || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Plate</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().licensePlate || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">VIN#</label>
+                  <input 
+                    type="text" 
+                    value={getVehicleDetails().vin || ''} 
+                    readOnly 
+                    className={inputClassName(false)} 
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Odometer</label>
+                  <input 
+                    type="number" 
+                    value={odometerValue} 
+                    onChange={handleOdometerChange} 
+                    placeholder="Enter current mileage" 
+                    className={inputClassName(false)}
+                    readOnly={isUpdate}
+                  />
+                </div>
+              </div>
+
               {/* Tow Driver Information - Common */}
               <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Tow Driver Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -926,187 +1048,109 @@ rateSheetShown: payload?.rateSheetShown === true,
                 )}
               </div>
 
-              {/* Vehicle Selection */}
-              <div className="mb-6">
-                <label className="block text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-2">Vehicle <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <select 
-                    value={selectedVehicle} 
-                    onChange={(e) => setSelectedVehicle(e.target.value)}
-                    className={`${inputClassName(false)} appearance-none`}
-                    disabled={isUpdate}
-                    required
-                  >
-                    <option value="">Select Vehicle</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle._id} value={vehicle._id}>
-                        {vehicle.name} - {vehicle.licensePlate}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-                </div>
-              </div> 
-
-              {/* Vehicle Details */}
-              <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Vehicle Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Year</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().year || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Make</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().make || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Model</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().model || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Color</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().color || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Plate</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().licensePlate || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">VIN#</label>
-                  <input 
-                    type="text" 
-                    value={getVehicleDetails().vin || ''} 
-                    readOnly 
-                    className={inputClassName(false)} 
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">Odometer</label>
-                  <input 
-                    type="number" 
-                    value={odometerValue} 
-                    onChange={handleOdometerChange} 
-                    placeholder="Enter current mileage" 
-                    className={inputClassName(false)}
-                    readOnly={isUpdate}
-                  />
-                </div>
-              </div>
+            
 
               {/* Tow Location Information */}
               <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Tow Location Information</h3>
              <div className="space-y-4 mb-6">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-  <div>
-    <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-      Towed From <span className="text-red-500">*</span>
-    </label>
-    <input
-      type="text"
-      value={sharedData.towedFrom}
-      onChange={(e) => handleSharedInputChange('towedFrom', e.target.value)}
-      placeholder="Enter location"
-      className={inputClassName(true)}
-      required
-    />
-  </div>
+              <div>
+                <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                  Towed From <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={sharedData.towedFrom}
+                  onChange={(e) => handleSharedInputChange('towedFrom', e.target.value)}
+                  placeholder="Enter location"
+                  className={inputClassName(true)}
+                  required
+                />
+              </div>
 
-  <div>
-    <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-      Start Date <span className="text-red-500">*</span>
-    </label>
-    <DatePickerComponent
-      value={sharedData.startDate}
-      onChange={(value) => handleSharedInputChange('startDate', value)}
-    />
-  </div>
+            <div>
+              <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                Start Date <span className="text-red-500">*</span>
+              </label>
+              <DatePickerComponent
+                value={sharedData.startDate || new Date()} // auto-fill current date
+                onChange={(value) => handleSharedInputChange("startDate", value)}
+                readOnly // make it read-only
+              />
+            </div>
 
-  <div>
-    <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-      Start Time <span className="text-red-500">*</span>
-    </label>
-    <CustomTimePicker
-      value={sharedData.startTime}
-      onChange={(value) => handleSharedInputChange('startTime', value)}
-    />
-  </div>
-</div>
+            <div>
+              <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                Start Time <span className="text-red-500">*</span>
+              </label>
+              <CustomTimePicker
+                value={
+                  sharedData.startTime ||
+                  new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })
+                } // auto-fill current time
+                onChange={(value) => handleSharedInputChange("startTime", value)}
+                readOnly // make it read-only
+              />
+            </div>
 
 
-{formType === 'tow' && (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div>
-      <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-        Towed To <span className="text-red-500">*</span>
-      </label>
-      <input
-        type="text"
-        value={towSpecific.towedTo}
-        onChange={(e) => handleTowSpecificInputChange('towedTo', e.target.value)}
-        placeholder="Enter location"
-        className={inputClassName(true)}
-        required
-      />
-    </div>
-
-<div>
-  <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-    End Date <span className="text-red-500">*</span>
-  </label>
-  <DatePickerComponent
-  value={towSpecific.endDate}
-  onChange={(value) => handleTowSpecificInputChange('endDate', value)}
-  minSelectableDate={
-    sharedData.startDate
-      ? (() => {
-          const [y, m, d] = sharedData.startDate.split('-').map(Number);
-          return new Date(y, m - 1, d); // ✅ Only allow end date >= start date
-        })()
-      : new Date()
-  }
-  disabled={!isFieldEditable('endDate')}
-/>
 
 </div>
 
 
-    <div>
-      <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
-        End Time <span className="text-red-500">*</span>
-      </label>
-      <CustomTimePicker
-        value={towSpecific.endTime}
-        onChange={(value) => handleTowSpecificInputChange('endTime', value)}
-        disabled={!isFieldEditable('endTime')}
-      />
-    </div>
-  </div>
-)}
+          {formType === 'tow' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+                  Towed To <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={towSpecific.towedTo}
+                  onChange={(e) => handleTowSpecificInputChange('towedTo', e.target.value)}
+                  placeholder="Enter location"
+                  className={inputClassName(true)}
+                  required
+                />
+              </div>
+
+          <div>
+            <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+              End Date <span className="text-red-500">*</span>
+            </label>
+            <DatePickerComponent
+            value={towSpecific.endDate}
+            onChange={(value) => handleTowSpecificInputChange('endDate', value)}
+            minSelectableDate={
+              sharedData.startDate
+                ? (() => {
+                    const [y, m, d] = sharedData.startDate.split('-').map(Number);
+                    return new Date(y, m - 1, d); // ✅ Only allow end date >= start date
+                  })()
+                : new Date()
+            }
+            disabled={!isFieldEditable('endDate')}
+          />
+
+          </div>
+
+
+          <div>
+            <label className="block text-sm roboto-medium text-[#333333E5] mb-2">
+              End Time <span className="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <CustomTimePicker
+              value={towSpecific.endTime}
+              onChange={(value) => handleTowSpecificInputChange('endTime', value)}
+              disabled={!isFieldEditable('endTime')}
+            />
+          </div>
+            </div>
+          )}
 
 </div>
 
@@ -1424,6 +1468,25 @@ rateSheetShown: payload?.rateSheetShown === true,
         Over the Email <span className="text-red-500">*</span>
       </span>
     </label>
+
+
+      {/* ✅ In-Person checkbox */}
+  <label className="flex items-center gap-2 cursor-pointer text-sm roboto-medium text-[#333333E5]">
+    <input
+      type="checkbox"
+      checked={sharedData.consentMethod === 'In-Person'}
+      onChange={() =>
+        handleConsentMethodChange(
+          sharedData.consentMethod === 'In-Person' ? '' : 'In-Person'
+        )
+      }
+      className="rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+      disabled={isUpdate}
+    />
+    <span>
+      In Person <span className="text-red-500">*</span>
+    </span>
+  </label>
   </div>
 
 
@@ -1434,7 +1497,7 @@ rateSheetShown: payload?.rateSheetShown === true,
         Storage Rate Schedule
       </h2>
       <p className="text-[14px] text-[#333333CC] roboto-medium text-justify mb-5 leading-relaxed">
-        The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for charging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is charged the full daily rate.
+        The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for chaeging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is chrged the full daily rate.
       </p>
       <table className="w-full bg-white border border-gray-200">
         <thead>
@@ -1487,18 +1550,18 @@ rateSheetShown: payload?.rateSheetShown === true,
 
               {/* Disclosure Statement - Common */}
               <div className="mt-8 rounded-lg mb-6  p-0 sm:p-4 bg-gray-50">
-                <h3 className=" text-[18px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Disclosure Statement / Pursuant to Ontario Regulation 167/23 - Schedule 2</h3>
+                <h3 className=" text-[18px] sm:text-[25px] roboto-bold text-[#333333] mb-4">DISCLOSURE STATEMENT / pURSUANT TO ONTARIO REGULATION 167/23-SCHEDULE 2</h3>
                 <div className="space-y-4 roboto-medium text-[14px] text-[#333333CC]">
                   <p className="font-semibold">
-                    1. Tow operators and tow truck drivers must follow the requirements of the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for the operation of a tow truck, conduct toward the public and at the scene of an accident, and the rates that can be charged for towing and vehicle storage services. The Act also sets out rights you have when requesting or receiving towing services.
+                    1.Tow operators and tow truck drivers must follow the requirements of the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for the operation of a tow truck, conduct toward the public and at the scene of an accident, and the rates that can be charged for towing a motor vehicle. The Act also sets out rights you have when requesting or receiving towing services.
                   </p>
                   <div>
                     <p className="font-semibold mb-1">2. You have the right to,</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li>Decide who can tow your vehicle and where your vehicle will be towed to;</li>
-                      <li>view and review the consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</li>
-                      <li>Receive an unaltered copy of the signed Consent to Tow form;</li>
-                      <li>choose an alternate referral; or</li>
+                      <li>receive and review the consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</li>
+                      <li>receive an unaltered copy of the signed Consent to Tow form;</li>
+                      <li>choose the payment method; and</li>
                       <li>contact the Ministry of Transportation if you have any concerns about the towing services you receive or the conduct of the tow truck driver or tow operator.</li>
                     </ul>
                   </div>
@@ -1506,15 +1569,16 @@ rateSheetShown: payload?.rateSheetShown === true,
                     <p className="font-semibold mb-1">3. Tow truck drivers and tow operators must,</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li>notify you if your vehicle is taken to a location that is different from the location you identified;</li>
-                      <li>not charge higher than the maximum rates published on the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021;</li>
+                      <li>not charge more than the rates published on the Government of Ontario's website on the Towing and Storage Safety and Enforcement Act, 2021;</li>
+
                       <li>accept multiple forms of payment;</li>
-                      <li>not advertise or consent to other services, including vehicle storage services;</li>
-                      <li>not refer you to any medical or legal services and can only refer to other towing, vehicle storage or vehicle repair business if you request it;</li>
+                      <li>not solicit you to consent to other services, including vehicle storage services;</li>
+                      <li>not refer you to any medical or legal services and can only refer you to another towing, vehicle storage or vehicle repair business if you request it; </li>
                       <li>disclose any interest they have or benefit they may receive from the referral at the time of making the referral.</li>
                     </ul>
                   </div>
-                  <p>4. Tow truck drivers and tow operators are identified by name and certificate number on the Consent to Tow form and on the tow truck. Make sure the tow operator&apos;s name and certificate number on the tow truck matches the documentation.</p>
-                  <p>5. Tow truck drivers and tow operators are subject to a Code of Conduct. See the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021.</p>
+                  <p>4.  Tow truck drivers and tow operators are identified by name and certificate number on the Consent to Tow form and on the tow truck. Make sure the tow operator's name and certificate number on the tow truck matches the documentation.</p>
+                  <p>5. Tow truck drivers and tow operators are subject to a Code of Conduct. See the Government of Ontario's website on the Towing and Storage Safety and Enforcement Act, 2021.</p>
                 </div>
               </div>
 
@@ -1522,7 +1586,7 @@ rateSheetShown: payload?.rateSheetShown === true,
               <div className="mb-6">
                 <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Disclosure of Interest</h3>
                 <div className="space-y-2 roboto-medium text-[14px] text-[#333333CC] mb-4">
-                  <p>1. UBK Towing Service Ltd. operates vehicle storage facilities{formType === 'storage' ? ' listed above.' : '.'}.</p>
+                  <p>1. UBK Towing Service Ltd. operates vehicle storage facilities.{formType === 'storage' ? ' listed above.' : '.'}.</p>
                   <p>2. UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
                   <p>3. UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
                 </div>
@@ -1543,10 +1607,9 @@ rateSheetShown: payload?.rateSheetShown === true,
               {/* Consent Statement - Common */}
               <h3 className="text-[25px] sm:text-[25px] roboto-bold text-[#333333] mb-4">Consent Statement</h3>
               <p className="roboto-medium text-[14px] text-[#333333CC] mb-4">
-                You hereby consent to the terms and conditions outlined in this document and authorize UBK
-                Towing Service Ltd. to provide towing, recovery, labour and roadside services as requested
-                to the above-mentioned vehicle. Towed vehicles will be held until full payment is received
-                pursuant to the Repair and Storage Liens Act.
+                You hereby consent to the terms and conditions outlined in this document and authorize UBK Towing Service Ltd. to provide towing, recovery, labour 
+and roadside services as requested to the above-mentioned vehicle.
+ Towed vehicles will be held until full payment is received pursuant to the Repair and Storage Liens Act.
               </p>
               <div className="space-y-3 mb-6">
                 <label className="flex items-start gap-2  text-sm cursor-pointer text-gray-700">
@@ -1554,7 +1617,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     type="checkbox"
                     checked={sharedData.informedOfRights}
                     onChange={() => handleSharedCheckboxChange('informedOfRights')}
-                    className="mt-1 rounded border-gray-300 w-4 h-4 text-[#043677] focus:ring-[#043677]"
+                    className="mt-1 rounded border-gray-300 w-4 h-4 shrink-0 text-[#043677] focus:ring-[#043677]"
                     disabled={isUpdate}
                     required
                   />
@@ -1596,9 +1659,8 @@ rateSheetShown: payload?.rateSheetShown === true,
                       <SignatureCanvas
                         penColor="black"
                         canvasProps={{
-                          width: 500,
-                          height: 40,
-                          className: "w-full border border-gray-300 rounded-lg"
+                        
+                          className: "w-full h-20 sm:h-30 border border-gray-300 rounded-lg"
                         }}
                         ref={towSignatureRef}
                         onEnd={() => towSignatureRef.current && setTowSpecific(prev => ({ ...prev, secondSignature: towSignatureRef.current.toDataURL('image/png') }))}
@@ -1616,9 +1678,7 @@ rateSheetShown: payload?.rateSheetShown === true,
                     <SignatureCanvas
                       penColor="black"
                       canvasProps={{
-                        width: 500,
-                        height: 40,
-                        className: "w-full border border-gray-300 rounded-lg"
+                        className: "w-full  h-20 sm:h-30 border border-gray-300 rounded-lg"
                       }}
                       ref={storageSignatureRef}
                       onEnd={() => storageSignatureRef.current && setStorageSpecific(prev => ({ ...prev, storageSignature: storageSignatureRef.current.toDataURL('image/png') }))}

@@ -124,33 +124,34 @@ const StoragePdf = ({ data }) => {
         </div>
 
         {/* Disclosure Statement */}
-        <div className="p-[16px]">
+          <div className="p-[16px] mx-[16px]">
           <div className="font-bold text-center text-[14px] mb-[8px] underline">
-            DISCLOSURE STATEMENT / PURSUANT TO ONTARIO REGULATION 167/23 - SCHEDULE 2
+           DISCLOSURE STATEMENT / PURSUANT TO ONTARIO REGULATION 167/23 - SCHEDULE 2
           </div>
           <div className="text-[12px] leading-snug space-y-[4px]">
-            <p><span className="font-bold">1.</span> Tow operators and tow truck drivers must follow the requirements of the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for the operation of a tow truck, conduct toward the public and at the scene of an accident, and the rates that can be charged for towing and vehicle storage services. The Act also sets out rights you have when requesting or receiving towing services.</p>
-            <p><span className="font-bold">2.</span> You have the right to,</p>
-            <ul className="list-disc pl-[24px] space-y-[4px]">
-              <li>Decide who can tow your vehicle and where your vehicle will be towed to;</li>
-              <li>view and review the consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</li>
-              <li>Receive an unaltered copy of the signed Consent to Tow form;</li>
-              <li>choose an alternate referral; or</li>
-              <li>contact the Ministry of Transportation if you have any concerns about the towing services you receive or the conduct of the tow truck driver or tow operator.</li>
-            </ul>
+            <p><span className="font-bold">1.</span>Tow operators and tow truck drivers must follow the requirements of the Towing and Storage Safety and Enforcement Act, 2021. The Act sets out responsibilities for the operation of a tow truck, conduct toward the public and at the scene of an accident, and the rates that can be charged for towing a motor vehicle. The Act also sets out rights you have when requesting or receiving towing services.
+</p>
+            <p><span className="font-bold">2.</span>You have the right to,</p>
+            <p className="pl-[16px]">(a) decide who can tow your vehicle and where your vehicle will be towed to;</p>
+            <p className="pl-[16px]">(b) receive and review the Consent to Tow form and Maximum Rate Schedule before towing begins; do not sign a blank form;</p>
+            <p className="pl-[16px]">(c) receive an unaltered copy of the signed Consent to Tow form;</p>
+            <p className="pl-[16px]">(d) receive an itemized invoice before paying and get a receipt when you pay;</p>
+            <p className="pl-[16px]">(e) choose the payment method; and</p>
+            <p className="pl-[16px]">(1) contact the Ministry of Transportation if you have any concerns about the towing services you receive or the conduct of the tow truck driver or tow operator.</p>
             <p><span className="font-bold">3.</span> Tow truck drivers and tow operators must,</p>
-            <ul className="list-disc pl-[24px] space-y-[4px]">
-              <li>notify you if your vehicle is taken to a location that is different from the location you identified;</li>
-              <li>not charge higher than the maximum rates published on the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021;</li>
-              <li>accept multiple forms of payment;</li>
-              <li>not advertise or consent to other services, including vehicle storage services;</li>
-              <li>not refer you to any medical or legal services and can only refer to other towing, vehicle storage or vehicle repair business if you request it;</li>
-              <li>disclose any interest they have or benefit they may receive from the referral at the time of making the referral.</li>
-            </ul>
-            <p>4. Tow truck drivers and tow operators are identified by name and certificate number on the Consent to Tow form and on the tow truck. Make sure the tow operator&apos;s name and certificate number on the tow truck matches the documentation.</p>
-            <p>5. Tow truck drivers and tow operators are subject to a Code of Conduct. See the Government of Ontario&apos;s website on the Towing and Storage Safety and Enforcement Act, 2021.</p>
+            <p className="pl-[16px]">(a) notify you if your vehicle is taken to a location that is different from the location you identified;</p>
+            <p className="pl-[16px]">(b) not charge more than the rates published on the Government of Ontario’s website on the Towing and Storage Safety and Enforcement Act, 2021;</p>
+            <p className="pl-[16px]">(c) accept multiple forms of payment;</p>
+            <p className="pl-[16px]">(d) not solicit you to consent to other services, including vehicle storage services;</p>
+            <p className="pl-[16px]">(e) not refer you to any medical or legal services and can only refer you to another towing, vehicle storage or vehicle repair business if you request it; and</p>
+            <p className="pl-[16px]">(f) disclose any interest they have or benefit they may receive from the referral at the time of making the referral.</p>
+
+            <p><span className="font-bold">4.</span> Tow truck drivers and tow operators are identified by name and certificate number on the Consent to Tow form and on the tow truck. Make sure the tow operator’s name and certificate number on the tow truck match the documentation. </p>
+            <p><span className="font-bold">5.</span> Tow truck drivers and tow operators are subject to a Code of Conduct. See the Government of Ontario’s website on the Towing and Storage Safety and Enforcement Act, 2021.</p>
           </div>
         </div>
+
+
 
         {/* Towed Vehicle Information */}
         <div className="p-[16px] ">
@@ -283,8 +284,7 @@ const StoragePdf = ({ data }) => {
           </div>
           <div className="text-[12px] space-y-[4px]">
             <p><span className="font-bold">1.</span> UBK Towing Service Ltd. operates vehicle storage facilities listed above.</p>
-            <p><span className="font-bold">2.</span> UBK Towing Service Ltd. DOES NOT have any interest in any other locations to which the motor vehicle may be towed for repair, storage, appraisal or other similar purpose.</p>
-            <p><span className="font-bold">3.</span> UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
+            <p><span className="font-bold">2.</span> UBK Towing Service Ltd. DOES NOT have any interest in any person or entity to whom the driver or operator refers to you.</p>
           </div>
         </div>
 
@@ -336,7 +336,7 @@ const StoragePdf = ({ data }) => {
         {/* Rate Schedule */}
         <div className="p-[16px] border-b-2 border-black">
           <div className="text-[12px] space-y-[8px]">
-            <p className="font-bold">The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for charging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is charged the full daily rate.</p>
+            <p className="font-bold">The Maximum Rate Schedule separates charges for indoor storage and outdoor storage, based upon the length of the stored vehicle. It also provides for chaeging for after-hours access to a vehicle. Vehicle storage rates are based on a daily rate. Charges for the first day of storage are operated on an hourly basis and each subsequent day of storage is chrged the full daily rate.</p>
             
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border-2 border-black text-[12px] mt-[8px]">
@@ -406,7 +406,9 @@ const StoragePdf = ({ data }) => {
           </div>
 
           <p className="leading-snug">
-              This consent is given freely and voluntarily with a full understanding of the costs and fees set out in the Maximum Rate Schedule. I understand that UBK Towing Service Ltd. is providing towing and roadside services as it is the above-referenced vehicle. You have been provided verbally informing you of your rights pursuits to Ontario Regulation 167/23, Schedule 2 and the Towing and Storage Safety Enforcement Act, 2021 Maximum Rates List on the back of this Consent To Tow form.
+              You hereby consent to the terms and conditions outlined in this document and authorize UBK Towing Service Ltd. to provide towing, recovery, labour 
+and roadside services as requested to the above-mentioned vehicle.
+ Towed vehicles will be held until full payment is received pursuant to the Repair and Storage Liens Act.
           </p>
         </div>
 
@@ -462,6 +464,16 @@ const StoragePdf = ({ data }) => {
               <span className="w-full border-b-2 border-black px-1 py-1 block">{driverSignature}</span>
               <label className="block font-bold mt-1">Driver Signature</label>
             </div> */}
+
+              {/* Checkbox 2 - In Person */}
+      <div className="flex justify-center items-center mt-[8px] gap-[8px]">
+        <span
+          className={`w-[16px] h-[16px] border-2 border-black ${
+            consentMethod === "In-Person" ? "bg-black" : ""
+          }`}
+        ></span>
+        <span>Consent given in person</span>
+      </div>
           </div>
         </div>
 

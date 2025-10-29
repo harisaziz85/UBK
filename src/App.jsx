@@ -49,6 +49,7 @@ import Towpdf from "./driver/component/Postform/pdf/Towpdf";
 import FormDetails from "./driver/component/Postform/FormDetails";
 import ForgotPasswordFlow from "./auth/ForgetPassword";
 import MyProfilePage from "./driver/MyprofilePage";
+import TowBillPdf from "./driver/component/Postform/pdf/TowBillpdf";
 
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
         <Route path="/inspection/:id" element={<InspectionDetails/>}/>
         <Route path="/storage" element={<Storagepdf/>}/>
         <Route path='/towpdf' element={<Towpdf/>}/>
+        <Route path="/towbill" element={<TowBillPdf/>}/>
         
         {/* profile */}
          <Route path="/profile" element={<Adminprofile/>} />
