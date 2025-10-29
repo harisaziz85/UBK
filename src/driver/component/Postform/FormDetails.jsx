@@ -1,50 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import * as htmlToImage from "html-to-image";
+import jsPDF from "jspdf";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import TowPdf from './pdf/Towpdf'; // Adjust path as needed
+import StoragePdf from './pdf/Storagepgf'; // Adjust path as needed
+
+// Simple inline LoadingSpinner component
+const LoadingSpinner = () => (
+  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+);
 
 const FormDetails = () => {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const componentRef = useRef();
 
   const BASE_URL = 'https://ubktowingbackend-production.up.railway.app/api';
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-
-           const token = localStorage.getItem("authToken"); // get token from localStorage
-      if (!token) {
-        throw new Error("Unauthorized – no token found");
-      }
-
-         const response = await fetch(`${BASE_URL}/driver/consentForm/${id}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-        if (!response.ok) {
-          throw new Error('Failed to fetch');
-        }
-        const result = await response.json();
-
-        console.log('form details page',result);
-        setData(result.form);
-      } catch (error) {
-        console.error('Error fetching form:', error);
-        // Handle error as needed
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id, BASE_URL]);
 
   const formatDate = (isoString) => {
     if (!isoString) return '';
@@ -76,134 +52,165 @@ const FormDetails = () => {
     }).replace(', ', ' ');
   };
 
-  const Field = ({ label, value, loading }) => (
-    <div className="flex gap-2">
-      <p className="font-semibold text-gray-700 min-w-fit">{label}:</p>
-      {loading ? (
-        <Skeleton height={16} width={200} />
-      ) : (
-        <p className="text-gray-600">{value}</p>
-      )}
-    </div>
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("authToken"); // get token from localStorage
+        if (!token) {
+          throw new Error("Unauthorized – no token found");
+        }
 
-  const isTow = data?.type === 'Consent to Tow';
+        const response = await fetch(`${BASE_URL}/driver/consentForm/${id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch');
+        }
+        const result = await response.json();
+
+        console.log('form details page',result);
+        setData(result.form);
+      } catch (error) {
+        console.error('Error fetching form:', error);
+        // Handle error as needed
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, BASE_URL]);
+
+  // Flatten data for PDF components
+  const pdfData = React.useMemo(() => {
+    if (!data) return {};
+    const isTow = data.type === 'Consent to Tow';
+    const policeData = data.policeDirected || {};
+    const officerNameBadge = policeData.isDirected ? `${policeData.officerName || ''} ${policeData.badgeNumber || ''}` : '';
+    const consentDateTime = formatDateTime(data.consentDateTime);
+    const { towDateTime, towEndDateTime } = data.towDetails || {};
+    const { startDateTime } = data.storageDetails || {};
+    const startDate = towDateTime ? formatDate(towDateTime) : formatDate(startDateTime);
+    const startTime = towDateTime ? formatTime(towDateTime) : formatTime(startDateTime);
+    const endDate = towEndDateTime ? formatDate(towEndDateTime) : '';
+    const endTime = towEndDateTime ? formatTime(towEndDateTime) : '';
+
+    const baseData = {
+      invoicePO: data.towDriver?.invoiceOrPO || '',
+      driverName: data.towDriver?.name || '',
+      towDriverName: data.towDriver?.name || '',
+      driverCertificate: data.towDriver?.driverCertificate || '',
+      truckNumber: data.towDriver?.truckNumber || '',
+      towTruckNumber: data.towDriver?.truckNumber || '',
+      callNumber: data.towDriver?.invoiceOrPO || '',
+      year: data.vehicle?.year || '',
+      make: data.vehicle?.make || '',
+      model: data.vehicle?.model || '',
+      color: data.vehicle?.color || '',
+      plate: data.vehicle?.plate || '',
+      vin: data.vehicle?.vin || '',
+      currentMileage: data.vehicle?.currentMileage || '',
+      towedFrom: isTow ? (data.towDetails?.fromLocation || '') : (data.storageDetails?.pickupLocation || ''),
+      towedTo: isTow ? (data.towDetails?.toLocation || '') : '',
+      consentPersonName: data.consentBy?.name || '',
+      consentAddress: data.consentBy?.address || '',
+      consentPhone: data.consentBy?.phone || '',
+      consentEmail: data.consentBy?.email || '',
+      providingServiceAtPoliceDirection: policeData.isDirected || false,
+      policeDirected: policeData.isDirected || false,
+      incidentNumber: policeData.incidentNumber || '',
+      callOccurrenceNumber: policeData.incidentNumber || '',
+      officerNameBadge,
+      detachmentDivision: policeData.detachmentDivision || '',
+      consentDateTime,
+      consentMethod: data.consentMethod || '',
+      informedOfRights: true, // Assume true if not in data; adjust if field exists
+      rateSheetShown: true, // Assume true if not in data; adjust if field exists
+      consentSignature: isTow ? (data.towDetails?.digitalSignature || '') : (data.storageDetails?.digitalSignature || ''),
+      driverSignature: '', // Not in data; adjust if needed
+      serviceDescription: isTow ? (data.towDetails?.descriptionOfServices || '') : '',
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      startDateTime: isTow ? formatDateTime(towDateTime) : formatDateTime(startDateTime),
+      storageType: '', // Adjust if storage type field exists in data
+      storageAddressConfirmed: true, // Assume; adjust if needed
+      acknowledgementRevisedDestination: false, // Adjust if field exists
+      acknowledgementSignature: '', // Adjust if needed
+      providingServices: false, // Adjust if needed
+      rightsInformed: true, // Assume true
+      consentOverPhone: data.consentMethod === 'Phone',
+      consentOverEmail: data.consentMethod === 'Email',
+    };
+
+    return baseData;
+  }, [data]);
+
+  // Download function using html-to-image and jsPDF
+  const handleDownload = async () => {
+    const element = componentRef.current;
+    if (!element) return;
+
+    setIsGeneratingPdf(true);
+
+    try {
+      // Wait for layout
+      await new Promise((r) => setTimeout(r, 800));
+
+      // Set styles for capture
+      const originalWidth = element.style.width;
+      const isTow = data?.type === 'Consent to Tow';
+      element.style.position = "absolute";
+      element.style.left = "0px";
+      element.style.top = "0";
+      element.style.backgroundColor = "#ffffff";
+      element.style.width = isTow ? "1250px" : "1340px";
+
+      const dataUrl = await htmlToImage.toPng(element, {
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+      });
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(
+        `${isTow ? "Tow_Form" : "Storage_Form"}_${data?._id?.slice(0, 7)}.pdf`
+      );
+
+      // Restore original styles
+      element.style.position = "";
+      element.style.left = "";
+      element.style.top = "";
+      element.style.width = originalWidth;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-4 md:px-6 lg:px-8">
-        <div className="max-w-full mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex w-full justify-between mb-6">
             <Skeleton height={40} width={300} />
             <Skeleton height={20} width={100} />
           </div>
-
-          {/* Tow Operator Skeleton */}
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <Skeleton height={24} width={250} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={80} />
-                  <Skeleton height={16} width={200} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Tow Driver Skeleton */}
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <Skeleton height={24} width={250} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={120} />
-                  <Skeleton height={16} width={150} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Vehicle Skeleton */}
-          <section className="p-4 sm:p-6 mb-6 overflow-hidden">
-            <Skeleton height={24} width={200} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm sm:text-base">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={60} />
-                  <Skeleton height={16} width={120} />
-                </div>
-              ))}
-              <div className="lg:col-span-2 flex gap-2">
-                <Skeleton height={16} width={80} />
-                <Skeleton height={16} width={150} />
-              </div>
-            </div>
-          </section>
-
-          {/* Location Generic Skeleton */}
-          <section className="p-4 sm:p-6 mb-6 overflow-hidden">
-            <Skeleton height={24} width={250} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm sm:text-base">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={100} />
-                  <Skeleton height={16} width={180} />
-                </div>
-              ))}
-              <div className="lg:col-span-2">
-                <Skeleton height={24} width={200} className="mb-2" />
-                <Skeleton height={16} count={3} />
-              </div>
-            </div>
-          </section>
-
-          {/* Consent By Skeleton */}
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <Skeleton height={24} width={300} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={80} />
-                  <Skeleton height={16} width={200} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Police Skeleton (optional, show as potential) */}
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <Skeleton height={24} width={200} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={150} />
-                  <Skeleton height={16} width={180} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Consent Details Skeleton */}
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <Skeleton height={24} width={200} className="mb-4" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-2">
-                  <Skeleton height={16} width={120} />
-                  <Skeleton height={16} width={150} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Signature Skeleton */}
-          <section className="p-4 sm:p-6 mb-6 overflow-hidden">
-            <Skeleton height={24} width={100} className="mb-4" />
-            <div className="border border-[#E9E9E961] pt-4">
-              <Skeleton height={16} width={50} className="mt-2" />
-            </div>
-          </section>
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <Skeleton height={800} />
+          </div>
         </div>
       </div>
     );
@@ -213,205 +220,40 @@ const FormDetails = () => {
     return <div>Error loading form data.</div>;
   }
 
+  const isTow = data?.type === 'Consent to Tow';
+  const PdfComponent = isTow ? TowPdf : StoragePdf;
+
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-4 md:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-start">
+      <div className="max-w-full mx-auto">
+        <div className="flex justify-between mb-6 items-center">
+          <h1 className="text-[16px] sm:text-3xl md:text-4xl font-bold text-gray-900 text-start">
             {data.type}
           </h1>
-          <p>Form {data._id.slice(0,7)}</p>
+          <button
+            onClick={handleDownload}
+            disabled={isGeneratingPdf}
+            className="px-6 py-3 bg-[#043677]/90 text-white rounded-md hover:bg-[#043677] text-[14px] sm:text-[16px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
+          </button>
         </div>
 
-        {/* Tow Operator Information */}
-        <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            Tow Operator Information
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-            <Field label="Legal Name" value={data.towOperator?.legalName || ''} loading={loading} />
-            <Field label="Address" value={data.towOperator?.address || ''} loading={loading} />
-            <Field label="Phone" value={data.towOperator?.phone || ''} loading={loading} />
-            <Field label="Email" value={data.towOperator?.email || ''} loading={loading} />
-            <Field label="Tow Operator Certificate" value={data.towOperator?.operatorCertificate || ''} loading={loading} />
-            <Field label="Vehicle Storage Certificate" value={data.towOperator?.storageCertificate || ''} loading={loading} />
+        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+          <div ref={componentRef} className="w-[11in] min-h-screen mx-auto py-4">
+            <PdfComponent data={pdfData} />
           </div>
-        </section>
-
-        {/* Tow Driver Information */}
-        <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-            Tow Driver Information
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-            <Field label="Tow Driver Name" value={data.towDriver?.name || ''} loading={loading} />
-            <Field label="Tow Truck Number" value={data.towDriver?.truckNumber || ''} loading={loading} />
-            <Field label="Tow Driver Certificate" value={data.towDriver?.driverCertificate || ''} loading={loading} />
-            <Field
-              label={isTow ? 'Call #' : 'Invoice/PO #'}
-              value={data.towDriver?.invoiceOrPO || ''}
-              loading={loading}
-            />
-          </div>
-        </section>
-
-        {/* Vehicle Details */}
-        <section className="p-4 sm:p-6 mb-6 overflow-hidden">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-            Vehicle Details
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm sm:text-base">
-            <Field label="Year" value={data.vehicle?.year || ''} loading={loading} />
-            <Field label="Make" value={data.vehicle?.make || ''} loading={loading} />
-            <Field label="Model" value={data.vehicle?.model || ''} loading={loading} />
-            <Field label="Color" value={data.vehicle?.color || ''} loading={loading} />
-            <Field label="Plate" value={data.vehicle?.plate || ''} loading={loading} />
-            <Field label="VIN" value={data.vehicle?.vin || ''} loading={loading} />
-            <div className="lg:col-span-2">
-              <Field
-                label="Odometer"
-                value={`${data.vehicle?.currentMileage || 0} miles`}
-                loading={loading}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Tow/Storage Location Information */}
-        {isTow ? (
-          <section className="p-4 sm:p-6 mb-6 overflow-hidden">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-              Tow Location Information
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm sm:text-base">
-              <Field label="Towed From" value={data.towDetails?.fromLocation || ''} loading={loading} />
-              <Field label="Towed To" value={data.towDetails?.toLocation || ''} loading={loading} />
-              <Field
-                label="Start Date/Time"
-                value={formatDateTime(data.towDetails?.towDateTime)}
-                loading={loading}
-              />
-              <Field
-                label="End Date/Time"
-                value={formatDateTime(data.towDetails?.towEndDateTime)}
-                loading={loading}
-              />
-              <div className="lg:col-span-2">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-                  Description of Services:
-                </h2>
-                <p className="text-gray-600">{data.towDetails?.descriptionOfServices || ''}</p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-              Storage Location Information
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 text-sm sm:text-base">
-              <Field
-                label="Pickup Location"
-                value={data.storageDetails?.pickupLocation || ''}
-                loading={loading}
-              />
-              <Field
-                label="Storage Location"
-                value={data.storageDetails?.storageLocation || ''}
-                loading={loading}
-              />
-              <div className="lg:col-span-2">
-                <Field
-                  label="Start Date/Time"
-                  value={formatDateTime(data.storageDetails?.startDateTime)}
-                  loading={loading}
-                />
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Person Giving Consent Information */}
-        <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-            Person Giving Consent Information
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-            <Field label="Name" value={data.consentBy?.name || ''} loading={loading} />
-            <Field label="Address" value={data.consentBy?.address || ''} loading={loading} />
-            <Field label="Phone" value={data.consentBy?.phone || ''} loading={loading} />
-            <Field label="Email" value={data.consentBy?.email || ''} loading={loading} />
-          </div>
-        </section>
-
-        {/* Police Directed Details */}
-        {data.policeDirected?.isDirected && (
-          <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-              Police Officer Details
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-              <Field
-                label="Officer Name & Badge #"
-                value={`${data.policeDirected?.officerName || ''}  ${data.policeDirected?.badgeNumber || ''}`}
-                loading={loading}
-              />
-              <Field
-                label="Detachment / Division"
-                value={data.policeDirected?.detachmentDivision || ''}
-                loading={loading}
-              />
-              <Field
-                label="Call / Occurrence / Incident #"
-                value={data.policeDirected?.incidentNumber || ''}
-                loading={loading}
-              />
-            </div>
-          </section>
-        )}
-
-        {/* Consent Details */}
-        <section className="p-4 sm:p-6 mb-0 overflow-hidden">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-            Consent Details
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-            <Field
-              label="Consent Date"
-              value={formatDate(data.consentDateTime)}
-              loading={loading}
-            />
-            <Field
-              label="Consent Time"
-              value={formatTime(data.consentDateTime)}
-              loading={loading}
-            />
-            <Field label="Consent Given" value={data.consentMethod || ''} loading={loading} />
-          </div>
-        </section>
-
-{/* Signature */}
-{(data?.towDetails?.digitalSignature || data?.storageDetails?.digitalSignature) && (
-  <section className="p-4 sm:px-3 mb-0 overflow-hidden">
-    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 flex items-start">
-      Signature
-    </h2>
-
-    <div className="border border-[#E9E9E961] pt-4 pb-2 px-3 rounded-md flex justify-start items-start">
-      <img
-        src={data?.towDetails?.digitalSignature || data?.storageDetails?.digitalSignature}
-        alt="Digital Signature"
-        className="max-w-full h-auto border border-gray-300 rounded-md"
-      />
-    </div>
-  </section>
-)}
-
-
-
-
-
+        </div>
       </div>
+
+      {isGeneratingPdf && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-lg flex items-center justify-center z-50">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-sm mx-4">
+            <LoadingSpinner />
+            <p className="text-gray-700 text-base sm:text-lg font-medium text-center">Generating PDF...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
